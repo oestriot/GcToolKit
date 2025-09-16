@@ -51,7 +51,7 @@ int read_sfo_key(char* key, char* out, char* sfo) {
 		
 		sfo_key s_key;
 		
-		memcpy(&s_key, sfo_buffer+ptr, sizeof(sfo_key));
+		memcpy(&s_key, sfo_buffer + ptr, sizeof(sfo_key));
 		ptr += sizeof(sfo_key);
 
 		if(s_key.type != PSF_TYPE_STR) continue;

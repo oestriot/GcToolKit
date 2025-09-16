@@ -4,10 +4,10 @@
 #include <string.h>
 
 #include <vitasdk.h>
+#include <GcKernKit.h>
 
 #include "log.h"
 #include "crypto.h"
-#include "GcKernKit.h"
 #include "device.h"
 
 #include "mbr.h"

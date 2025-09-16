@@ -1,3 +1,7 @@
+/*
+*	GcKernKit export headers
+*/
+
 int kResetGc();
 int kClearCartSecret();
 int kGetCartSecret(uint8_t* keys);

@@ -104,7 +104,7 @@ int begin_file_send(char* ip_address, unsigned short port, char* filename, uint6
 	memset(&packet, 0x00, sizeof(send_file_packet));
 	
 	packet.magic = SEND_FILE_MAGIC;
-	strncpy(packet.filename, filename, sizeof(packet.filename));
+	strncpy(packet.filename, filename, sizeof(packet.filename)-1);
 	packet.total_size = total_size;
 	
 	int send = sceNetSend(socket, &packet, sizeof(send_file_packet), 0);
@@ -113,9 +113,9 @@ int begin_file_send(char* ip_address, unsigned short port, char* filename, uint6
 	return socket;
 	
 	error:
-	if(connection > 0)
+	if(connection >= 0)
 		sceNetShutdown(socket, SCE_NET_SHUT_RDWR);
-	if(socket > 0)
+	if(socket >= 0)
 		sceNetSocketClose(socket);
 	return ret;
 }

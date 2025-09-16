@@ -435,7 +435,7 @@ int do_select_file(char* folder, char* output, char* extension, uint64_t max_siz
 	memset(&filter, 0x00, sizeof(SearchFilter));
 	filter.max_filesize = max_size;
 	filter.file_only = 1;
-	strncpy(filter.match_extension, extension, sizeof(filter.match_extension));
+	strncpy(filter.match_extension, extension, sizeof(filter.match_extension)-1);
 	
 	int res = get_files_in_folder(folder, files, &total_files, &filter, sizeof(options));
 	

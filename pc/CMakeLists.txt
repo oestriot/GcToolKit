@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(gc_backup_network)
+project(GcNetworkBackup)
 
 IF(CMAKE_SYSTEM_NAME MATCHES "^MINGW")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -static-libgcc -Wl,-Bstatic -O3")
