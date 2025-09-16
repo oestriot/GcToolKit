@@ -105,3 +105,16 @@ and an overview on how the vita decrypts game data in general;
 
 
 ![gc authentication diagram](https://silica.codes/Estradrive/GcToolKit/raw/branch/main/diagram.png)
+
+# Building
+
+to build the plugin using VitaSDK just run:
+
+```
+mkdir build
+cd build
+cmake ..
+make
+```
+
+you can also build it with debug logging enabled by passing ```-DCMAKE_BUILD_TYPE=DEBUG``` to the cmake command.
