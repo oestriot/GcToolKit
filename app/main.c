@@ -5,6 +5,7 @@
 #include <vitasdk.h>
 #include <vita2d.h>
 
+#include "lock.h"
 #include "ctrl.h"
 #include "crypto.h"
 #include "gameinfo.h"
@@ -16,7 +17,7 @@
 #include "net.h"
 #include "bgm.h"
 #include "log.h"
-#include "GcKernKit.h"
+#include <GcKernKit.h>
 
 void get_output_filename(char* output, char* format, int size_output) {
 	char title_id[64];
@@ -29,7 +30,7 @@ void get_output_filename(char* output, char* format, int size_output) {
 
 
 int handle_dump_device(int what, char* block_device, char* outfile, char* ip_address, unsigned short port) {
-	int res = -9890;
+	int res = 0;
 	
 	if(what != DUMP_KEYS_ONLY)
 		res = do_device_dump(block_device, outfile, (what == DUMP_WHOLE_GC) ? 1 : 0, ip_address, port);		
@@ -43,7 +44,7 @@ int handle_dump_device(int what, char* block_device, char* outfile, char* ip_add
 }
 
 int handle_menu_set_network_options(int what, char* block_device, char* outfile) {
-	char ip_address[0x1028];
+	unsigned char ip_address[0x1028];
 	unsigned short port = DEFAULT_PORT;
 	
 	memset(ip_address, 0x00, sizeof(ip_address));
@@ -165,7 +166,7 @@ void handle_menu_set_output(char* fmt, int what) {
 	snprintf(output_folder, sizeof(output_folder), "%sbak/%s", output_device, output_filename);
 	PRINT_STR("what = %x, output_folder = %s\n", what, output_folder);
 
-	int res = -9893;
+	int res = 0;
 	if(selected != DUMP_LOCATION_NET) {
 		res = handle_dump_device(what, block_device, output_folder, NULL, 0);
 	}
@@ -375,8 +376,14 @@ void handle_menu_select_option() {
 		do_gc_insert_prompt();
 }
 
-int main() {
-	load_kernel_modules();
+int main(int argc, char** argv) {
+	int has_restarted = (argc >= 2 && argv != NULL && strcmp(argv[1], "-restarted") == 0);
+	PRINT_STR("has_restarted: 0x%x\n", has_restarted);
+	
+	if(!has_restarted){
+		load_kernel_modules();
+	}
+	
 	init_ctrl();
 	init_vita2d();
 	init_menus();
@@ -384,11 +391,16 @@ int main() {
 	init_sound();
 	init_shell();
 	
-	do_gc_insert_prompt();
-	while(1) {
-		handle_menu_select_option();
+	if(kernel_started()) {
+		do_gc_insert_prompt();
+		while(1) {
+			handle_menu_select_option();
+		}		
 	}
-	
+	else {
+		do_kmodule_failed_message(KMODULE_NAME);
+	}
+		
 	
 	term_shell();
 	term_sound();

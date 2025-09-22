@@ -13,10 +13,11 @@ int do_device_wipe_and_format(const char* block_device, uint8_t full, uint8_t fo
 int do_device_restore(const char* block_device, char* input_file);
 int do_format_confirm(const char* block_device);
 
-void do_confirm_message(char* title, char* msg);
+void do_confirm_message(const char* title, const char* msg);
 int do_network_options(char* ip_address, unsigned short port);
-void do_ime();
 int do_error(int error);
+void do_ime();
+void do_kmodule_failed_message(const char* module_name);
 void do_device_info();
 
 void init_menus();

@@ -5,14 +5,17 @@
 #include "sfo.h"
 #include "io.h"
 #include "err.h"
+#include <GcKernKit.h>
+
+
 int read_sfo_key(char* key, char* out, char* sfo) {
-	int ret = 0;
+	int res = 0;
 	
 	uint64_t sfo_size = get_file_size(sfo);
 	if(sfo_size <= 0) ERROR(sfo_size);
 	
 	char* sfo_buffer = malloc(sfo_size);
-	if(sfo_buffer == NULL) ERROR(-82194);
+	if(sfo_buffer == NULL) ERROR(POINTER_WAS_NULL);
 
 	memset(sfo_buffer, 0x00, sfo_size);
 	
@@ -22,29 +25,29 @@ int read_sfo_key(char* key, char* out, char* sfo) {
 	// read sfo
 	
 	int rd = sceIoRead(sfo_fd, sfo_buffer, sfo_size);
-	if(rd != sfo_size) ERROR(-2);
+	if(rd != sfo_size) ERROR(SIZE_NOT_MATCH);
 	
 	// close sfo
 	if(sceIoClose(sfo_fd) >= 0)
 		sfo_fd = 0;
 	
-	if(sfo_size <= sizeof(sfo_header)) ERROR(-3);
+	if(sfo_size <= sizeof(sfo_header)) ERROR(SIZE_NOT_MATCH);
 	
 	
 	// get sfo header
 	sfo_header header;
 	memcpy(&header, sfo_buffer, sizeof(sfo_header));
 	
-	if(memcmp(header.magic, "\0PSF", sizeof(header.magic)) != 0) ERROR(-4); // check magic	
-	if(header.count > 200) ERROR(-5); // give up if more than 200 keys
-	if(sfo_size < (sizeof(sfo_header) + (sizeof(sfo_key) * header.count))) ERROR(-6); // check if size is enough for keys + sfo header size
+	if(memcmp(header.magic, "\0PSF", sizeof(header.magic)) != 0) ERROR(INVALID_MAGIC); // check magic	
+	if(header.count > 200) ERROR(SFO_TOO_MANY_ENTRIES); // give up if more than 200 keys
+	if(sfo_size < (sizeof(sfo_header) + (sizeof(sfo_key) * header.count))) ERROR(SIZE_NOT_MATCH); // check if size is enough for keys + sfo header size
 	
 	uint32_t ptr = sizeof(sfo_header);
 	
 	// read keys
 	for(int i = 0; i < header.count; i++)
 	{
-		if(ptr > sfo_size) ERROR(-7); // check for overflow
+		if(ptr > sfo_size) ERROR(SIZE_NOT_MATCH); // check for overflow
 
 		char key_name[64];
 		char key_value[64];
@@ -58,10 +61,10 @@ int read_sfo_key(char* key, char* out, char* sfo) {
 		
 		// calculate location of key in buffer
 		int name_offset = header.key_offset + s_key.name_offset;
-		if(name_offset > sfo_size) ERROR(-8);
+		if(name_offset > sfo_size) ERROR(SIZE_NOT_MATCH);
 		
 		int data_offset = header.value_offset + s_key.data_offset;
-		if(data_offset > sfo_size) ERROR(-9);
+		if(data_offset > sfo_size) ERROR(SIZE_NOT_MATCH);
 
 		// copy the key and value into buffers.
 		strncpy(key_name, sfo_buffer + name_offset, sizeof(key_name)-1);
@@ -78,5 +81,5 @@ error:
 		free(sfo_buffer);
 	if(sfo_fd > 0) 
 		sceIoClose(sfo_fd);
-	return ret;
+	return res;
 }

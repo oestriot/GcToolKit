@@ -55,7 +55,7 @@ void* receive_file(void* args) {
 		}
 	}
 	else{
-		fprintf(stderr, "Header packet is incorret size: %x\n", rd);
+		fprintf(stderr, "Header packet is incorres size: %x\n", rd);
 	}
 	
 	CLOSE_SOCKET(connectionFd);

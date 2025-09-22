@@ -52,10 +52,10 @@ int get_key() {
 		if(!device_exist(BLOCK_DEVICE_GC)) return SCE_CTRL_CANCEL; 
 		
 		sceCtrlPeekBufferPositive(0, &pad, 1);
-		unsigned newb = prev ^ (pad.buttons & prev);
+		unsigned int new_buttons = prev ^ (pad.buttons & prev);
 		prev = pad.buttons;
 		for (int i = 0; i < sizeof(buttons)/sizeof(*buttons); ++i) {
-			if (newb & buttons[i]) {
+			if (new_buttons & buttons[i]) {
 				return buttons[i];	
 			}				
 		}

@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <taihen.h>
 #include <vitasdkkern.h>
+#include "GcKernKit.h"
 #include "cmd56.h"
 #include "log.h"
 #include "mod.h"
@@ -167,5 +168,5 @@ int kResetGc() {
 		PRINT_STR("ksceKernelWaitEventFlag(0x%02X, 0x1000,5,0,0) 0x%04X\n", interupt_info[1].op_sync_id, res);
 		return res;
 	}
-	return -1130;
+	return INTER_INFO_WAS_NULL;
 }

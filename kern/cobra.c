@@ -9,7 +9,7 @@ static int sceKernelGetSystemTimeWideHook = -1;
 static tai_hook_ref_t sceKernelGetSystemTimeWideHookRef;
 
 uint64_t return_0() {
-	PRINT_STR("ret 0\n");
+	PRINT_STR("res 0\n");
 	return 0;
 }
 

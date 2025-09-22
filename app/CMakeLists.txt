@@ -45,6 +45,7 @@ add_executable(${PROJECT_NAME}
 	device.c
 	crypto.c
 	kernel.c
+	lock.c
 	io.c
 	gameinfo.c
 	sfo.c

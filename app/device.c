@@ -6,6 +6,7 @@
 #include <vitasdk.h>
 #include <GcKernKit.h>
 
+#include "kernel.h"
 #include "log.h"
 #include "crypto.h"
 #include "device.h"
@@ -28,11 +29,11 @@
 #define DEVICE_ACCESS_LOOP(rd_func, wr_func) \
 	do { \
 		int rd = rd_func(rd_fd, (void*)DEVICE_DUMP_BUFFER, sizeof(DEVICE_DUMP_BUFFER)); \
-		if(rd == 0) ERROR(-2); \
+		if(rd == 0) ERROR(SIZE_IS_ZERO); \
 		if(rd < 0) ERROR(rd); \
 		\
 		int wr = wr_func(wr_fd, (void*)DEVICE_DUMP_BUFFER, rd); \
-		if(wr == 0) ERROR(-3); \
+		if(wr == 0) ERROR(SIZE_IS_ZERO); \
 		if(wr < 0) ERROR(wr); \
 		\
 		total += wr; \
@@ -52,8 +53,8 @@
 		int wr = wr_func(wr_fd, &vci, sizeof(VciHeader)); \
 		PRINT_STR("wr = %x\n", wr); \
 		\
-		if(wr == 0) ERROR(-9680); \
-		if(wr != sizeof(VciHeader)) ERROR(-9681); \
+		if(wr == 0) ERROR(SIZE_IS_ZERO); \
+		if(wr != sizeof(VciHeader)) ERROR(SIZE_NOT_MATCH); \
 		if(wr < 0) ERROR(wr); \
 	}
 
@@ -76,8 +77,8 @@
 		int wr = wr_func(wr_fd, &vci, sizeof(PsvHeader)); \
 		PRINT_STR("wr = %x\n", wr); \
 		\
-		if(wr == 0) ERROR(-9682); \
-		if(wr != sizeof(VciHeader)) ERROR(-9683); \
+		if(wr == 0) ERROR(SIZE_IS_ZERO); \
+		if(wr != sizeof(VciHeader)) ERROR(SIZE_NOT_MATCH); \
 		if(wr < 0) ERROR(wr); \
 	}
 
@@ -85,15 +86,17 @@
 	uint64_t device_size = 0; \
 	kGetDeviceSize(dev_fd, &device_size); \
 	PRINT_STR("device_size = %llx\n", device_size); \
-	if(device_size == 0) ERROR(-9684); \
+	if(device_size == 0) ERROR(SIZE_IS_ZERO); \
 	if(progress_callback != NULL) progress_callback((const char*)placeholder_txt, (char*)placeholder_txt, total, device_size) \
 	
-#define SAFE_CHK(dev) if(memcmp(dev, "sdstor0:gcd", 11) != 0 && memcmp(dev, "sdstor0:uma", 11) != 0) ERROR(-128)
+#define SAFE_CHK(dev) if(memcmp(dev, "sdstor0:gcd", 11) != 0 && memcmp(dev, "sdstor0:uma", 11) != 0) ERROR(BRICK_PREVENTED_DEVICE_WHITELIST)
 
 // exfatfs does each 0x20000 reading internally - Princess of Sleeping 
 static uint8_t DEVICE_DUMP_BUFFER[0x20000]__attribute__((aligned(0x40))); 
 
 uint8_t device_exist(const char* block_device) {
+	if(!kernel_started()) return DEVICE_KERNEL_MODULE_NOT_STARTED;
+	
 	int dfd = kOpenDevice(block_device, SCE_O_RDONLY);
 	
 	if(dfd < 0)
@@ -104,6 +107,7 @@ uint8_t device_exist(const char* block_device) {
 }
 
 uint64_t device_size(const char* block_device) {
+	if(!kernel_started()) return DEVICE_KERNEL_MODULE_NOT_STARTED;
 
 	uint64_t device_size = 0;
 
@@ -137,7 +141,9 @@ int read_data_from_image(SceUID fd, char* data, int size) {
 }
 
 int dump_device_network(char* ip_address, unsigned short port, const char* block_device, char* path, GcCmd56Keys* keys, void (*progress_callback)(const char*, char*, uint64_t, uint64_t)) {
-	int ret = 0;	
+	if(!kernel_started()) return DEVICE_KERNEL_MODULE_NOT_STARTED;
+
+	int res = 0;	
 	uint64_t total = 0;
 	
 	PRINT_STR("Begining NETWORK dump of %s to %s:%u\n", block_device, ip_address, port);
@@ -163,12 +169,14 @@ error:
 	if(rd_fd >= 0)
 		kCloseDevice(rd_fd);
 	
-	return ret;
+	return res;
 }
 
 
 int dump_device(const char* block_device, char* path, GcCmd56Keys* keys, void (*progress_callback)(const char*, char*, uint64_t, uint64_t)) {
-	int ret = 0;
+	if(!kernel_started()) return DEVICE_KERNEL_MODULE_NOT_STARTED;
+
+	int res = 0;
 	uint64_t total = 0;
 
 	PRINT_STR("Begining dump of %s to %s\n", block_device, path);
@@ -194,11 +202,13 @@ error:
 	if(rd_fd >= 0)
 		kCloseDevice(rd_fd);
 	
-	return ret;
+	return res;
 }
 
 int restore_device(const char* block_device, char* path, void (*progress_callback)(const char*, char*, uint64_t, uint64_t)) {
-	int ret = 0;
+	if(!kernel_started()) return DEVICE_KERNEL_MODULE_NOT_STARTED;
+
+	int res = 0;
 	uint64_t total = 0;
 	
 	SAFE_CHK(block_device);
@@ -216,7 +226,7 @@ int restore_device(const char* block_device, char* path, void (*progress_callbac
 	
 	// get device size
 	CREATE_DEV_SZ(block_device, wr_fd);
-	if(img_file_sz > device_size) ERROR(-2);
+	if(img_file_sz > device_size) ERROR(SIZE_NO_SPACE);
 	
 	// enter read/write loop
 	DEVICE_ACCESS_LOOP(read_data_from_image, kWriteDevice);
@@ -227,11 +237,13 @@ error:
 	if(wr_fd >= 0)
 		kCloseDevice(wr_fd);
 	
-	return ret;
+	return res;
 }
 
 int wipe_device(const char* block_device, void (*progress_callback)(const char*, char*, uint64_t, uint64_t)) {
-	int ret = 0;
+	if(!kernel_started()) return DEVICE_KERNEL_MODULE_NOT_STARTED;
+
+	int res = 0;
 	uint64_t total = 0;
 	
 	int rd_fd = 0;
@@ -253,5 +265,5 @@ error:
 	if(wr_fd >= 0)
 		kCloseDevice(wr_fd);
 	
-	return ret;
+	return res;
 }

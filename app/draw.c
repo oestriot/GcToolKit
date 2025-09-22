@@ -49,11 +49,11 @@ void term_vita2d() {
 	vita2d_free_texture(menuoverlay);
 }
 
-void draw_text_color(int x, int y, int color ,char* msg) {	
+void draw_text_color(int x, int y, int color, const char* msg) {	
 	vita2d_pvf_draw_text(pvf, x, y, color, TEXT_SIZE, msg);
 }
 
-void draw_text(int x, int y, char* msg) {
+void draw_text(int x, int y, const char* msg) {
 	draw_text_color(x, y, COLOR_WHITE, msg);
 }
 
@@ -69,7 +69,7 @@ void draw_progress_bar(int y, uint64_t done, uint64_t total) {
 
 }
 
-void draw_text_center_color(int y, int color, char* msg) {
+void draw_text_center_color(int y, int color, const char* msg) {
 	int text_width = MENUOVERLAY_WIDTH;
 	int text_height = 0;	
 	char processed_msg[512];
@@ -94,11 +94,11 @@ void draw_text_center_color(int y, int color, char* msg) {
 	draw_text_color(text_x, y, color, processed_msg);
 }
 
-void draw_text_center(int y, char* msg) {
+void draw_text_center(int y, const char* msg) {
 	draw_text_center_color(y, COLOR_WHITE, msg);
 }
 
-void draw_option(int y, char* opt, int selected) {
+void draw_option(int y, const char* opt, int selected) {
 	if(!selected) {
 		draw_text_center_color(y, COLOR_WHITE, opt);
 	}
@@ -108,7 +108,7 @@ void draw_option(int y, char* opt, int selected) {
 	
 }
 
-void draw_title(char* title) {
+void draw_title(const char* title) {
 	draw_text_center(TITLE_Y, title);	
 }
 
@@ -158,6 +158,6 @@ void free_texture(vita2d_texture* texture) {
 	vita2d_free_texture(texture);
 }
 
-vita2d_texture* load_texture(char* path) {
+vita2d_texture* load_texture(const char* path) {
 	return vita2d_load_PNG_file(path);
 }

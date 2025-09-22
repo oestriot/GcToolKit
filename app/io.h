@@ -10,6 +10,10 @@ typedef struct SearchFilter {
 } SearchFilter;
 
 int file_exist(char* path);
+int write_file(const char* path, const void* data, size_t size);
+int read_file(const char* path, void* data, size_t size);
+int copy_file(const char* path, const char* new_path);
+
 void remove_illegal_chars(char* str);
 
 int wait_for_partition(char* partiton);

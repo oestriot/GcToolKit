@@ -6,6 +6,7 @@
 #include "io.h"
 #include "log.h"
 #include "err.h"
+#include <GcKernKit.h>
 
 int file_exist(char* path) {
 	SceIoStat stat;
@@ -23,7 +24,7 @@ int wait_for_partition(char* partiton) {
 }
 
 int get_files_in_folder(char* folder, char* out_filenames, int* total_folders, SearchFilter* filter, size_t max_files) {
-	int ret = 0;
+	int res = 0;
 	
 	// get total folder count
 	*total_folders = 0;
@@ -80,33 +81,32 @@ int get_files_in_folder(char* folder, char* out_filenames, int* total_folders, S
 		PRINT_STR("total_folders: %x\n", *total_folders);
 	}
 	
-	ret = sceIoDclose(dfd);
-	PRINT_STR("sceIoDclose: %x\n", ret);
-	if(ret > 0) ERROR(ret);
+	res = sceIoDclose(dfd);
+	PRINT_STR("sceIoDclose: %x\n", res);
+	if(res > 0) ERROR(res);
 	
 	return 0;
 	error:
-	PRINT_STR("Error case reached: %x\n", ret);
+	PRINT_STR("Error case reached: %x\n", res);
 	if(dfd >= 0)
 		sceIoDclose(dfd);
-	return ret;	
+	return res;	
 }
 
 int read_first_filename(char* path, char* output, size_t out_size) {
-	int ret = 0;
+	int res = 0;
 	int dfd = sceIoDopen(path);
 	if(dfd < 0) ERROR(dfd);
 	
 	SceIoDirent ent;
-	int res = sceIoDread(dfd, &ent);
-	if(res < 0) ERROR(res);
+	res = sceIoDread(dfd, &ent);
 	
 	strncpy(output, ent.d_name, out_size);
 	
 error:
 	if(dfd >= 0)
 		sceIoDclose(dfd);
-	return ret;	
+	return res;	
 }
 
 void remove_illegal_chars(char* str) {
@@ -202,6 +202,55 @@ uint64_t get_file_size(const char* filepath) {
 	if(res >= 0)
 		return stat.st_size;
 	return 0;
+}
+
+int read_file(const char* path, void* data, size_t size) {
+	
+	int res = 0;
+	SceUID fd = sceIoOpen(path, SCE_O_RDONLY, 0777);
+	if(fd > 0) {
+		res = sceIoRead(fd, data, size);
+		if(res < 0) goto error;
+		if(res != size) ERROR(SIZE_NOT_MATCH);
+	}
+	
+error:
+	sceIoClose(fd);
+	return res;
+	
+}
+
+int write_file(const char* path, const void* data, size_t size) {
+	char outdir[MAX_PATH];
+	int res = 0;
+
+	SceUID wfd = sceIoOpen(path, SCE_O_WRONLY | SCE_O_CREAT, 0777);
+	if(wfd < 0) ERROR(wfd);
+	
+	if(wfd > 0) {
+		res = sceIoWrite(wfd, data, size);
+		if(res < 0) goto error;
+		if(res != size) ERROR(SIZE_NOT_MATCH);
+	}
+	
+error:
+	sceIoClose(wfd);
+	return res;
+	
+}
+
+int copy_file(const char* path, const char* new_path) {
+	int res = 0;
+	uint64_t fileSize = get_file_size(path);
+	char* data = malloc(fileSize);
+	
+	if(data != NULL) {
+		if(read_file(path, data, fileSize) != fileSize) ERROR(fileSize);
+		if(write_file(new_path, data, fileSize) != fileSize) ERROR(fileSize);
+	}
+error:	
+	if(data != NULL) free(data);
+	return res;
 }
 
 uint64_t get_free_space(const char* device) {

@@ -14,16 +14,16 @@ static int return_1() {
 
 // shamelessly stolen from dots_tb
 static SceUID sceSysconSetOtgPowerLevel_patched(uint32_t *pwr_val) {
-	SceUID ret, state;
+	SceUID res, state;
 	ENTER_SYSCALL(state);
 	
-	ret = TAI_CONTINUE(SceUID, sceSysconSetOtgPowerLevelHookRef, pwr_val);
+	res = TAI_CONTINUE(SceUID, sceSysconSetOtgPowerLevelHookRef, pwr_val);
 	PRINT_STR("sceSysconSetOtgPowerLevel original %x\n", *pwr_val);
 	if(*pwr_val == 0x700)
 		PRINT_STR("sceSysconSetOtgPowerLevel new %x\n\n", *pwr_val = 0x200);
 	
 	EXIT_SYSCALL(state);
-	return ret;
+	return res;
 	
 }
 

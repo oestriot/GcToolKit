@@ -5,10 +5,10 @@
 #include "device.h"
 #include "gameinfo.h"
 #include "io.h"
+#include "err.h"
 #include "net.h"
-#include "GcKernKit.h"
 #include "gc_ident.h"
-#include "kernel.h"
+#include "lock.h"
 #include "log.h"
 
 #include <string.h>
@@ -16,6 +16,7 @@
 #include <stdlib.h>
 #include <vitasdk.h>
 #include <stdint.h>
+#include <GcKernKit.h>
 
 static vita2d_texture* insertgc_tex;
 static uint8_t options[0x1000];
@@ -25,6 +26,7 @@ static uint8_t options[0x1000];
 				  int increment_y = 20; \
 				  int total = 0; \
 				  memset(options, 0x00, sizeof(options))
+				  
 #define ADDOPT(cond,x) if(cond) { \
 					draw_option(opt_y, x, option == *selected); \
 					opt_y += increment_y; \
@@ -38,9 +40,13 @@ static uint8_t options[0x1000];
 				   option++ 
 
 #define RETURNOPT() return option
+
 #define CALC_FIRST_OPTION() for(first_option = 0; (options[first_option] != 1 && first_option < sizeof(options)); first_option++)
+
 #define CALC_LAST_OPTION() for(last_option = sizeof(options); (options[last_option] != 1 && last_option > 0); last_option--)
+
 #define WINDOW_SIZE (19)
+
 #define PROCESS_MENU(func, ...) \
 					  int window = 0; \
 					  int selected = 0; \
@@ -114,6 +120,7 @@ static uint8_t options[0x1000];
 					 draw_text_center(330, output_txt); \
 					 \
 					 end_draw()
+					 
 #define WAIT_FOR_CONFIRM() \
 					do {\
 						int ctrl = get_key(); \
@@ -182,6 +189,7 @@ void draw_insert_gc_menu() {
 }
 
 void do_gc_insert_prompt() {
+	unlock_gc();
 	draw_insert_gc_menu();
 	wait_for_gc_auth();	
 }
@@ -325,7 +333,25 @@ int draw_format_confirm_menu(int* selected, int* window, const char* device) {
 
 }
 
-void draw_confirmation_message(char* title, char* msg) {
+void draw_kmodule_failed_message(const char* module_name) {
+	start_draw();
+	draw_background();
+	draw_controls(0);
+	
+	char output_txt[128];
+	snprintf(output_txt, sizeof(output_txt), "Failed to load app0:%s.skprx", module_name);
+	draw_title(output_txt);
+
+	snprintf(output_txt, sizeof(output_txt), "GcToolKit failed to load kernel module \"%s\"", module_name);
+	draw_text_center(250, output_txt);
+	draw_text_center(270, "Please ensure \"Unsafe Homebrew\" is enabled.");
+	draw_text_center(290, "This can also fail on \"Activated\" Dev & Test Kits.");
+	
+	end_draw();
+}
+
+
+void draw_confirmation_message(const char* title, const char* msg) {
 	start_draw();
 	draw_background();
 	draw_controls(0);
@@ -412,6 +438,8 @@ int do_network_options(char* ip_address, unsigned short port) {
 int do_gc_options() {
 	char title_id[64];
 	char title[64];
+	
+	lock_gc();
 
 	mount_gro0();
 	mount_grw0();
@@ -441,7 +469,7 @@ int do_select_file(char* folder, char* output, char* extension, uint64_t max_siz
 	
 	PRINT_STR("get_files_in_folder = %x\n", res);
 	if(res < 0) return res;
-	if(total_files <= 0) return -2;
+	if(total_files <= 0) return TOTAL_FILES_LESS_THAN_EQ_0;
 	
 	PRINT_STR("total_files: %x\n", total_files);
 	
@@ -454,12 +482,16 @@ void do_ime() {
 	for(int i = 0; i < 0x5; i++) draw_ime();
 }
 
-void do_confirm_message(char* title, char* msg) {
+void do_confirm_message(const char* title, const char* msg) {
 	draw_confirmation_message(title, msg);
 
 	WAIT_FOR_CONFIRM();
 }
 
+void do_kmodule_failed_message(const char* module_name) {
+	draw_kmodule_failed_message(module_name);
+	WAIT_FOR_CONFIRM();
+}
 
 int do_format_confirm(const char* block_device) {
 	PROCESS_MENU(draw_format_confirm_menu, block_device);
@@ -468,7 +500,7 @@ int do_format_confirm(const char* block_device) {
 
 int do_device_wipe_and_format(const char* block_device, uint8_t full, uint8_t format) {
 	lock_shell();
-	disable_power_off();
+	lock_power();
 
 	umount_gro0();
 	umount_grw0();
@@ -486,14 +518,14 @@ int do_device_wipe_and_format(const char* block_device, uint8_t full, uint8_t fo
 	umount_devices();
 	
 	unlock_shell();
-	enable_power_off();
+	unlock_power();
 	
 	return res;
 }
 
 int do_device_restore(const char* block_device, char* input_file) {
 	lock_shell();
-	disable_power_off();
+	lock_power();
 	
 	umount_gro0();
 	umount_grw0();
@@ -506,14 +538,14 @@ int do_device_restore(const char* block_device, char* input_file) {
 	umount_devices();
 
 	unlock_shell();
-	enable_power_off();
+	unlock_power();
 	return res;
 }
 
 int do_device_dump(const char* block_device, char* output_file, uint8_t vci, char* ip_address, unsigned short port) {
 	
 	lock_shell();
-	disable_power_off();
+	lock_power();
 	
 	umount_gro0();
 	umount_grw0();
@@ -538,7 +570,7 @@ int do_device_dump(const char* block_device, char* output_file, uint8_t vci, cha
 	umount_devices();
 	
 	unlock_shell();
-	enable_power_off();
+	unlock_power();
 
 	return res;
 }

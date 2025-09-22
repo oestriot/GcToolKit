@@ -6,9 +6,11 @@
 #include <vitasdkkern.h>
 #include <taihen.h>
 #include "mod.h"
+#include "format.h"
+#include "GcKernKit.h"
 
 #define ERROR(x) return x
-#define SAFE_CHK(dev) if(memcmp(dev, "sdstor0:gcd", 11) != 0 && memcmp(dev, "sdstor0:uma", 11) != 0) ERROR(-1140)
+#define SAFE_CHK(dev) if(memcmp(dev, "sdstor0:gcd", 11) != 0 && memcmp(dev, "sdstor0:uma", 11) != 0) ERROR(BRICK_PREVENTED_DEVICE_WHITELIST)
 	
 int module_get_offset(SceUID pid, SceUID modid, int segidx, size_t offset, uintptr_t *addr);
 

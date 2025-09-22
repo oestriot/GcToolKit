@@ -11,7 +11,7 @@ static char memory[16 * 1024];
 
 
 int init_network() {
-    int ret = 0;
+    int res = 0;
 	
 	SceNetInitParam param;
 	memset(&param, 0x00, sizeof(SceNetInitParam));
@@ -39,7 +39,7 @@ error:
 		sceNetTerm();
 	if(loadModule >= 0)
 		sceSysmoduleUnloadModule(SCE_SYSMODULE_NET);
-	return ret;
+	return res;
 }
 
 void term_network() {
@@ -80,7 +80,7 @@ void end_file_send(int fstream) {
 }
 
 int begin_file_send(char* ip_address, unsigned short port, char* filename, uint64_t total_size) {
-	int ret = 0;
+	int res = 0;
 	
 	SceUID socket = sceNetSocket("filesocket", SCE_NET_AF_INET, SCE_NET_SOCK_STREAM, 0);
 	if(socket < 0) ERROR(socket);
@@ -92,8 +92,8 @@ int begin_file_send(char* ip_address, unsigned short port, char* filename, uint6
 	sin.sin_len = sizeof(SceNetSockaddrIn);
 	sin.sin_family = SCE_NET_AF_INET;
 	
-	ret = sceNetInetPton(SCE_NET_AF_INET, ip_address, &sin.sin_addr);
-	if(ret < 0) ERROR(ret);
+	res = sceNetInetPton(SCE_NET_AF_INET, ip_address, &sin.sin_addr);
+	if(res < 0) ERROR(res);
 	
 	sin.sin_port = sceNetHtons(port);
 
@@ -117,7 +117,7 @@ int begin_file_send(char* ip_address, unsigned short port, char* filename, uint6
 		sceNetShutdown(socket, SCE_NET_SHUT_RDWR);
 	if(socket >= 0)
 		sceNetSocketClose(socket);
-	return ret;
+	return res;
 }
 
 

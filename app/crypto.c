@@ -75,9 +75,9 @@ int key_dump_network(char* ip_address, unsigned short port, char* output_file) {
 	PRINT_STR("wr = %x (sizeof = %x)\n", wr, sizeof(GcCmd56Keys));
 	end_file_send(fd);
 
-	if(wr == 0) return -9582;
+	if(wr == 0) return SIZE_IS_ZERO;
 	if(wr < 0) return wr;
-	if(wr != sizeof(GcCmd56Keys)) return -9583;
+	if(wr != sizeof(GcCmd56Keys)) return SIZE_NOT_MATCH;
 
 	return 0;
 }
@@ -96,9 +96,9 @@ int key_dump(char* output_file) {
 	PRINT_STR("wr = %x (sizeof = %x)\n", wr, sizeof(GcCmd56Keys));
 	sceIoClose(fd);
 
-	if(wr == 0) return -9584;
+	if(wr == 0) return SIZE_IS_ZERO;
 	if(wr < 0) return wr;
-	if(wr != sizeof(GcCmd56Keys)) return -9585;
+	if(wr != sizeof(GcCmd56Keys)) return SIZE_NOT_MATCH;
 
 	return 0;
 }
@@ -170,7 +170,7 @@ void derive_cart_secret(GcCmd56Keys* keys, uint8_t* cart_secret) {
 	
 }
 
-uint8_t verify_cmd56_keys(GcCmd56Keys* keys) {
+uint8_t verify_packet18_key(GcCmd56Keys* keys) {
 	uint8_t got_final_keys[0x20];
 	uint8_t expected_final_keys[0x20];
 	
@@ -187,7 +187,7 @@ uint8_t verify_cmd56_keys(GcCmd56Keys* keys) {
 		return 1;
 	}
 error:	
-	PRINT_STR("verify_cmd56_keys failed !\n");
+	PRINT_STR("verify_packet18_key failed !\n");
 	PRINT_STR("got_final_keys ");
 	PRINT_BUFFER(got_final_keys);
 	
@@ -200,7 +200,7 @@ error:
 uint8_t verify_packet20_key(GcCmd56Keys* keys) {
 	uint8_t expected_final_rif_hash[SHA1_BLOCK_SIZE];
 	uint8_t got_final_rif_hash[SHA1_BLOCK_SIZE];
-
+	
 	derive_packet20_hash(keys, expected_final_rif_hash);
 	
 	// get title id from license folder
@@ -208,40 +208,39 @@ uint8_t verify_packet20_key(GcCmd56Keys* keys) {
 	snprintf(folder, MAX_PATH, "gro0:/license/app");
 	PRINT_STR("folder = %s\n", folder);
 	
-	char TITLE_ID[12];
-	int ret = read_first_filename(folder, TITLE_ID, sizeof(TITLE_ID));
-	PRINT_STR("read_first_filename license folder ret = 0x%x\n", ret);
-	if(ret < 0) ERROR(-9586);
+	char title_id[12];
+	int res = read_first_filename(folder, title_id, sizeof(title_id));
+	PRINT_STR("read_first_filename license folder res = 0x%x\n", res);
+	if(res < 0) goto error;
 
-	PRINT_STR("TITLE_ID = %s\n", TITLE_ID);
-	snprintf(folder, MAX_PATH, "gro0:/license/app/%s", TITLE_ID);
+	PRINT_STR("title_id = %s\n", title_id);
+	snprintf(folder, MAX_PATH, "gro0:/license/app/%s", title_id);
 	PRINT_STR("folder = %s\n", folder);
 	
 	// get rif name from license/titleid folder
-	char RIF_NAME[0x50];
-	ret = read_first_filename(folder, RIF_NAME, sizeof(RIF_NAME));
-	PRINT_STR("read_first_filename license titleid folder ret = 0x%x\n",ret);
-	if(ret < 0) ERROR(-2);
+	char rif_filename[0x50];
+	res = read_first_filename(folder, rif_filename, sizeof(rif_filename));
+	PRINT_STR("read_first_filename license titleid folder res = 0x%x\n",res);
+	if(res < 0) goto error;
 	
-	PRINT_STR("RIF_NAME = %s\n", RIF_NAME);
-	snprintf(folder, MAX_PATH, "gro0:/license/app/%s/%s", TITLE_ID, RIF_NAME);
-	
+	PRINT_STR("rif_filename = %s\n", rif_filename);
+	snprintf(folder, MAX_PATH, "gro0:/license/app/%s/%s", title_id, rif_filename);
 	PRINT_STR("folder = %s\n", folder);
 	
 	// read the hash from the rif file ..
 	
 	SceUID fd = sceIoOpen(folder, SCE_O_RDONLY, 0777);
 	PRINT_STR("rif fd = %x\n", fd);
-	if(fd < 0) ERROR(-3);
+	if(fd < 0) goto error;
 	
 	// final rif hash should == 0xE0 in rif file
 	uint64_t loc = sceIoLseek(fd, 0xE0, SCE_SEEK_SET);
 	PRINT_STR("sceIoLseek loc = %llx\n", loc);
-	if(loc != 0xE0) ERROR(-4);
+	if(loc != 0xE0) goto error;
 	
-	ret = sceIoRead(fd, got_final_rif_hash, SHA1_BLOCK_SIZE);
-	PRINT_STR("sceIoRead ret = %x\n", ret);
-	if(ret != SHA1_BLOCK_SIZE) ERROR(-5);
+	res = sceIoRead(fd, got_final_rif_hash, SHA1_BLOCK_SIZE);
+	PRINT_STR("sceIoRead res = %x\n", res);
+	if(res != SHA1_BLOCK_SIZE) goto error;
 	
 	sceIoClose(fd);
 	
@@ -252,7 +251,6 @@ uint8_t verify_packet20_key(GcCmd56Keys* keys) {
 
 	PRINT_STR("verify_packet20_key failed!\n");
 	
-	return 0;
 error:	
 	if(fd > 0)
 		sceIoClose(fd);
@@ -294,14 +292,14 @@ int extract_gc_keys(GcCmd56Keys* keys) {
 		PRINT_BUFFER(keys->packet20_key);
 		
 		// verify packet18_key key
-		if(!verify_cmd56_keys(keys)) return -3;
+		if(!verify_packet18_key(keys)) return KEYS_VERIFY_P18_FAILED;
 		
 		// verify rif buffer
 		if(file_exist("gro0:"))
-			if(!verify_packet20_key(keys)) return -2;
+			if(!verify_packet20_key(keys)) return KEYS_VERIFY_P20_FAILED;
 		
 		
 		return 0;
 	}
-	return -9587;
+	return KEYS_NOT_CAPTURED;
 }
