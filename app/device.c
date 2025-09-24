@@ -74,28 +74,36 @@ static inline int create_vci_header(BackupState* state, DeviceAccessCallback* wr
 
 
 static inline int finalize_psv_header(BackupState* state) {
-	const size_t offset = offsetof(PsvHeader, all_sectors_sha256);
+	PRINT_STR("Finalizing PSV Header\n");
+	const uint64_t offset = offsetof(PsvHeader, all_sectors_sha256);
+	
 	if(state->format == BACKUP_FORMAT_PSV || state->format == BACKUP_FORMAT_PSV_TRIM) {
+		uint8_t sha256_out[0x20];
+		sha256_final(&state->sha_ctx, sha256_out);
+		PRINT_STR("sha256_out: ");
+		PRINT_BUFFER(sha256_out);
+
 		if(state->wr_fd >= 0) {
-			if(state->net_info != NULL) { // phys
-				size_t seek = sceIoLseek(state->wr_fd, offset, SCE_SEEK_SET);
-				
+			if(state->net_info == NULL) { // phys
+				uint64_t seek = sceIoLseek(state->wr_fd, offset, SCE_SEEK_SET);
+				PRINT_STR("seek %llx, offset %llx\n", offset, seek);
+	
 				if(seek == offset) {
-					uint8_t sha256_out[0x20];
-					sha256_final(&state->sha_ctx, sha256_out);
 					int wr = sceIoWrite(state->wr_fd, sha256_out, sizeof(sha256_out));
+					
+					PRINT_STR("wr %x\n", wr);
+					
 					if(wr == 0) return SIZE_IS_ZERO;
 					if(wr < 0) return wr;
 					if(wr != sizeof(sha256_out)) return SIZE_NOT_MATCH;
 					return 0;
 				}
+				
 				return SIZE_NOT_MATCH;
 			}
-			else { // net
-				uint8_t sha256_out[0x20];
-				sha256_final(&state->sha_ctx, sha256_out);
-				
-				send_packet_patch(state->wr_fd, state->output_path, offset, sha256_out, sizeof(sha256_out));
+			else { // net				
+				int res = send_packet_patch(state->wr_fd, state->output_path, offset, sha256_out, sizeof(sha256_out));
+				PRINT_STR("res = %x\n", res);
 			}
 		}	
 	}
@@ -199,6 +207,9 @@ static inline int dump_device_network(BackupState* state) {
 	
 	// enter read/write loop
 	res = device_access_loop(state, kReadDevice, file_send_data);
+	if(res < 0) goto error;
+	
+	res = finalize_psv_header(state);
 	if(res < 0) goto error;
 	
 error:
