@@ -1,10 +1,29 @@
 #include <stdint.h>
 #include <stdio.h>
+#include <locale.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <limits.h>
 #include "main.h"
+
+#ifdef _WIN32
+FILE* fopen_utf8(const char* filename, const char* mode) {
+	wchar_t wfname[0x1028] = { 0 };
+	wchar_t wmode[0x1028] = { 0 };
+	
+	MultiByteToWideChar(CP_UTF8, 0, filename, strlen(filename), wfname, sizeof(wfname));
+	MultiByteToWideChar(CP_UTF8, 0, mode, strlen(mode), wmode, sizeof(wfname));
+	
+	return _wfopen(wfname, wmode);
+}
+#define fopen fopen_utf8
+#endif
+
+static char* work_buffer[WORKBUF_SIZE];
+
+
 
 void remove_illegal_chars(char* str) {
 	int slen = strlen(str);
@@ -26,46 +45,75 @@ void remove_illegal_chars(char* str) {
 }
 
 void* receive_file(void* args) {
-	char* workBuffer = malloc(WORKBUF_SIZE);
-	int connectionFd = *(int*)args;
-	send_file_packet header;
+	int connection_fd = *(int*)args;
+	packet packet_data;
+	memset(&packet_data, 0, sizeof(packet));
 	
-	int rd = READ_SOCKET(connectionFd, &header, sizeof(send_file_packet));
+	int rd = READ_SOCKET(connection_fd, &packet_data, sizeof(packet));
 	
-	if(rd == sizeof(send_file_packet)) { // check header size
-		if(header.magic == SEND_FILE_MAGIC){ // check magic number
-			header.filename[sizeof(header.filename)-1] = 0x00; // prevent buffer overflow
-			remove_illegal_chars(header.filename); // remove illegal chars from filename
+	if(rd == sizeof(packet)) { // check header size
+		if(packet_data.magic == SEND_FILE_MAGIC){ // receive packet
+			send_file_packet* sendfile = (send_file_packet*)&packet_data;
 			
-			printf("Receiving ... %s ... %llu bytes.\n", header.filename, header.total_size);
-			FILE* outfileFd = fopen(header.filename, "wb");
+			sendfile->filename[sizeof(sendfile->filename)-1] = 0x00; // prevent buffer overflow
+			remove_illegal_chars(sendfile->filename); // remove illegal chars from filename
 			
-			uint64_t total_read = 0;
-			do {
-				rd = READ_SOCKET(connectionFd, workBuffer, WORKBUF_SIZE);
-				fwrite(workBuffer, rd, 1, outfileFd);
-				total_read += rd;
-			} while(total_read < header.total_size);
+			printf("Receiving ... %s ... %lu bytes.\n", sendfile->filename, sendfile->total_size);
+			FILE* outfile_fd = fopen(sendfile->filename, "wb");
+			if(outfile_fd != NULL) {
+				uint64_t total_read = 0;
+				do {
+					rd = READ_SOCKET(connection_fd, work_buffer, WORKBUF_SIZE);
+					fwrite(work_buffer, rd, 1, outfile_fd);
+					total_read += rd;
+				} while(total_read < sendfile->total_size);
+				
+				printf("File ... %s ... received.\n", sendfile->filename);
+				fclose(outfile_fd);
+				
+			}
+		}
+		
+		else if(packet_data.magic == PATCH_FILE_MAGIC) { // patch packet
+			patch_file_packet* patchfile = (patch_file_packet*)&packet_data;
+
+			patchfile->filename[sizeof(patchfile->filename)-1] = 0x00; // prevent buffer overflow
+			remove_illegal_chars(patchfile->filename); // remove illegal chars from filename
 			
-			printf("File ... %s ... received.\n", header.filename);
-			fclose(outfileFd);
+			printf("Patching ... %s ... %u bytes at 0x%x\n", patchfile->filename, patchfile->patch_size, patchfile->offset);
+			
+			FILE* patchfile_fd = fopen(patchfile->filename, "wb");
+			if(patchfile_fd != NULL) {
+				int pos = fseek(patchfile_fd, patchfile->offset, SEEK_SET);
+				if(pos == 0) {
+					fwrite(patchfile->patch_data, patchfile->patch_size, 1, patchfile_fd);				
+				}
+				fclose(patchfile_fd);				
+			}
+			
 		}
 		else {
-			fprintf(stderr, "Invalid magic: %x\n", header.magic);
+			fprintf(stderr, "Invalid magic: %x\n", packet_data.magic);
 		}
 	}
 	else{
 		fprintf(stderr, "Header packet is incorres size: %x\n", rd);
 	}
 	
-	CLOSE_SOCKET(connectionFd);
-	free(workBuffer);
+	CLOSE_SOCKET(connection_fd);
 }
 
 
 
 int main(int argc, char *argv[])
 {
+#ifdef _WIN32
+	SetFileApisToOEM();
+	setlocale(LC_ALL, ".UTF8");
+	SetConsoleOutputCP(CP_UTF8);
+	SetConsoleCP(CP_UTF8);
+#endif	
+
 	unsigned short port = DEFAULT_PORT;
 	if(argc >= 2){
 		port = (unsigned short)atoi(argv[1]);		
@@ -81,9 +129,9 @@ int main(int argc, char *argv[])
 
 	while(1)
 	{
-		int connectionFd = ACCEPT_SOCKET(listenFd);
+		int connection_fd = ACCEPT_SOCKET(listenFd);
 		pthread_t threadFd;
-		pthread_create(&threadFd, NULL, receive_file, &connectionFd);
+		pthread_create(&threadFd, NULL, receive_file, &connection_fd);
 		sleep(1);
 	}
 	

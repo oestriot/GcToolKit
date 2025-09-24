@@ -4,11 +4,11 @@
 #include <stdint.h>
 
 #ifdef ENABLE_LOGGING
-#define PRINT_STR(...) sceClibPrintf(__VA_ARGS__)
+#define PRINT_STR(...) do { sceClibPrintf("[GcToolKit] %s: ", __FUNCTION__); sceClibPrintf(__VA_ARGS__); } while(0);
 #define PRINT_BUFFER(buffer) for(int i = 0; i < sizeof(buffer); i++) { \
-									PRINT_STR("%02X ", (uint8_t)(buffer[i]));	\
+									sceClibPrintf("%02X ", (uint8_t)(buffer[i]));	\
 							 } \
-							 PRINT_STR("\n")
+							 sceClibPrintf("\n")
 #else
 #define PRINT_STR(...) /**/
 #define PRINT_BUFFER(buffer) /**/

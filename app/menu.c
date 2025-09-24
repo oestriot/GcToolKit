@@ -136,39 +136,58 @@ void term_menus() {
 	free_texture(insertgc_tex);	
 }
 
-void draw_wipe_progress(const char* device, char* unused, uint64_t progress, uint64_t total) {
+void draw_wipe_progress(const char* device, const char* unused, uint64_t progress, uint64_t total) {
 	RESTORE_MENU("Formatting", "Writing", device, device);
 }
 
-void draw_restore_progress(const char* device, char* input_filename, uint64_t progress, uint64_t total) {
+void draw_restore_progress(const char* device, const char* input_filename, uint64_t progress, uint64_t total) {
 	RESTORE_MENU("Restoring", "Reading", device, input_filename);
 }
 
-void draw_dump_progress(const char* device, char* output_filename, uint64_t progress, uint64_t total) {
+void draw_dump_progress(const char* device, const char* output_filename, uint64_t progress, uint64_t total) {
 	RESTORE_MENU("Backing up", "Writing", device, output_filename);
 }
 
+int draw_select_backup_format(int* selected, int* window, const char* unused) {
+	start_draw();
+	draw_background();
+	draw_controls(1);
+
+	draw_title("Select backup format ...");
+	
+	DEFOPT(200);
+
+	ADDOPT(1, "Backup Vita Cartridge Image (.vci)");
+	ADDOPT(0, "Backup Trimmed Vita Cartridge Image (.trim.vci)");
+	ADDOPT(1, "Backup PSVGameSD (.psv)");
+	ADDOPT(0, "Backup Trimmed PSVGameSD (.trim.psv)");
+	ADDOPT(1, "Backup Raw (.img)");
+	
+	end_draw();
+	
+	RETURNOPT();
+}
 
 int draw_gc_options(int* selected, int* window, char* title, uint8_t has_grw0, uint8_t has_mediaid) {
 	start_draw();
 	draw_background();
 	draw_controls(0);
 
-	char w_title[128];
-	snprintf(w_title, sizeof(w_title), "What to do with %s ...", title);
-	draw_title(w_title);
+	char what_title[128];
+	snprintf(what_title, sizeof(what_title), "What to do with %s ...", title);
+	draw_title(what_title);
 	
 	DEFOPT(200);
 
-	ADDOPT(1, "Backup Entire Game Cart (.VCI)");
-	ADDOPT(1, "Backup Game Cart Keys (.BIN)");
+	ADDOPT(1, "Backup Entire Game Cart");
+	ADDOPT(1, "Backup Game Cart Keys");
 
-	ADDOPT(has_mediaid, "Backup MediaId Section (.MEDIAID)");
-	ADDOPT(has_mediaid, "Restore MediaId Section (.MEDIAID)");		
-	ADDOPT(has_mediaid, "Format MediaId Section");
+	ADDOPT(has_mediaid, "Backup Media Id Section");
+	ADDOPT(has_mediaid, "Restore Media Id Section");		
+	ADDOPT(has_mediaid, "Format Media Id Section");
 
-	ADDOPT(has_grw0, "Backup Writable Section (.IMG)");
-	ADDOPT(has_grw0, "Restore Writable Section (.IMG)");
+	ADDOPT(has_grw0, "Backup Writable Section");
+	ADDOPT(has_grw0, "Restore Writable Section");
 	ADDOPT(has_grw0, "Format Writable Section");
 	
 	ADDOPT(1, "Get Game Cart Info");
@@ -184,7 +203,7 @@ void draw_insert_gc_menu() {
 	
 	draw_title("Waiting for CMD56 authentication ...");
 	draw_texture_center(140, insertgc_tex);
-	draw_text_center(360, "Insert a VITA game cart!");	
+	draw_text_center(360, "Insert a PlayStation Vita Game Cartridge.");	
 	end_draw();
 }
 
@@ -279,7 +298,7 @@ int draw_network_settings(int* selected, int* window, char* ip_address, unsigned
 	
 	draw_title("Enter Network Address ...");
 
-	draw_text_center(200, "Run the \"gc_backup_network\" program");
+	draw_text_center(200, "Run the \"GcNetworkBackup\" program");
 	draw_text_center(220, "it can be found in the readme for GC ToolKit.");
 	draw_text_center(250, "and enter the IP of the device its running on.");
 
@@ -498,6 +517,11 @@ int do_format_confirm(const char* block_device) {
 	return selected;
 }
 
+int do_select_backup_format() {
+	PROCESS_MENU(draw_select_backup_format, NULL);
+	return selected;
+}
+
 int do_device_wipe_and_format(const char* block_device, uint8_t full, uint8_t format) {
 	lock_shell();
 	lock_power();
@@ -542,7 +566,7 @@ int do_device_restore(const char* block_device, char* input_file) {
 	return res;
 }
 
-int do_device_dump(const char* block_device, char* output_file, uint8_t vci, char* ip_address, unsigned short port) {
+int do_device_dump(const char* block_device, char* output_file, BackupFormat format, char* ip_address, unsigned short port) {
 	
 	lock_shell();
 	lock_power();
@@ -550,20 +574,26 @@ int do_device_dump(const char* block_device, char* output_file, uint8_t vci, cha
 	umount_gro0();
 	umount_grw0();
 	mount_devices();
+	int res = 0;
 	
 	GcCmd56Keys keys;
-	if(vci){
-		int res = extract_gc_keys(&keys);
-		if(res < 0) return res;
+	NetworkInfo net_info;
+	
+	extract_gc_keys(&keys);
+	if(res < 0) return res;
+	
+	if(ip_address != NULL) {
+		strncpy(net_info.ip_address, ip_address, sizeof(net_info.ip_address));
+		net_info.port = port;		
 	}
 	
-	int res = -9190;
-	
-	if(ip_address == NULL)
-		res = dump_device(block_device, output_file, vci ? &keys : NULL, draw_dump_progress);
-	else
-		res = dump_device_network(ip_address, port, block_device, output_file, vci ? &keys : NULL, draw_dump_progress);
-
+	res = dump_device(
+				block_device,
+				output_file,
+				format,
+				(format != BACKUP_FORMAT_RAW) ? &keys : NULL,
+				(ip_address != NULL) ? &net_info : NULL,
+				draw_dump_progress);
 
 	mount_gro0();
 	mount_grw0();
@@ -597,10 +627,10 @@ int do_select_input_location() {
 
 int do_error(int error) {
 	if(error == OP_CANCELED) return error;
+	char msg[0x1028];
 	
-	char msg[0x1028];	
-	snprintf(msg, sizeof(msg), "There was an error ( res = 0x%08X )", error);
-	do_confirm_message("Error!", msg);
+	snprintf(msg, sizeof(msg), "Error: %s (0x%02X)", get_error_msg(error), error);
+	do_confirm_message("An error occured.", msg);
 	return 0;
 }
 

@@ -72,7 +72,7 @@ void draw_progress_bar(int y, uint64_t done, uint64_t total) {
 void draw_text_center_color(int y, int color, const char* msg) {
 	int text_width = MENUOVERLAY_WIDTH;
 	int text_height = 0;	
-	char processed_msg[512];
+	char processed_msg[0x1028];
 	
 	// Basically we want to trim every message so it fits insize the MENUOVERLAY image,
 	strncpy(processed_msg, msg, sizeof(processed_msg));

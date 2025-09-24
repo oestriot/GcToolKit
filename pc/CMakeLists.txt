@@ -1,7 +1,8 @@
 cmake_minimum_required(VERSION 3.10)
 project(GcNetworkBackup)
 
-IF(CMAKE_SYSTEM_NAME MATCHES "^MINGW")
+
+if(TARGET_WIN32)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -static-libgcc -Wl,-Bstatic -O3")
 ELSE()
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3")
@@ -18,7 +19,7 @@ add_executable(${PROJECT_NAME}
 	main.c
 )
 
-IF(CMAKE_SYSTEM_NAME MATCHES "^MINGW")
+if(TARGET_WIN32)
 target_link_libraries(${PROJECT_NAME}
 	pthread
 	ws2_32

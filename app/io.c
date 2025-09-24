@@ -270,3 +270,13 @@ uint64_t get_free_space(const char* device) {
 	
 	return free_space;
 }
+
+void change_extension(char* path, const char* new_extension) {
+	size_t len = strlen(path);
+	for(int i = 0; i < len; i++) {
+		if(path[i] == '.') {
+			strcpy(path + i, new_extension);
+			break;
+		}
+	}
+}

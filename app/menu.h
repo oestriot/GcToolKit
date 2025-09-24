@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include "device.h"
 #define OP_CANCELED (-9530)
 
 
@@ -8,7 +9,7 @@ int do_select_output_location(char* output, uint64_t device_size);
 int do_select_input_location();
 int do_select_file(char* folder, char* output, char* extension, uint64_t max_size);
 
-int do_device_dump(const char* block_device, char* output_file, uint8_t vci, char* ip_address, unsigned short port);
+int do_device_dump(const char* block_device, char* output_file, BackupFormat format, char* ip_address, unsigned short port);
 int do_device_wipe_and_format(const char* block_device, uint8_t full, uint8_t format);
 int do_device_restore(const char* block_device, char* input_file);
 int do_format_confirm(const char* block_device);
@@ -19,6 +20,7 @@ int do_error(int error);
 void do_ime();
 void do_kmodule_failed_message(const char* module_name);
 void do_device_info();
+int do_select_backup_format();
 
 void init_menus();
 void term_menus();
@@ -63,4 +65,12 @@ enum select_output_options {
 	DUMP_LOCATION_NET,
 	CHANGE_FILENAME,
 	O_RELOAD_DEVICES
+};
+
+enum select_backup_format_options {
+	SELECT_FMT_VCI,
+	SELECT_FMT_VCI_TRIM,
+	SELECT_FMT_PSV,
+	SELECT_FMT_PSV_TRIM,
+	SELECT_FMT_RAW
 };

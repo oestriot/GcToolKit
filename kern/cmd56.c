@@ -153,6 +153,8 @@ int kResetGc() {
 		PRINT_STR("ksceKernelWaitEventFlag(0x%02X, 0x100,5,0,0) 0x%04X\n", interupt_info[1].op_sync_id, res);
 		if(res < 0) return res;
 		
+		ksceKernelDelayThread(1000 * 5); // 5ms
+		
 		// power up gc slot
 		res = ksceSysconCtrlSdPower(1);
 		PRINT_STR("ksceSysconCtrlSdPower(1) 0x%04X\n", res);
@@ -168,5 +170,5 @@ int kResetGc() {
 		PRINT_STR("ksceKernelWaitEventFlag(0x%02X, 0x1000,5,0,0) 0x%04X\n", interupt_info[1].op_sync_id, res);
 		return res;
 	}
-	return INTER_INFO_WAS_NULL;
+	return POINTER_WAS_NULL;
 }

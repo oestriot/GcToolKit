@@ -38,6 +38,7 @@ include_directories(${CMAKE_SOURCE_DIR}/kern)
 add_executable(${PROJECT_NAME}
 	aes.c
 	aes_cmac.c
+	err.c
 	sha256.c
 	sha1.c
 	ctrl.c
@@ -98,7 +99,7 @@ target_link_libraries(${PROJECT_NAME}
 	SceAppUtil_stub
 	SceIme_stub
 	SceAudio_stub
-
+	SceError_stub
 )
 
 

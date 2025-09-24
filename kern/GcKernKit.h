@@ -2,6 +2,10 @@
 *	GcKernKit export headers
 */
 
+#ifndef GC_KERN_KIT_H
+#define GC_KERN_KIT_H 1
+#include <stdint.h>
+
 int kResetGc();
 int kClearCartSecret();
 int kGetCartSecret(uint8_t* keys);
@@ -11,11 +15,11 @@ int kGetLastCmd20KeyId();
 int kGetLastCmd20Input(void* cmd20_input);
 int kResetCmd20Input();
 
-int kOpenDevice(const char* device, int permission);
-int kReadDevice(int device_handle, uint8_t* data, int size);
-int kWriteDevice(int device_handle, uint8_t* data, int size);
-int kCloseDevice(int device_handle);
-void kGetDeviceSize(int device_handle, uint64_t* device_size);
+SceUID kOpenDevice(const char* device, SceMode permission);
+int kReadDevice(SceUID device_handle, void* data, size_t size);
+int kWriteDevice(SceUID device_handle, void* data, size_t size);
+int kCloseDevice(SceUID device_handle);
+void kGetDeviceSize(SceUID device_handle, uint64_t* device_size);
 
 int kFormatDevice(const char* device);
 
@@ -51,9 +55,11 @@ enum GcToolKitError {
 	KEYS_VERIFY_P18_FAILED = -9588,
 	KEYS_VERIFY_P20_FAILED = -9589,
 	KEYS_NOT_CAPTURED = -9587,
-	DEVICE_KERNEL_MODULE_NOT_STARTED = -120,
+	KERNEL_MODULE_FAILED_START = -120,
 	TOTAL_FILES_LESS_THAN_EQ_0 = -920,
-	INTER_INFO_WAS_NULL = -1130,
-	BRICK_PREVENTED_DEVICE_WHITELIST = -128,
-
+	DEVICE_WHITELIST_FAILED = -128
 };
+
+#define DEVICE_WHITELIST_CHECK(dev) do { if(memcmp(dev, "sdstor0:gcd", 11) != 0) return DEVICE_WHITELIST_FAILED; } while(0)
+
+#endif // GC_KERN_KIT_H

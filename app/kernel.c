@@ -46,7 +46,6 @@ int kernel_started() {
 	memset(buffer, 0x00, sizeof(buffer));
 	
 	SceUID uid = _vshKernelSearchModuleByName(KMODULE_NAME, buffer);
-	PRINT_STR("_vshKernelSearchModuleByName = %x\n", uid);
 	
 	return (uid > 0);
 }

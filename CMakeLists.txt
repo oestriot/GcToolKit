@@ -9,6 +9,9 @@ if(NOT DEFINED CMAKE_TOOLCHAIN_FILE)
 endif()
 
 project(GcToolKitBuild)
+if(BUILD_PC)
+add_subdirectory(pc)
+else()
 include("$ENV{VITASDK}/share/vita.cmake" REQUIRED)
 
 add_subdirectory(kern)
@@ -19,5 +22,8 @@ add_custom_target(${PROJECT_NAME}
 	DEPENDS GcToolKit.vpk-vpk
 	COMMAND mv ${CMAKE_BINARY_DIR}/app/GcToolKit.vpk .
 )
+
+endif()
+
 
 # TODO: find out how to build pc/ folder for !vita.

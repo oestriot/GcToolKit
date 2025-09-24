@@ -4,11 +4,42 @@
 #include "err.h"
 #include "net.h"
 #include "log.h"
+#include <GcKernKit.h>
 
 static uint8_t init = 0;
 uint8_t connected = 0;
-static char memory[16 * 1024];
+static uint8_t memory[16 * 1024];
 
+
+int send_packet_file(SceUID socket, const char* filename, uint64_t file_size) {
+	send_file_packet packet;
+	memset(&packet, 0x00, sizeof(send_file_packet));
+
+	packet.magic = SEND_FILE_MAGIC;
+	strncpy(packet.filename, filename, sizeof(packet.filename)-1);
+	packet.total_size = file_size;
+	
+	return sceNetSend(socket, &packet, sizeof(send_file_packet), 0);
+}
+
+
+int send_packet_patch(SceUID socket, const char* filename, uint32_t offset, const char* data, uint32_t size ) {
+	patch_file_packet packet;
+
+	if(size > sizeof(packet.patch_size)) size = sizeof(packet.patch_size);
+
+	memset(&packet, 0x00, sizeof(patch_file_packet));
+
+
+	packet.magic = PATCH_FILE_MAGIC;
+	packet.offset = offset;
+	packet.patch_size = size;
+	
+	memcpy(packet.patch_data, data, size);
+	strncpy(packet.filename, filename, sizeof(packet.filename)-1);
+
+	return sceNetSend(socket, &packet, sizeof(patch_file_packet), 0);
+}
 
 int init_network() {
     int res = 0;
@@ -74,13 +105,18 @@ uint8_t check_ip_address_valid(char* ip_address) {
 int file_send_data(int fstream, void* data, size_t data_sz) {
 	return sceNetSend(fstream, data, data_sz, 0);
 }
-void end_file_send(int fstream) {
-	sceNetShutdown(fstream, SCE_NET_SHUT_RDWR);
-	sceNetSocketClose(fstream);	
+int end_file_send(int fstream) {
+	int res = sceNetShutdown(fstream, SCE_NET_SHUT_RDWR);
+	if(res < 0) return res;
+	res = sceNetSocketClose(fstream);	
+	if(res < 0) return res;
+	return 0;
 }
 
-int begin_file_send(char* ip_address, unsigned short port, char* filename, uint64_t total_size) {
-	int res = 0;
+
+
+int begin_file_send(const char* ip_address, unsigned short port, const char* filename, uint64_t total_size) {
+	int res = -1;
 	
 	SceUID socket = sceNetSocket("filesocket", SCE_NET_AF_INET, SCE_NET_SOCK_STREAM, 0);
 	if(socket < 0) ERROR(socket);
@@ -100,23 +136,14 @@ int begin_file_send(char* ip_address, unsigned short port, char* filename, uint6
 	int connection = sceNetConnect(socket, (SceNetSockaddr*)&sin, sizeof(SceNetSockaddrIn));	
 	if(connection < 0) ERROR(connection);
 	
-	send_file_packet packet;
-	memset(&packet, 0x00, sizeof(send_file_packet));
-	
-	packet.magic = SEND_FILE_MAGIC;
-	strncpy(packet.filename, filename, sizeof(packet.filename)-1);
-	packet.total_size = total_size;
-	
-	int send = sceNetSend(socket, &packet, sizeof(send_file_packet), 0);
-	if(send < 0) ERROR(send);
+	res = send_packet_file(socket, filename, total_size);
+	if(res < 0) ERROR(res);
 	
 	return socket;
 	
 	error:
-	if(connection >= 0)
-		sceNetShutdown(socket, SCE_NET_SHUT_RDWR);
-	if(socket >= 0)
-		sceNetSocketClose(socket);
+	if(connection >= 0) sceNetShutdown(socket, SCE_NET_SHUT_RDWR);
+	if(socket >= 0) sceNetSocketClose(socket);
 	return res;
 }
 
