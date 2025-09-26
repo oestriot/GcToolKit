@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <taihen.h>
 #include <vitasdkkern.h>
-#include "GcKernKit.h"
+#include <GcToolKit.h>
 #include "cmd56.h"
 #include "log.h"
 #include "mod.h"

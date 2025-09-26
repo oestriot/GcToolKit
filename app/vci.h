@@ -8,7 +8,7 @@
 typedef struct GcCmd56Keys{
 	uint8_t packet20_key[0x20];
 	uint8_t packet18_key[0x20];
-} GcCmd56Keys;
+} __attribute__((packed)) GcCmd56Keys;
 
 typedef struct VciHeader {
 	char magic[0x4];
@@ -16,7 +16,7 @@ typedef struct VciHeader {
 	uint64_t devicesize;
 	GcCmd56Keys keys;
 	uint8_t padding[0x1B0];
-} VciHeader;
+} __attribute__((packed)) VciHeader;
 
 
 #endif

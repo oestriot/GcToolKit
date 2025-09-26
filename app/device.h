@@ -9,6 +9,10 @@
 #define BLOCK_DEVICE_GRW0 "sdstor0:gcd-lp-ign-gamerw"
 #define BLOCK_DEVICE_GRO0 "sdstor0:gcd-lp-ign-gamero"
 
+#define FMT_IS_PSV(fmt) (fmt == BACKUP_FORMAT_PSV || fmt == BACKUP_FORMAT_PSV_TRIM)
+#define FMT_IS_VCI(fmt) (fmt == BACKUP_FORMAT_VCI || fmt == BACKUP_FORMAT_VCI_TRIM)
+#define FMT_IS_RAW(fmt) (fmt == BACKUP_FORMAT_RAW)
+
 typedef enum BackupFormat {
 	BACKUP_FORMAT_VCI,
 	BACKUP_FORMAT_VCI_TRIM,

@@ -5,6 +5,7 @@
 #ifndef GC_KERN_KIT_H
 #define GC_KERN_KIT_H 1
 #include <stdint.h>
+#include <psp2common/kernel/iofilemgr.h>
 
 int kResetGc();
 int kClearCartSecret();
@@ -45,21 +46,5 @@ typedef struct CommsData {
     uint8_t packet20[83];
 } CommsData;
 
-enum GcToolKitError {	
-	SIZE_IS_ZERO = -9584,
-	SIZE_NOT_MATCH = -9585,
-	SIZE_NO_SPACE = -9686,
-	POINTER_WAS_NULL = -1132,
-	INVALID_MAGIC = -2329,
-	SFO_TOO_MANY_ENTRIES = -253,
-	KEYS_VERIFY_P18_FAILED = -9588,
-	KEYS_VERIFY_P20_FAILED = -9589,
-	KEYS_NOT_CAPTURED = -9587,
-	KERNEL_MODULE_FAILED_START = -120,
-	TOTAL_FILES_LESS_THAN_EQ_0 = -920,
-	DEVICE_WHITELIST_FAILED = -128
-};
-
-#define DEVICE_WHITELIST_CHECK(dev) do { if(memcmp(dev, "sdstor0:gcd", 11) != 0) return DEVICE_WHITELIST_FAILED; } while(0)
 
 #endif // GC_KERN_KIT_H

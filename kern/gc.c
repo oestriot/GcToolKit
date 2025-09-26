@@ -1,7 +1,7 @@
 #include <vitasdkkern.h>
 #include <stdint.h>
 #include <stdio.h>
-#include "GcKernKit.h"
+#include <GcToolKit.h>
 #include "gc.h"
 #include "log.h"
 

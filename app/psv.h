@@ -15,6 +15,6 @@ typedef struct PsvHeader {
 	uint64_t image_size;
 	uint64_t image_offset;
 	uint8_t padding[0x190];
-} PsvHeader;
+} __attribute__((packed)) PsvHeader;
 
 #endif

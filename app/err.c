@@ -1,6 +1,6 @@
 #include <vitasdk.h>
 #include <string.h>
-#include <GcKernKit.h>
+#include <GcToolKit.h>
 
 static char tmp_error[0x20];
 const char* get_error_msg(int error) {	

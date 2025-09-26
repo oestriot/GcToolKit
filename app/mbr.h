@@ -36,7 +36,7 @@ typedef struct ScePartiton {
 	uint8_t active;
 	uint32_t flags;
 	uint16_t unk;
-} ScePartiton;
+} __attribute__((packed)) ScePartiton;
 
 typedef struct SceMbr {
 	char magic[0x20];
@@ -47,7 +47,7 @@ typedef struct SceMbr {
 	char unk2[0x5e];
 	char unk3[0x10 * 4];
 	uint16_t sig;
-} SceMbr;
+} __attribute__((packed)) SceMbr;
 
 
 #endif

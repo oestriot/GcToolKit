@@ -2,7 +2,7 @@
 #include "crypto.h"
 #include "log.h"
 
-#include <GcKernKit.h>
+#include <GcToolKit.h>
 #include <string.h>
 
 const char* keyid_to_keygroup(uint16_t keyId) {

@@ -15,6 +15,8 @@ link_directories(
 	${CMAKE_CURRENT_BINARY_DIR}
 )
 
+include_directories(${CMAKE_SOURCE_DIR}/inc)
+
 add_executable(${PROJECT_NAME}
 	main.c
 )

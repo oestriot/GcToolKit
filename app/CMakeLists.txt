@@ -15,7 +15,7 @@ set(VITA_APP_NAME "GCToolKit")
 set(VITA_TITLEID  "GCTK10000")
 set(VITA_VERSION  "01.06")
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu99")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wno-format-truncation -std=gnu17")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
 
 set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -O3")
@@ -27,17 +27,17 @@ set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -DENABLE_LOGGING=1")
 set(VITA_MKSFOEX_FLAGS "${VITA_MKSFOEX_FLAGS}")
 set(VITA_MAKE_FSELF_FLAGS "${VITA_MAKE_FSELF_FLAGS}")
 
+include_directories(${CMAKE_SOURCE_DIR}/inc)
+
 link_directories(
   ${CMAKE_CURRENT_BINARY_DIR}
   ${CMAKE_BINARY_DIR}/kern
 )
 
-include_directories(${CMAKE_SOURCE_DIR}/kern)
-
-
 add_executable(${PROJECT_NAME}
 	aes.c
 	aes_cmac.c
+	config.c
 	err.c
 	sha256.c
 	sha1.c

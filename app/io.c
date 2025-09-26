@@ -6,9 +6,9 @@
 #include "io.h"
 #include "log.h"
 #include "err.h"
-#include <GcKernKit.h>
+#include <GcToolKit.h>
 
-int file_exist(char* path) {
+int file_exist(const char* path) {
 	SceIoStat stat;
 	int res = sceIoGetstat(path, &stat);
 	if(res >= 0) return 1;
@@ -24,7 +24,7 @@ int wait_for_partition(char* partiton) {
 }
 
 int get_files_in_folder(char* folder, char* out_filenames, int* total_folders, SearchFilter* filter, size_t max_files) {
-	int res = 0;
+	int res = -1;
 	
 	// get total folder count
 	*total_folders = 0;
@@ -94,7 +94,7 @@ int get_files_in_folder(char* folder, char* out_filenames, int* total_folders, S
 }
 
 int read_first_filename(char* path, char* output, size_t out_size) {
-	int res = 0;
+	int res = -1;
 	int dfd = sceIoDopen(path);
 	if(dfd < 0) ERROR(dfd);
 	
@@ -111,8 +111,8 @@ error:
 
 void remove_illegal_chars(char* str) {
 	// remove illegal characters from file name
-	int slen = strlen(str);
-	for(int i = 0; i < slen; i++) {
+	size_t len = strlen(str);
+	for(size_t i = 0; i < len; i++) {
 		if(str[i] == '/' ||
 		str[i] == '\\' ||
 		str[i] == ':' ||
@@ -205,8 +205,7 @@ uint64_t get_file_size(const char* filepath) {
 }
 
 int read_file(const char* path, void* data, size_t size) {
-	
-	int res = 0;
+	int res = -1;
 	SceUID fd = sceIoOpen(path, SCE_O_RDONLY, 0777);
 	if(fd > 0) {
 		res = sceIoRead(fd, data, size);
@@ -221,8 +220,9 @@ error:
 }
 
 int write_file(const char* path, const void* data, size_t size) {
-	char outdir[MAX_PATH];
-	int res = 0;
+	int res = -1;
+	
+	make_directories_excluding_last(path);
 
 	SceUID wfd = sceIoOpen(path, SCE_O_WRONLY | SCE_O_CREAT, 0777);
 	if(wfd < 0) ERROR(wfd);
@@ -241,12 +241,12 @@ error:
 
 int copy_file(const char* path, const char* new_path) {
 	int res = 0;
-	uint64_t fileSize = get_file_size(path);
-	char* data = malloc(fileSize);
+	uint64_t file_size = get_file_size(path);
+	char* data = malloc(file_size);
 	
 	if(data != NULL) {
-		if(read_file(path, data, fileSize) != fileSize) ERROR(fileSize);
-		if(write_file(new_path, data, fileSize) != fileSize) ERROR(fileSize);
+		if(read_file(path, data, file_size) != file_size) ERROR(file_size);
+		if(write_file(new_path, data, file_size) != file_size) ERROR(file_size);
 	}
 error:	
 	if(data != NULL) free(data);
@@ -257,8 +257,7 @@ uint64_t get_free_space(const char* device) {
 	uint64_t free_space = 0;
 	 
 	// host0 will always report as 0 bytes free
-	if(strcmp("host0:", device) == 0)
-		return 0xFFFFFFFFFFFFFFFFull;
+	if(strcmp("host0:", device) == 0) return 0xFFFFFFFFFFFFFFFFull;
 	 
 	SceIoDevInfo info;
 	int res = sceIoDevctl(device, 0x3001, NULL, 0, &info, sizeof(SceIoDevInfo));
@@ -271,12 +270,55 @@ uint64_t get_free_space(const char* device) {
 	return free_space;
 }
 
-void change_extension(char* path, const char* new_extension) {
+void change_extension(char* path, size_t path_length, const char* new_extension) {
 	size_t len = strlen(path);
-	for(int i = 0; i < len; i++) {
+	if(len > path_length) len = path_length;
+	
+	for(size_t i = 0; i < len; i++) {
 		if(path[i] == '.') {
-			strcpy(path + i, new_extension);
+			strncpy(path + i, new_extension, path_length - i);
 			break;
 		}
 	}
+	return;
+}
+
+int extract_dirname(const char* path, char* dir_name, size_t dir_name_length) {
+	strncpy(dir_name, path, dir_name_length);
+	
+	int last_slash = 0;
+	for(int i = 0; i < strlen(path); i++) {
+		if(path[i] == '/' || path[i] == '\\') last_slash = i;
+	}
+	
+	dir_name[last_slash] = 0;
+	return last_slash;
+}
+
+void make_directories(const char* path) {
+	if(file_exist(path)) return;
+	
+	char dir_name[MAX_PATH];
+	memset(dir_name, 0x00, sizeof(dir_name));
+	
+
+	for(int i = 0; i < strlen(path); i++) {
+		if(path[i] == '/' || path[i] == '\\') {
+			memset(dir_name, 0, sizeof(dir_name));
+			strncpy(dir_name, path, i);
+
+			if(!file_exist(dir_name)){
+				PRINT_STR("Creating Directory: %s\n", dir_name);
+				sceIoMkdir(dir_name, 0777);
+			}	
+		}
+	}
+	
+	sceIoMkdir(path, 0777);
+}
+
+void make_directories_excluding_last(const char* filepath) {
+	char dir_name[MAX_PATH];
+	extract_dirname(filepath, dir_name, sizeof(dir_name));
+	make_directories(dir_name);
 }

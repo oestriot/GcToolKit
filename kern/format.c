@@ -5,8 +5,9 @@
 
 #include <vitasdkkern.h>
 #include <taihen.h>
-#include "GcKernKit.h"
+#include <GcToolKit.h>
 #include "mod.h"
+#include "io.h"
 #include "format.h"
 	
 int module_get_offset(SceUID pid, SceUID modid, int segidx, size_t offset, uintptr_t *addr);
@@ -114,7 +115,7 @@ int FatfsExecFormat(const char *s, SceSize bytePerCluster, SceUInt32 sce_fs_type
 int kFormatDevice(const char* device) {
 	int state = 0;
 	ENTER_SYSCALL(state);
-	static char k_device[1028];
+	static char k_device[MAX_PATH];
 	ksceKernelStrncpyUserToKernel(k_device, (const void*)device, sizeof(k_device));
 	
 	DEVICE_WHITELIST_CHECK(k_device);

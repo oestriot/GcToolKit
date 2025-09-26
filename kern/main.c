@@ -2,6 +2,7 @@
 #include <string.h>
 #include <taihen.h>
 #include <vitasdkkern.h>
+#include <GcToolKit.h>
 #include "cmd56.h"
 #include "cobra.h"
 #include "format.h"

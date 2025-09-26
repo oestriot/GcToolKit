@@ -21,7 +21,7 @@ int read_gameinfo(char* title_id, char* title) {
 	PRINT_STR("read_title_id: = %x\n", res);
 
 	if(res >= 0) {
-		char param_sfo_path[512];
+		char param_sfo_path[MAX_PATH];
 		snprintf(param_sfo_path, sizeof(param_sfo_path), "gro0:/app/%s/sce_sys/param.sfo", title_id);
 		res = read_sfo_key("STITLE", title, param_sfo_path);
 		if(res == -9) // not found

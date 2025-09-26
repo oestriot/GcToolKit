@@ -1,7 +1,6 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <stddef.h>
-#include <stdlib.h>
 #include <assert.h>
 
 // define socket functions for each operating system
@@ -47,37 +46,5 @@
 
 #endif
 
-
 #define WORKBUF_SIZE 0x20000
 #define DEFAULT_PORT 46327
-
-#define PACKET_SIZE 0x210
-#define MAX_FILENAME_SIZE 0x50
-#define MAX_PATCH_SIZE 0x50
-#define SEND_FILE_MAGIC 38717
-#define PATCH_FILE_MAGIC 63215
-
-typedef struct packet {
-	uint16_t magic;
-	char padding[PACKET_SIZE-sizeof(uint16_t)];
-} packet;
-static_assert(sizeof(packet) == PACKET_SIZE);
-
-typedef struct send_file_packet {
-	uint16_t magic;
-	char filename[MAX_FILENAME_SIZE];
-	char padding[0x1B0];
-	uint64_t total_size;
-} send_file_packet;
-static_assert(sizeof(send_file_packet) == PACKET_SIZE);
-
-typedef struct patch_file_packet {
-	uint16_t magic;
-	uint32_t offset;
-	uint32_t patch_size;
-	char patch_data[MAX_PATCH_SIZE];
-	char filename[MAX_FILENAME_SIZE];
-	char padding[0x164];
-} patch_file_packet;
-static_assert(sizeof(patch_file_packet) == PACKET_SIZE);
-

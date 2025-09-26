@@ -18,8 +18,8 @@
 #include <stdint.h>
 #include <GcKernKit.h>
 
-static vita2d_texture* insertgc_tex;
-static uint8_t options[0x1000];
+static vita2d_texture* insertgc_tex = NULL;
+static uint8_t options[BUFFER_SIZE];
 
 #define DEFOPT(y) int option = 0;\
 				  int opt_y = y; \
@@ -124,8 +124,8 @@ static uint8_t options[0x1000];
 #define WAIT_FOR_CONFIRM() \
 					do {\
 						int ctrl = get_key(); \
-						if(ctrl == SCE_CTRL_CONFIRM) break;\
-						else if(ctrl == SCE_CTRL_CANCEL) break;\
+						if(ctrl == SCE_CTRL_CONFIRM) break; \
+						else if(ctrl == SCE_CTRL_CANCEL) break; \
 					} while(1)\
 
 void init_menus() {
@@ -173,7 +173,7 @@ int draw_gc_options(int* selected, int* window, char* title, uint8_t has_grw0, u
 	draw_background();
 	draw_controls(0);
 
-	char what_title[128];
+	char what_title[MAX_PATH];
 	snprintf(what_title, sizeof(what_title), "What to do with %s ...", title);
 	draw_title(what_title);
 	
@@ -234,15 +234,24 @@ int draw_select_input_location(int* selected, int* window, uint8_t have_ux0, uin
 }
 
 int draw_select_output_location(int* selected, int* window, char* output_file, uint8_t have_ux0, uint8_t have_xmc, uint8_t have_usb, uint8_t have_host0, uint8_t save_network) {
+	PRINT_STR("start_draw()\n");
+	
 	start_draw();
+
+	PRINT_STR("draw_background()\n");
 	draw_background();
+
+	PRINT_STR("draw_controls()\n");
 	draw_controls(1);
 	
+	PRINT_STR("draw_title()\n");
 	draw_title("Select output device ...");
 
-	char output_txt[128];
+	char output_txt[MAX_PATH];
 	snprintf(output_txt, sizeof(output_txt), "%s", output_file);
 	draw_text_center(200, output_txt);
+	
+	PRINT_STR("output_txt: %s\n", output_txt);
 	
 	DEFOPT(240);
 	
@@ -265,7 +274,7 @@ int draw_select_file(int* selected, int* window, char* input_folder, char* folde
 	draw_background();
 	draw_controls(1);
 	
-	char title[128];
+	char title[MAX_PATH];
 	snprintf(title, sizeof(title), "Select a file from: %s ...", input_folder);
 	draw_title(title);
 	
@@ -302,7 +311,7 @@ int draw_network_settings(int* selected, int* window, char* ip_address, unsigned
 	draw_text_center(220, "it can be found in the readme for GC ToolKit.");
 	draw_text_center(250, "and enter the IP of the device its running on.");
 
-	char output_txt[128];
+	char output_txt[MAX_PATH];
 	snprintf(output_txt, sizeof(output_txt), "Current Setting: %s on port %u", ip_address, port);
 	draw_text_center(300, output_txt);
 	
@@ -333,7 +342,7 @@ int draw_format_confirm_menu(int* selected, int* window, const char* device) {
 	draw_background();
 	draw_controls(1);
 	
-	char output_txt[128];
+	char output_txt[MAX_PATH];
 	snprintf(output_txt, sizeof(output_txt), "Format %s to TexFAT? ...", device);
 	draw_title(output_txt);
 	
@@ -357,7 +366,7 @@ void draw_kmodule_failed_message(const char* module_name) {
 	draw_background();
 	draw_controls(0);
 	
-	char output_txt[128];
+	char output_txt[MAX_PATH];
 	snprintf(output_txt, sizeof(output_txt), "Failed to load app0:%s.skprx", module_name);
 	draw_title(output_txt);
 
@@ -389,49 +398,49 @@ void draw_device_info(GcInfo* info) {
 	
 	draw_title("GC Information");
 	
-	char hex[0x100];
-	char msg[0x200];
+	char hex[MAX_PATH/2];
+	char msg[MAX_PATH];
 	
 	memset(hex, 0x00, sizeof(hex));
 	memset(msg, 0x00, sizeof(msg));
 	
 	TO_HEX(info->Cid, sizeof(info->Cid), hex);
-	snprintf(msg, sizeof(msg), "MMC CID: %s", hex);
+	snprintf(msg, sizeof(msg)-1, "MMC CID: %s", hex);
 	draw_text_center(120, msg);
 	
 	TO_HEX(info->Csd, sizeof(info->Cid), hex);
-	snprintf(msg, sizeof(msg), "MMC CSD: %s", hex);
+	snprintf(msg, sizeof(msg)-1, "MMC CSD: %s", hex);
 	draw_text_center(140, msg);
 
-	snprintf(msg, sizeof(msg), "Extended CSD Revision: 0x%02X", info->ExtCsdRev);
+	snprintf(msg, sizeof(msg)-1, "Extended CSD Revision: 0x%02X", info->ExtCsdRev);
 	draw_text_center(160, msg);
 	
-	snprintf(msg, sizeof(msg), "Device Name: %s", info->DeviceName);
+	snprintf(msg, sizeof(msg)-1, "Device Name: %s", info->DeviceName);
 	draw_text_center(180, msg);
 
-	snprintf(msg, sizeof(msg), "Device Serial Number: 0x%X", info->DeviceSerial);
+	snprintf(msg, sizeof(msg)-1, "Device Serial Number: 0x%X", info->DeviceSerial);
 	draw_text_center(200, msg);
 	
-	snprintf(msg, sizeof(msg), "Device Revision: 0x%X", info->DeviceRev);
+	snprintf(msg, sizeof(msg)-1, "Device Revision: 0x%X", info->DeviceRev);
 	draw_text_center(220, msg);
 	
 	
-	snprintf(msg, sizeof(msg), "Vendor: %s (0x%02X)", mmc_vendor_id_to_manufacturer(info->Vendor), info->Vendor);
+	snprintf(msg, sizeof(msg)-1, "Vendor: %s (0x%02X)", mmc_vendor_id_to_manufacturer(info->Vendor), info->Vendor);
 	draw_text_center(240, msg);
 	
-	snprintf(msg, sizeof(msg), "Manufactured Date: %u/%u", info->Month, info->Year);
+	snprintf(msg, sizeof(msg)-1, "Manufactured Date: %u/%u", info->Month, info->Year);
 	draw_text_center(260, msg);
 	
 	
 	TO_HEX(info->KeySet.packet18_key, sizeof(info->KeySet.packet18_key), hex);
-	snprintf(msg, sizeof(msg), "CMD56 Key18: %s", hex);
+	snprintf(msg, sizeof(msg)-1, "CMD56 Key18: %s", hex);
 	draw_text_center(310, msg);
 	
 	TO_HEX(info->KeySet.packet20_key, sizeof(info->KeySet.packet20_key), hex);
-	snprintf(msg, sizeof(msg), "CMD56 Key20: %s", hex);
+	snprintf(msg, sizeof(msg)-1, "CMD56 Key20: %s", hex);
 	draw_text_center(330, msg);
 	
-	snprintf(msg, sizeof(msg), "CMD56 KeyID: %s (0x%02X)", keyid_to_keygroup(info->KeyId), info->KeyId);
+	snprintf(msg, sizeof(msg)-1, "CMD56 KeyID: %s (0x%02X)", keyid_to_keygroup(info->KeyId), info->KeyId);
 	draw_text_center(350, msg);
 	
 		
@@ -591,7 +600,7 @@ int do_device_dump(const char* block_device, char* output_file, BackupFormat for
 				block_device,
 				output_file,
 				format,
-				(format != BACKUP_FORMAT_RAW) ? &keys : NULL,
+				(!FMT_IS_RAW(format)) ? &keys : NULL,
 				(ip_address != NULL) ? &net_info : NULL,
 				draw_dump_progress);
 
@@ -627,7 +636,7 @@ int do_select_input_location() {
 
 int do_error(int error) {
 	if(error == OP_CANCELED) return error;
-	char msg[0x1028];
+	char msg[MAX_PATH];
 	
 	snprintf(msg, sizeof(msg), "Error: %s (0x%02X)", get_error_msg(error), error);
 	do_confirm_message("An error occured.", msg);
@@ -639,9 +648,7 @@ int do_select_output_location(char* output, uint64_t dev_size) {
 	PRINT_STR("mount_devices\n");
 	mount_devices();
 	
-	uint8_t save_network = is_connected();
-	PRINT_STR("save_network = %x\n", save_network);
-	
+	uint8_t save_network = is_connected();	
 	
 	uint64_t xmc_size = get_free_space("xmc0:");
 	uint64_t uma_size = get_free_space("uma0:");
@@ -650,7 +657,6 @@ int do_select_output_location(char* output, uint64_t dev_size) {
 	uint8_t ux_exist = file_exist("ux0:");
 	uint8_t xmc_exist = file_exist("xmc0:");
 	uint8_t uma_exist = file_exist("uma0:");
-
 	uint8_t host_exist = file_exist("host0:");
 
 	PRINT_STR("device_size %llx\n", dev_size);
@@ -658,12 +664,19 @@ int do_select_output_location(char* output, uint64_t dev_size) {
 	PRINT_STR("uma_size %llx\n", uma_size);
 	PRINT_STR("ux_size %llx\n", ux_size);
 	
+	PRINT_STR("save_network = %x\n", save_network);
+
+
+	PRINT_STR("ux_exist = %x\n", ux_exist);
+	PRINT_STR("xmc_exist = %x\n", xmc_exist);
+	PRINT_STR("uma_exist = %x\n", uma_exist);
+	PRINT_STR("host_exist = %x\n", host_exist);
+
 	PROCESS_MENU(draw_select_output_location, output, 
 				(ux_exist  && ux_size >= dev_size), 
 				(xmc_exist && xmc_size >= dev_size), 
 				(uma_exist && uma_size >= dev_size), 
-				host_exist, 
-				save_network);
+				host_exist, save_network);
 	
 	return selected;
 }

@@ -17,73 +17,77 @@
 #include "net.h"
 #include "bgm.h"
 #include "log.h"
+#include "config.h"
 
-#include <GcKernKit.h>
+#include <GcToolKit.h>
 
-void get_output_filename(char* output, char* format, int size_output) {
+#define return PRINT_STR("Returning from %s\n", __FUNCTION__); return
+
+
+void get_output_filename(char* output, char* extension, int size_output) {
 	char title_id[64];
 	char title[64];
 	read_gameinfo(title_id, title);
-		
-	snprintf(output, size_output, "%s [%s].%s", title, title_id, format);
+	
+	snprintf(output, size_output, "%s [%s].%s", title, title_id, extension);
 	remove_illegal_chars(output);
+	return;
 }
 
 
-int handle_dump_device(int what, BackupFormat format, char* block_device, char* outfile, char* ip_address, unsigned short port) {
+int handle_dump_device(int what, BackupFormat format, char* block_device, char* out_file, char* ip_address, unsigned short port) {
 	int res = -1;
 	
 	if(what != DUMP_KEYS_ONLY) {
-		res = do_device_dump(block_device, outfile, format, ip_address, port);				
+		res = do_device_dump(block_device, out_file, format, ip_address, port);				
 	}
 	else if(ip_address == NULL) {		
-		res = key_dump(outfile);
+		res = key_dump(out_file);
 	}
 	else {
-		res = key_dump_network(ip_address, port, outfile);		
+		res = key_dump_network(ip_address, port, out_file);		
 	}
-	
+
 	// dump keys if format is not VCI ..
-	if(what == DUMP_WHOLE_GC) {
-		if(format != BACKUP_FORMAT_VCI && format != BACKUP_FORMAT_VCI_TRIM) {
-			change_extension(outfile, ".bin");
-			if(ip_address == NULL) {		
-				res = key_dump(outfile);
-				if(res < 0) goto error;
-			}
-			else {
-				res = key_dump_network(ip_address, port, outfile);		
-				if(res < 0) goto error;
-			}		
+	if(what == DUMP_WHOLE_GC && !FMT_IS_VCI(format)) {
+		change_extension(out_file, MAX_PATH, ".keys.bin");
+		if(ip_address == NULL) { // is this a network dump?
+			res = key_dump(out_file);
 		}
+		else {
+			res = key_dump_network(ip_address, port, out_file);		
+		}		
 	}
 	
-error:
-	
+	if(res < 0) {
+		do_error(res);
+	}
+	else {
+		char msg[MAX_PATH];
+		snprintf(msg, sizeof(msg)-1, "Backup created at: %s ...", out_file);
+		do_confirm_message("Backup Success!", msg);
+	}
+
 	return res;
 }
 
 int handle_menu_set_network_options(int what, BackupFormat format, char* block_device, char* outfile) {
-	unsigned char ip_address[0x1028];
-	unsigned short port = DEFAULT_PORT;
-	
-	memset(ip_address, 0x00, sizeof(ip_address));
-	strncpy(ip_address, DEFAULT_IP, sizeof(ip_address));
-	
+
 	int selected = -1;
 	while(1) {
-		selected = do_network_options(ip_address, port);
+		selected = do_network_options(CONFIG.ip_address, CONFIG.port);
 		switch(selected) {
 			case CHANGE_IP:
-				open_ime("Enter IP", ip_address, 15);
-				PRINT_STR("ip address: %s\n", ip_address);
-				if(!check_ip_address_valid(ip_address))
-					strncpy(ip_address, DEFAULT_IP, sizeof(ip_address));
+				open_ime("Enter IP", CONFIG.ip_address, sizeof(CONFIG.ip_address)-1);
+				PRINT_STR("ip address: %s\n", CONFIG.ip_address);
+				if(!check_ip_address_valid(CONFIG.ip_address)) {
+					strncpy(CONFIG.ip_address, DEFAULT_IP, sizeof(CONFIG.ip_address)-1);
+				}
 				
 				continue;
 				break;
 			case CHANGE_PORT:
-				open_ime_short("Enter PORT", &port);
+				open_ime_short("Enter PORT", &CONFIG.port);
 				continue;
 				break;
 			case START_DUMP:
@@ -95,16 +99,22 @@ int handle_menu_set_network_options(int what, BackupFormat format, char* block_d
 		break;
 	};
 	
-	return handle_dump_device(what, format, block_device, outfile, ip_address, port);
+	save_config();
+	
+	return handle_dump_device(what, format, block_device, outfile, CONFIG.ip_address, CONFIG.port);
 }
 
 
 	
 void handle_menu_set_output(char* ext, BackupFormat format, int what) {
-	start:
 		// determine block device		
 		PRINT_STR("handle_menu_set_output\n");
 		
+		// get output_folder
+		int res = 0;
+		char output_folder[MAX_PATH];
+		char output_filename[MAX_PATH/2];
+
 		char* block_device = NULL;
 		char* output_device = NULL;
 		
@@ -126,21 +136,17 @@ void handle_menu_set_output(char* ext, BackupFormat format, int what) {
 		PRINT_STR("block_device: %s\n", block_device);
 
 		// get filename
-		char output_filename[0x128] = { 0 };
-		get_output_filename(output_filename, ext, MAX_PATH);
-		
+		get_output_filename(output_filename, ext, sizeof(output_filename));		
 		PRINT_STR("output_filename: %s\n", output_filename);
 
-		// get total size
-		uint64_t total_device_size = sizeof(GcCmd56Keys);
-		if(block_device != NULL) total_device_size = get_device_size(block_device);
-		
-		
-		PRINT_STR("total_device_size %llx\n", total_device_size);
+		// get required space for the file
+		uint64_t required_space = sizeof(GcCmd56Keys);
+		if(block_device != NULL) required_space = get_device_size(block_device);
+		PRINT_STR("required_space %llx\n", required_space);
 		
 		int selected = -1;
 		do {
-			selected = do_select_output_location(output_filename, total_device_size);
+			selected = do_select_output_location(output_filename, required_space);
 			
 			switch(selected) {
 				case DUMP_LOCATION_UX0:
@@ -159,7 +165,7 @@ void handle_menu_set_output(char* ext, BackupFormat format, int what) {
 					output_device = "";
 					break;
 				case CHANGE_FILENAME:
-					open_ime("Enter filename", output_filename, MAX_PATH);
+					open_ime("Enter filename", output_filename, sizeof(output_filename));
 					remove_illegal_chars(output_filename);
 					continue;
 					break;
@@ -173,43 +179,25 @@ void handle_menu_set_output(char* ext, BackupFormat format, int what) {
 					return;
 					break;
 			};
+			PRINT_STR("output_device %s\n", output_device);
+
+			if(selected != DUMP_LOCATION_NET) {
+				// get full output path, (eg, ux0:bak/game.vci)
+				snprintf(output_folder, sizeof(output_folder)-1, "%s%s/%s", output_device, CONFIG.backup_folder, output_filename);
+				PRINT_STR("DUMP PHYSICAL : what = %x, format = %x, output_folder = %s\n", what, format, output_folder);
+
+				res = handle_dump_device(what, format, block_device, output_folder, NULL, 0);
+				if(res == OP_CANCELED) break;
+			}			
+			else {
+				res = handle_menu_set_network_options(what, format, block_device, output_filename);
+				if(res == OP_CANCELED) continue;
+			}			
+
 			break;
 		} while(1);
-		PRINT_STR("output_device %s\n", output_device);
 
-		// get outfile
-		char output_folder[0x512];
-		
-		// create "device:bak" folder if not exist
-		if(selected != DUMP_LOCATION_NET) {
-			snprintf(output_folder, sizeof(output_folder), "%sbak", output_device);
-			sceIoMkdir(output_folder, 0777);
-		}
-		
-		// get full output path, device:bak/file.vci 
-		snprintf(output_folder, sizeof(output_folder), "%sbak/%s", output_device, output_filename);
-		PRINT_STR("what = %x, output_folder = %s\n", what, output_folder);
-
-		int res = 0;
-		
-		if(selected != DUMP_LOCATION_NET) {
-			res = handle_dump_device(what, format, block_device, output_folder, NULL, 0);
-			if(res == OP_CANCELED) return;
-		}
-		else {
-			res = handle_menu_set_network_options(what, format, block_device, output_filename);
-			if(res == OP_CANCELED) goto start;
-		}
-		
-		
-		char msg[0x1028];
-		if(res < 0) {
-			do_error(res);
-		}
-		else{
-			snprintf(msg, sizeof(msg), "Backup created at: %s ...", output_folder);
-			do_confirm_message("Backup Success!", msg);
-		}
+		return;
 }
 
 int handle_format_confirm_and_format(const char* block_device) {
@@ -248,15 +236,16 @@ void handle_wipe_option(int what) {
 	else if(what == RESET_MEDIAID) res = do_device_wipe_and_format(block_device, 1, 0);
 	if(res == OP_CANCELED) return;
 	
-	char msg[0x1028];	
+	char msg[MAX_PATH];	
 	if(res < 0) {
 		do_error(res);
 	}
 	else{
-		snprintf(msg, sizeof(msg), "Formatted: \"%s\" ...", block_device);
+		snprintf(msg, sizeof(msg)-1, "Formatted: \"%s\" ...", block_device);
 		do_confirm_message("Format Success!", msg);
 	}	
-
+	
+	return;
 }
 
 void handle_select_file(int what, char* folder) {
@@ -291,18 +280,21 @@ void handle_select_file(int what, char* folder) {
 		return;
 	}
 	
-	char input_file[MAX_PATH*5];
-	snprintf(input_file, sizeof(input_file), "%s/%s", folder, file);
+	char input_file[MAX_PATH];
+	snprintf(input_file, sizeof(input_file)-1, "%s/%s", folder, file);
 	
 	int res = do_device_restore(block_device, input_file);
-	char msg[0x1028];	
+	
 	if(res < 0) {
 		do_error(res);
 	}
 	else{
-		snprintf(msg, sizeof(msg), "Restored from: %s ...", input_file);
+		char msg[MAX_PATH];	
+		snprintf(msg, sizeof(msg)-1, "Restored from: %s ...", input_file);
 		do_confirm_message("Restore Success!", msg);
 	}
+	
+	return;
 }
 
 void handle_select_input_device(int what) {
@@ -337,14 +329,13 @@ void handle_select_input_device(int what) {
 		break;
 	};
 	
-	// get infile
 	char input_folder[MAX_PATH];
+	snprintf(input_folder, sizeof(input_folder), "%s%s", input_device, CONFIG.backup_folder);
+	make_directories(input_folder);
 	
-	
-	snprintf(input_folder, sizeof(input_folder), "%sbak", input_device);
-	sceIoMkdir(input_folder, 0777);
-	
+	// get input file
 	handle_select_file(what, input_folder);
+	return;
 }
 
 void handle_menu_select_backup_format(int what) {
@@ -383,6 +374,8 @@ void handle_menu_select_backup_format(int what) {
 		handle_menu_set_output(ext, format, what);
 		
 	}
+	
+	return;
 }
 
 void handle_menu_select_option() {
@@ -394,7 +387,7 @@ void handle_menu_select_option() {
 			ext = "vci";
 			break;
 		case DUMP_KEYS_ONLY:
-			ext = "bin";
+			ext = "keys.bin";
 			break;
 			
 		case DUMP_MEDIAID:
@@ -431,7 +424,9 @@ void handle_menu_select_option() {
 	if(selected == GET_GC_INFO)
 		do_device_info();
 	if(selected == OP_CANCELED)
-		do_gc_insert_prompt();
+		do_gc_insert_prompt();\
+	
+	return;
 }
 
 int main(int argc, char** argv) {
@@ -442,6 +437,7 @@ int main(int argc, char** argv) {
 		load_kernel_modules();
 	}
 	
+	init_config();
 	init_ctrl();
 	init_vita2d();
 	init_menus();

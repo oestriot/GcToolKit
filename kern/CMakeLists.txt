@@ -11,14 +11,15 @@ endif()
 project(GcKernKit)
 include("$ENV{VITASDK}/share/vita.cmake" REQUIRED)
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wl,-q -std=gnu99")
-
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wl,-q -std=gnu17")
 set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -O3")
 set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -O0 -DENABLE_LOGGING=1")
 
 
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -nostdlib")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -fno-rtti -fno-exceptions")
+
+include_directories(${CMAKE_SOURCE_DIR}/inc)
 
 link_directories(
 	${CMAKE_CURRENT_BINARY_DIR}

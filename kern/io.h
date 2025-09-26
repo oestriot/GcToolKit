@@ -1,6 +1,8 @@
 #ifndef _IO_H
 #define _IO_H 1
 
+#define MAX_PATH (0x512)
+
 SceUID kOpenDevice(const char* device, SceMode permission);
 int kReadDevice(SceUID device_handle, void* data, size_t size);
 int kWriteDevice(SceUID device_handle, void* data, size_t size);

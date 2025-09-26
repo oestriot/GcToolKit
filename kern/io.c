@@ -2,8 +2,8 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <vitasdkkern.h>
-#include "GcKernKit.h"
-
+#include <GcToolKit.h>
+#include "io.h"
 
 SceUID k_open_device(const char* device, int permission) {
 	// check if device is being opened for writing ...
@@ -48,7 +48,7 @@ uint64_t k_get_device_size(SceUID device_handle) {
 // io syscalls
 
 SceUID kOpenDevice(const char* device, int permission) {
-	static char k_device[1028];
+	static char k_device[MAX_PATH];
 	
 	ksceKernelStrncpyUserToKernel(k_device, (const void*)device, sizeof(k_device));
 	

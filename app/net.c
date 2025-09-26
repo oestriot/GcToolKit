@@ -11,7 +11,7 @@ uint8_t connected = 0;
 static uint8_t memory[16 * 1024];
 
 
-int send_packet_file(SceUID socket, const char* filename, uint64_t file_size) {
+int begin_file_send(SceUID socket, const char* filename, uint64_t file_size) {
 	send_file_packet packet;
 	memset(&packet, 0x00, sizeof(send_file_packet));
 
@@ -23,10 +23,10 @@ int send_packet_file(SceUID socket, const char* filename, uint64_t file_size) {
 }
 
 
-int send_packet_patch(SceUID socket, const char* filename, uint32_t offset, const char* data, uint32_t size ) {
+int send_file_patch(SceUID socket, const char* filename, uint32_t offset, const void* data, uint32_t size) {
 	patch_file_packet packet;
 
-	if(size > sizeof(packet.patch_size)) size = sizeof(packet.patch_size);
+	if(size > sizeof(packet.patch_data)) size = sizeof(packet.patch_data);
 
 	memset(&packet, 0x00, sizeof(patch_file_packet));
 
@@ -102,20 +102,20 @@ uint8_t check_ip_address_valid(char* ip_address) {
 	else return 1;
 }
 
-int file_send_data(int fstream, void* data, size_t data_sz) {
-	return sceNetSend(fstream, data, data_sz, 0);
+int file_send_data(SceUID connection, void* data, size_t data_sz) {
+	return sceNetSend(connection, data, data_sz, 0);
 }
-int end_file_send(int fstream) {
-	int res = sceNetShutdown(fstream, SCE_NET_SHUT_RDWR);
+
+int end_connection(SceUID socket) {
+	int res = sceNetShutdown(socket, SCE_NET_SHUT_RDWR);
 	if(res < 0) return res;
-	res = sceNetSocketClose(fstream);	
+	res = sceNetSocketClose(socket);	
 	if(res < 0) return res;
 	return 0;
 }
 
 
-
-int begin_file_send(const char* ip_address, unsigned short port, const char* filename, uint64_t total_size) {
+int begin_connection(const char* ip_address, unsigned short port) {
 	int res = -1;
 	
 	SceUID socket = sceNetSocket("filesocket", SCE_NET_AF_INET, SCE_NET_SOCK_STREAM, 0);
@@ -136,9 +136,6 @@ int begin_file_send(const char* ip_address, unsigned short port, const char* fil
 	int connection = sceNetConnect(socket, (SceNetSockaddr*)&sin, sizeof(SceNetSockaddrIn));	
 	if(connection < 0) ERROR(connection);
 	
-	res = send_packet_file(socket, filename, total_size);
-	if(res < 0) ERROR(res);
-	
 	return socket;
 	
 	error:
@@ -146,5 +143,4 @@ int begin_file_send(const char* ip_address, unsigned short port, const char* fil
 	if(socket >= 0) sceNetSocketClose(socket);
 	return res;
 }
-
 

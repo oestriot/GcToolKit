@@ -1,10 +1,15 @@
 #include "draw.h"
 #include "ctrl.h"
+#include "io.h"
 #include <vita2d.h>
 #include <vitasdk.h>
 #include <string.h>
 #include <stdint.h>
 #include <stdio.h>
+
+#define IS_ASCII(c) (c < 0x7F)
+#define IS_CODEPOINT_BEGIN(c) (!((c & 0x80) != 0) || ((c & 0x40) != 0))
+#define IS_CODEPOINT_PART(c) !IS_CODEPOINT_BEGIN(c)
 
 #define MENUOVERLAY_WIDTH (494)
 #define MENUOVERLAY_HEIGHT (506) 
@@ -72,19 +77,16 @@ void draw_progress_bar(int y, uint64_t done, uint64_t total) {
 void draw_text_center_color(int y, int color, const char* msg) {
 	int text_width = MENUOVERLAY_WIDTH;
 	int text_height = 0;	
-	char processed_msg[0x1028];
+	char processed_msg[MAX_PATH];
 	
 	// Basically we want to trim every message so it fits insize the MENUOVERLAY image,
 	strncpy(processed_msg, msg, sizeof(processed_msg));
-	size_t msg_len = strnlen(msg, sizeof(processed_msg)-1);
+	int msg_len = strnlen(msg, sizeof(processed_msg)-1);
 	
 	do{
-		processed_msg[msg_len] = 0; // remove last character ...
-		
 		vita2d_pvf_text_dimensions(pvf, TEXT_SIZE, processed_msg, &text_width, &text_height); // check size
-
-		msg_len--; // minus 1 from the message length
-	} while( msg_len > 0 && text_width > (MENUOVERLAY_WIDTH - (MENUOVERLAY_PAD * 2)) );
+		processed_msg[msg_len--] = 0;
+	} while(msg_len > 0 && text_width > (MENUOVERLAY_WIDTH - (MENUOVERLAY_PAD * 2)));
 	
 	
 	// Calculate the x position as center based on the menu overlay;

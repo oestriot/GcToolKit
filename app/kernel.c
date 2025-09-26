@@ -6,6 +6,7 @@
 #include "err.h"
 #include "log.h"
 #include "kernel.h"
+#include "io.h"
 
 // the kernel module "GcKernKit" will be attempted to start from the following locations:
 // (attempted in the order their listed.)
@@ -51,7 +52,7 @@ int kernel_started() {
 }
 
 int try_load(const char* install_path) {
-	char kplugin_path[0x1028];
+	char kplugin_path[MAX_PATH];
 	char titleid[12];
 	
 	memset(titleid, 0x00, sizeof(titleid));

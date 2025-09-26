@@ -57,5 +57,3 @@ build_vita/*
 kern/build/*
 app/build/*
 pc/build/*
-
-app/GcKernKit.h

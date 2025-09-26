@@ -77,9 +77,10 @@ static inline int finalize_psv_header(BackupState* state) {
 	PRINT_STR("Finalizing PSV Header\n");
 	const uint64_t offset = offsetof(PsvHeader, all_sectors_sha256);
 	
-	if(state->format == BACKUP_FORMAT_PSV || state->format == BACKUP_FORMAT_PSV_TRIM) {
+	if(FMT_IS_PSV(state->format)) {
 		uint8_t sha256_out[0x20];
 		sha256_final(&state->sha_ctx, sha256_out);
+		
 		PRINT_STR("sha256_out: ");
 		PRINT_BUFFER(sha256_out);
 
@@ -89,8 +90,7 @@ static inline int finalize_psv_header(BackupState* state) {
 				PRINT_STR("seek %llx, offset %llx\n", offset, seek);
 	
 				if(seek == offset) {
-					int wr = sceIoWrite(state->wr_fd, sha256_out, sizeof(sha256_out));
-					
+					int wr = sceIoWrite(state->wr_fd, sha256_out, sizeof(sha256_out));			
 					PRINT_STR("wr %x\n", wr);
 					
 					if(wr == 0) return SIZE_IS_ZERO;
@@ -101,9 +101,16 @@ static inline int finalize_psv_header(BackupState* state) {
 				
 				return SIZE_NOT_MATCH;
 			}
-			else { // net				
-				int res = send_packet_patch(state->wr_fd, state->output_path, offset, sha256_out, sizeof(sha256_out));
-				PRINT_STR("res = %x\n", res);
+			else { // net
+				SceUID connection = begin_connection(state->net_info->ip_address, state->net_info->port);
+				if(connection > 0) {
+					PRINT_STR("connection = %x\n", connection);
+					
+					int res = send_file_patch(connection, state->output_path, offset, sha256_out, sizeof(sha256_out));
+					PRINT_STR("patch = %x\n", res);
+					
+					end_connection(connection);	
+				}
 			}
 		}	
 	}
@@ -153,7 +160,7 @@ static inline int device_access_loop(BackupState* state, DeviceAccessCallback* r
 		if(rd < 0) return rd;
 
 		// hash this data if a hash is needed (i.e in psvgamesd .psv format)
-		if(state->format == BACKUP_FORMAT_VCI) sha256_update(&state->sha_ctx, DEVICE_DUMP_BUFFER, rd);
+		if(FMT_IS_PSV(state->format)) sha256_update(&state->sha_ctx, DEVICE_DUMP_BUFFER, rd);
 
 		int wr = wr_func(state->wr_fd, DEVICE_DUMP_BUFFER, rd);
 		if(wr == 0) return SIZE_IS_ZERO;
@@ -163,6 +170,8 @@ static inline int device_access_loop(BackupState* state, DeviceAccessCallback* r
 		state->total += wr; 
 		if(state->callback != NULL) state->callback(state->block_device, state->output_path, state->total, state->device_size);
 	} while(state->total < state->device_size);
+
+	return 0;
 }
 
 // device access functions
@@ -198,8 +207,12 @@ static inline int dump_device_network(BackupState* state) {
 	if(state->rd_fd < 0) ERROR(state->rd_fd);
 	
 	// open socket
-	state->wr_fd = begin_file_send(state->net_info->ip_address, state->net_info->port, state->output_path, effective_size);
+	state->wr_fd = begin_connection(state->net_info->ip_address, state->net_info->port);
 	if(state->wr_fd < 0) ERROR(state->wr_fd);
+	
+	// send file start packet
+	res = begin_file_send(state->wr_fd, state->output_path, effective_size);
+	if(res < 0) goto error;
 	
 	// write vci header
 	res = create_header(state, file_send_data);
@@ -209,11 +222,12 @@ static inline int dump_device_network(BackupState* state) {
 	res = device_access_loop(state, kReadDevice, file_send_data);
 	if(res < 0) goto error;
 	
-	res = finalize_psv_header(state);
-	if(res < 0) goto error;
+		
+	// add hash into .psv file;
+	if(FMT_IS_PSV(state->format)) res = finalize_psv_header(state);
 	
 error:
-	if(state->wr_fd >= 0) end_file_send(state->wr_fd);
+	if(state->wr_fd >= 0) end_connection(state->wr_fd);
 	if(state->rd_fd >= 0) kCloseDevice(state->rd_fd);
 	
 	return res;
@@ -221,8 +235,9 @@ error:
 
 static inline int dump_device_phys(BackupState* state) {
 	int res = -1;
-	
 	PRINT_STR("Begining physical dump of %s to %s\n", state->block_device, state->output_path);
+	
+	make_directories_excluding_last(state->output_path);
 	
 	// open device
 	state->rd_fd = kOpenDevice(state->block_device, SCE_O_RDONLY | SCE_O_RDLOCK);
@@ -240,8 +255,8 @@ static inline int dump_device_phys(BackupState* state) {
 	res = device_access_loop(state, kReadDevice, write_data);
 	if(res < 0) goto error;
 	
-	res = finalize_psv_header(state);
-	if(res < 0) goto error;
+	// add hash into .psv file;
+	if(FMT_IS_PSV(state->format)) res = finalize_psv_header(state);
 	
 error:
 	if(state->wr_fd >= 0)
@@ -279,7 +294,8 @@ int dump_device(const char* block_device, const char* output_path, BackupFormat 
 	PRINT_STR("state.callback = %p\n", state.callback);
 	PRINT_STR("state.net_info = %p\n", state.net_info);
 
-	sha256_init(&state.sha_ctx);	
+	sha256_init(&state.sha_ctx);
+	
 	
 	if(state.net_info == NULL) {
 		res = dump_device_phys(&state);

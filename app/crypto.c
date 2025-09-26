@@ -12,7 +12,7 @@
 #include "io.h"
 #include "device.h"
 
-#include "GcKernKit.h"
+#include <GcToolKit.h>
 #include "crypto.h"
 #include "net.h"
 #include "err.h"
@@ -67,13 +67,18 @@ int key_dump_network(char* ip_address, unsigned short port, char* output_file) {
 	int got_keys = extract_gc_keys(&keys);
 	if(got_keys < 0) return got_keys;
 	
-	SceUID fd = begin_file_send(ip_address, port, output_file, sizeof(GcCmd56Keys));
+	SceUID fd = begin_connection(ip_address, port);
 	PRINT_STR("fd = %x\n", fd);
 	if(fd < 0) return fd;
 	
+	int res = begin_file_send(fd, output_file, sizeof(GcCmd56Keys));
+	if(res < 0) goto error;
+	
 	int wr = file_send_data(fd, &keys, sizeof(GcCmd56Keys));
 	PRINT_STR("wr = %x (sizeof = %x)\n", wr, sizeof(GcCmd56Keys));
-	end_file_send(fd);
+
+error:
+	end_connection(fd);
 
 	if(wr == 0) return SIZE_IS_ZERO;
 	if(wr < 0) return wr;
@@ -84,18 +89,13 @@ int key_dump_network(char* ip_address, unsigned short port, char* output_file) {
 
 int key_dump(char* output_file) {
 	GcCmd56Keys keys;
-	
+	make_directories_excluding_last(output_file);
+
 	int got_keys = extract_gc_keys(&keys);
 	if(got_keys < 0) return got_keys;
 	
-	SceUID fd = sceIoOpen(output_file, SCE_O_WRONLY | SCE_O_CREAT | SCE_O_TRUNC, 0777);
-	PRINT_STR("fd = %x\n", fd);
-	if(fd < 0) return fd;
+	int wr = write_file(output_file, &keys, sizeof(GcCmd56Keys));
 	
-	int wr = sceIoWrite(fd, &keys, sizeof(GcCmd56Keys));
-	PRINT_STR("wr = %x (sizeof = %x)\n", wr, sizeof(GcCmd56Keys));
-	sceIoClose(fd);
-
 	if(wr == 0) return SIZE_IS_ZERO;
 	if(wr < 0) return wr;
 	if(wr != sizeof(GcCmd56Keys)) return SIZE_NOT_MATCH;
