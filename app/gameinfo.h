@@ -1,1 +1,1 @@
-int read_gameinfo(char* title_id, char* title);
+int read_gameinfo(char* title_id, char* title, size_t length);

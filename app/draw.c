@@ -80,7 +80,7 @@ void draw_text_center_color(int y, int color, const char* msg) {
 	char processed_msg[MAX_PATH];
 	
 	// Basically we want to trim every message so it fits insize the MENUOVERLAY image,
-	strncpy(processed_msg, msg, sizeof(processed_msg));
+	strncpy(processed_msg, msg, sizeof(processed_msg)-1);
 	int msg_len = strnlen(msg, sizeof(processed_msg)-1);
 	
 	do{

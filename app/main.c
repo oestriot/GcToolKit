@@ -21,13 +21,11 @@
 
 #include <GcToolKit.h>
 
-#define return PRINT_STR("Returning from %s\n", __FUNCTION__); return
-
 
 void get_output_filename(char* output, char* extension, int size_output) {
 	char title_id[64];
 	char title[64];
-	read_gameinfo(title_id, title);
+	read_gameinfo(title_id, title, sizeof(title));
 	
 	snprintf(output, size_output, "%s [%s].%s", title, title_id, extension);
 	remove_illegal_chars(output);
@@ -339,7 +337,7 @@ void handle_select_input_device(int what) {
 }
 
 void handle_menu_select_backup_format(int what) {
-	BackupFormat format;
+	BackupFormat format = BACKUP_FORMAT_VCI;
 	char* ext = "vci";
 	int selected = -1;
 	while(1) {

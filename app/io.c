@@ -284,7 +284,7 @@ void change_extension(char* path, size_t path_length, const char* new_extension)
 }
 
 int extract_dirname(const char* path, char* dir_name, size_t dir_name_length) {
-	strncpy(dir_name, path, dir_name_length);
+	strncpy(dir_name, path, dir_name_length-1);
 	
 	int last_slash = 0;
 	for(int i = 0; i < strlen(path); i++) {

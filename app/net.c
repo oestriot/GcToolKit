@@ -6,7 +6,7 @@
 #include "log.h"
 #include <GcKernKit.h>
 
-static uint8_t init = 0;
+static uint8_t network_initalized = 0;
 uint8_t connected = 0;
 static uint8_t memory[16 * 1024];
 
@@ -42,7 +42,10 @@ int send_file_patch(SceUID socket, const char* filename, uint32_t offset, const 
 }
 
 int init_network() {
-    int res = 0;
+    int res = -1;
+	int load_module = -1;
+	int net_init = -1;
+	int net_ctl_init = -1;
 	
 	SceNetInitParam param;
 	memset(&param, 0x00, sizeof(SceNetInitParam));
@@ -50,26 +53,25 @@ int init_network() {
 	param.size = sizeof(memory);
 	param.flags = 0;
 	
-	int loadModule = sceSysmoduleLoadModule(SCE_SYSMODULE_NET);
-	PRINT_STR("sceSysmoduleLoadModule = %x\n", loadModule);
-	if(loadModule < 0) ERROR(loadModule);
-	int netInit = sceNetInit(&param);
-	PRINT_STR("sceNetInit = %x\n", netInit);
-	if(netInit < 0) ERROR(netInit);
-	int netCtlInit = sceNetCtlInit();
-	PRINT_STR("sceNetCtlInit = %x\n", netCtlInit);
-	if(netCtlInit < 0) ERROR(netCtlInit);
+	load_module = sceSysmoduleLoadModule(SCE_SYSMODULE_NET);
+	PRINT_STR("sceSysmoduleLoadModule = %x\n", load_module);
+	if(load_module < 0) ERROR(load_module);
 	
-	init = 1;
+	net_init = sceNetInit(&param);
+	PRINT_STR("sceNetInit = %x\n", net_init);
+	if(net_init < 0) ERROR(net_init);
+	
+	net_ctl_init = sceNetCtlInit();
+	PRINT_STR("sceNetCtlInit = %x\n", net_ctl_init);
+	if(net_ctl_init < 0) ERROR(net_ctl_init);
+	
+	network_initalized = 1;
 	
 	return 0;
 error:
-	if(netCtlInit >= 0)
-		sceNetCtlTerm();
-	if(netInit >= 0)	
-		sceNetTerm();
-	if(loadModule >= 0)
-		sceSysmoduleUnloadModule(SCE_SYSMODULE_NET);
+	if(net_ctl_init >= 0) sceNetCtlTerm();
+	if(net_init >= 0) sceNetTerm();
+	if(load_module >= 0) sceSysmoduleUnloadModule(SCE_SYSMODULE_NET);
 	return res;
 }
 
@@ -77,11 +79,11 @@ void term_network() {
 	sceNetCtlTerm();
 	sceNetTerm();
 	sceSysmoduleUnloadModule(SCE_SYSMODULE_NET);
-	init = 0;
+	network_initalized = 0;
 }
 
 uint8_t is_connected() {
-	if(!init) return 0;
+	if(!network_initalized) return 0;
 	int state = 0;
 	PRINT_STR("sceNetCtlInetGetState before call %x\n", state);
 	sceNetCtlInetGetState(&state);

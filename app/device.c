@@ -4,7 +4,7 @@
 #include <string.h>
 
 #include <vitasdk.h>
-#include <GcKernKit.h>
+#include <GcToolKit.h>
 
 #include "kernel.h"
 #include "log.h"
@@ -106,7 +106,7 @@ static inline int finalize_psv_header(BackupState* state) {
 				if(connection > 0) {
 					PRINT_STR("connection = %x\n", connection);
 					
-					int res = send_file_patch(connection, state->output_path, offset, sha256_out, sizeof(sha256_out));
+					send_file_patch(connection, state->output_path, offset, sha256_out, sizeof(sha256_out));
 					PRINT_STR("patch = %x\n", res);
 					
 					end_connection(connection);	

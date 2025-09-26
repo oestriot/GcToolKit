@@ -63,6 +63,7 @@ void derive_master_key(uint8_t* cartRandom, uint8_t* masterkey, int keyId) {
 
 int key_dump_network(char* ip_address, unsigned short port, char* output_file) {
 	GcCmd56Keys keys;
+	int netwr = -1;
 	
 	int got_keys = extract_gc_keys(&keys);
 	if(got_keys < 0) return got_keys;
@@ -74,17 +75,16 @@ int key_dump_network(char* ip_address, unsigned short port, char* output_file) {
 	int res = begin_file_send(fd, output_file, sizeof(GcCmd56Keys));
 	if(res < 0) goto error;
 	
-	int wr = file_send_data(fd, &keys, sizeof(GcCmd56Keys));
-	PRINT_STR("wr = %x (sizeof = %x)\n", wr, sizeof(GcCmd56Keys));
+	netwr = file_send_data(fd, &keys, sizeof(GcCmd56Keys));
+	PRINT_STR("netwr = %x (sizeof = %x)\n", wr, sizeof(GcCmd56Keys));
 
 error:
-	end_connection(fd);
+	if(fd >= 0) end_connection(fd);
 
-	if(wr == 0) return SIZE_IS_ZERO;
-	if(wr < 0) return wr;
-	if(wr != sizeof(GcCmd56Keys)) return SIZE_NOT_MATCH;
-
-	return 0;
+	if(netwr == 0) return SIZE_IS_ZERO;
+	if(netwr != sizeof(GcCmd56Keys)) return SIZE_NOT_MATCH;
+	
+	return res;
 }
 
 int key_dump(char* output_file) {
@@ -211,17 +211,17 @@ uint8_t verify_packet20_key(GcCmd56Keys* keys) {
 	char title_id[12];
 	int res = read_first_filename(folder, title_id, sizeof(title_id));
 	PRINT_STR("read_first_filename license folder res = 0x%x\n", res);
-	if(res < 0) goto error;
+	if(res < 0) return 0;
 
 	PRINT_STR("title_id = %s\n", title_id);
 	snprintf(folder, MAX_PATH, "gro0:/license/app/%s", title_id);
 	PRINT_STR("folder = %s\n", folder);
 	
 	// get rif name from license/titleid folder
-	char rif_filename[0x50];
+	char rif_filename[MAX_PATH];
 	res = read_first_filename(folder, rif_filename, sizeof(rif_filename));
 	PRINT_STR("read_first_filename license titleid folder res = 0x%x\n",res);
-	if(res < 0) goto error;
+	if(res < 0) return 0;
 	
 	PRINT_STR("rif_filename = %s\n", rif_filename);
 	snprintf(folder, MAX_PATH, "gro0:/license/app/%s/%s", title_id, rif_filename);
@@ -252,8 +252,7 @@ uint8_t verify_packet20_key(GcCmd56Keys* keys) {
 	PRINT_STR("verify_packet20_key failed!\n");
 	
 error:	
-	if(fd > 0)
-		sceIoClose(fd);
+	if(fd > 0) sceIoClose(fd);
 	return 0;
 	
 }

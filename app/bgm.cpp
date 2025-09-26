@@ -10,12 +10,15 @@ extern "C"
 {
 #include "io.h"
 #include "log.h"
+#include "config.h"
 
 
 	static SoLoud::Soloud soloud;
 	static SoLoud::WavStream bgm;
 	
 	void init_sound() {
+		if(!CONFIG.play_music) return;
+		
 		soloud.init();
 		soloud.setGlobalVolume(1.0);
 		

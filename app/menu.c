@@ -398,7 +398,7 @@ void draw_device_info(GcInfo* info) {
 	
 	draw_title("GC Information");
 	
-	char hex[MAX_PATH/2];
+	char hex[MAX_PATH];
 	char msg[MAX_PATH];
 	
 	memset(hex, 0x00, sizeof(hex));
@@ -472,7 +472,7 @@ int do_gc_options() {
 	mount_gro0();
 	mount_grw0();
 
-	read_gameinfo(title_id, title);
+	read_gameinfo(title_id, title, sizeof(title));
 	
 	remove_illegal_chars(title);
 	
@@ -592,7 +592,7 @@ int do_device_dump(const char* block_device, char* output_file, BackupFormat for
 	if(res < 0) return res;
 	
 	if(ip_address != NULL) {
-		strncpy(net_info.ip_address, ip_address, sizeof(net_info.ip_address));
+		strncpy(net_info.ip_address, ip_address, sizeof(net_info.ip_address)-1);
 		net_info.port = port;		
 	}
 	
