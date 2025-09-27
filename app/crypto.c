@@ -122,23 +122,22 @@ void decrypt_packet20_key(uint8_t* secondaryKey0, uint8_t* packet20, uint8_t* pa
 }
 
 void wait_for_gc_auth() {
-
-	while(!kHasCmd20Captured()) {
-		int res = kResetCmd20Input();
-		PRINT_STR("kResetCmd20Input = %x\n", res);
-		if (res >= 0) {
-
+	int res = kResetCmd20Input();
+	PRINT_STR("kResetCmd20Input = %x\n", res);
+	if (res >= 0) {
+		do {
+			
 			// check if there is already a GC inserted, if there is 
 			// reset the gc device to capture authentication step
 			// we, dont do this if there is not a gc inserted, incase someone is using an sd2vita.
-
+			
 			if( file_exist("gro0:") || file_exist("grw0:") || device_exist(BLOCK_DEVICE_MEDIAID) ) {
 				res = kResetGc();
 				PRINT_STR("kResetGc = %x\n", res);
 			}		
-		}
-		
-		sceKernelDelayThread(1000 * 500); // 500ms
+					
+			sceKernelDelayThread(1000 * 500); // 500ms
+		} while(!kHasCmd20Captured());
 	}
 }
 
