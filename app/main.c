@@ -421,6 +421,8 @@ void handle_menu_select_option() {
 		handle_select_input_device(selected);
 	if(selected == GET_GC_INFO)
 		do_device_info();
+	if(selected == OP_CANCELED)
+		do_gc_insert_prompt();
 	
 	return;
 }
@@ -450,8 +452,8 @@ int main(int argc, char** argv) {
 		do_kmodule_failed_message(KMODULE_NAME);
 	}
 	else {
+		do_gc_insert_prompt();
 		while(1) {
-			do_gc_insert_prompt();
 			handle_menu_select_option();
 		}		
 	}
