@@ -455,7 +455,7 @@ int main(int argc, char** argv) {
 		do_gc_insert_prompt();
 		while(1) {
 			handle_menu_select_option();
-		}		
+		}
 	}
 		
 	

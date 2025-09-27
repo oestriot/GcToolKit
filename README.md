@@ -27,12 +27,12 @@ for this reason the 1gb internal storage on a Vita 2k- cannot be used.
 # Network Backup
 GCToolKit allows to save a VCI of a game over the local network;
 
-to do this requires running the program "gc_backup_network" program running on your computer;
+to do this requires running the program "GcNetworkBackup" program running on your computer;
 
 this feature is useful if you don't have a memory card or otherwise, do not have an avalible storage device
 
-- [Windows](http://silica.codes/Estradrive/GcToolKit/releases/download/v1.5/gc_backup_network.exe) [(mirror)](https://github.com/Estradrive/GcToolKit/releases/download/v1.5/gc_backup_network.exe)
-- [Linux](http://silica.codes/Estradrive/GcToolKit/releases/download/v1.5/gc_backup_network.elf) [(mirror)](https://github.com/Estradrive/GcToolKit/releases/download/v1.5/gc_backup_network.elf)
+- [Windows](https://silica.codes/OEstriot/GcToolKit/releases/download/v1.6/GcNetworkBackup.exe) [(mirror)](https://github.com/oestriot/GcToolKit/releases/download/v1.6/GcNetworkBackup.exe)
+- [Linux](https://silica.codes/OEstriot/GcToolKit/releases/download/v1.6/GcNetworkBackup.exe) [(mirror)](https://github.com/oestriot/GcToolKit/releases/download/v1.6/GcNetworkBackup)
 
 the source code for it is in the "pc" folder of this repoistory.
 
