@@ -86,7 +86,7 @@ void* receive_packets(void* args) {
 			patchfile->filename[sizeof(patchfile->filename)-1] = 0x00; // prevent buffer overflow
 			remove_illegal_chars(patchfile->filename); // remove illegal chars from filename
 			
-			printf("Patching ... %s ... %u bytes at 0x%x\n", patchfile->filename, patchfile->patch_size, patchfile->offset);
+			printf("Patching ... %s ... %u bytes at 0x%llx\n", patchfile->filename, patchfile->patch_size, patchfile->offset);
 			
 			FILE* patchfile_fd = fopen(patchfile->filename, "r+b");
 			if(patchfile_fd != NULL) {
