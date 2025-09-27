@@ -29,6 +29,8 @@ const char* get_error_msg(int error) {
 			return "Directory contained no files.";
 		case DEVICE_WHITELIST_FAILED:
 			return "Destination device is not a gamecard, aborting to prevent a brick.";
+		case OK:
+			return "Operation completed successfully.";
 		default:
 			_sceErrorGetExternalString(tmp_error, error);
 			return (const char*)tmp_error;

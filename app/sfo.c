@@ -2,6 +2,8 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
+
 #include "sfo.h"
 #include "io.h"
 #include "err.h"
@@ -9,14 +11,14 @@
 
 
 int read_sfo_key(const char* sfo_file, const char* sfo_key, char* out_key, size_t out_key_size) {
-//int read_sfo_key(char* key, char* out, char* sfo) {
 	int res = -1;
+	uint8_t* sfo_buffer = NULL;
 	SceUID sfo_fd = -1;
 	
 	uint64_t sfo_size = get_file_size(sfo_file);
-	if(sfo_size <= 0) return sfo_size;
+	if(sfo_size <= 0) ERROR(sfo_size);
 	
-	char* sfo_buffer = malloc(sfo_size);
+	sfo_buffer = malloc(sfo_size);
 	if(sfo_buffer == NULL) ERROR(POINTER_WAS_NULL);
 
 	memset(sfo_buffer, 0x00, sfo_size);
@@ -60,19 +62,21 @@ int read_sfo_key(const char* sfo_file, const char* sfo_key, char* out_key, size_
 		if(s_key.type != PSF_TYPE_STR) continue;
 		
 		// calculate location of key in buffer
-		int name_offset = header.key_offset + s_key.name_offset;
+		uintptr_t name_offset = header.key_offset + s_key.name_offset;
 		if(name_offset > sfo_size) ERROR(SIZE_NOT_MATCH);
 		
-		int data_offset = header.value_offset + s_key.data_offset;
+		uintptr_t data_offset = header.value_offset + s_key.data_offset;
 		if(data_offset > sfo_size) ERROR(SIZE_NOT_MATCH);
 
 		// copy the key and value into buffers.
-		strncpy(key_name, sfo_buffer + name_offset, sizeof(key_name)-1);
-		strncpy(key_value, sfo_buffer + data_offset, sizeof(key_value)-1);		
+		strncpy(key_name, (char*)(sfo_buffer + name_offset), sizeof(key_name)-1);
+		strncpy(key_value, (char*)(sfo_buffer + data_offset), sizeof(key_value)-1);		
 
-		if(strncmp(key_name, sfo_key, out_key_size-1) == 0){
+		PRINT_STR("key_name: %s, key_value: %s, out_key_size: %x\n", key_name, key_value, out_key_size);
+
+		if(strncmp(key_name, sfo_key, out_key_size) == 0){
 			strncpy(out_key, key_value, out_key_size-1);
-			break;
+			ERROR(OK);
 		}
 
 	}

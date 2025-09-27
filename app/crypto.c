@@ -76,7 +76,7 @@ int key_dump_network(char* ip_address, unsigned short port, char* output_file) {
 	if(res < 0) goto error;
 	
 	netwr = file_send_data(fd, &keys, sizeof(GcCmd56Keys));
-	PRINT_STR("netwr = %x (sizeof = %x)\n", wr, sizeof(GcCmd56Keys));
+	PRINT_STR("netwr = %x (sizeof = %x)\n", netwr, sizeof(GcCmd56Keys));
 
 error:
 	if(fd >= 0) end_connection(fd);
@@ -122,21 +122,24 @@ void decrypt_packet20_key(uint8_t* secondaryKey0, uint8_t* packet20, uint8_t* pa
 }
 
 void wait_for_gc_auth() {
-	int res = kResetCmd20Input();
-	PRINT_STR("kResetCmd20Input = %x\n", res);
-	if (res >= 0) {
 
-		// check if there is already a GC inserted, if there is 
-		// reset the gc device to capture authentication step
-		// we, dont do this if there is not a gc inserted, incase someone is using an sd2vita.
+	while(!kHasCmd20Captured()) {
+		int res = kResetCmd20Input();
+		PRINT_STR("kResetCmd20Input = %x\n", res);
+		if (res >= 0) {
 
-		if( file_exist("gro0:") || file_exist("grw0:") || device_exist(BLOCK_DEVICE_MEDIAID) ) {
-			res = kResetGc();
-			PRINT_STR("kResetGc = %x\n", res);
-		}		
+			// check if there is already a GC inserted, if there is 
+			// reset the gc device to capture authentication step
+			// we, dont do this if there is not a gc inserted, incase someone is using an sd2vita.
+
+			if( file_exist("gro0:") || file_exist("grw0:") || device_exist(BLOCK_DEVICE_MEDIAID) ) {
+				res = kResetGc();
+				PRINT_STR("kResetGc = %x\n", res);
+			}		
+		}
+		
+		sceKernelDelayThread(1000 * 500); // 500ms
 	}
-
-	while(!kHasCmd20Captured()) { /*wait*/ };
 }
 
 void derive_packet20_hash(GcCmd56Keys* keys, uint8_t* packet20_hash) {

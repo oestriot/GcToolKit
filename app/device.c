@@ -74,6 +74,7 @@ static inline int create_vci_header(BackupState* state, DeviceAccessCallback* wr
 
 
 static inline int finalize_psv_header(BackupState* state) {
+	int res = -1;
 	PRINT_STR("Finalizing PSV Header\n");
 	const uint64_t offset = offsetof(PsvHeader, all_sectors_sha256);
 	
@@ -106,10 +107,12 @@ static inline int finalize_psv_header(BackupState* state) {
 				if(connection > 0) {
 					PRINT_STR("connection = %x\n", connection);
 					
-					send_file_patch(connection, state->output_path, offset, sha256_out, sizeof(sha256_out));
+					res = send_file_patch(connection, state->output_path, offset, sha256_out, sizeof(sha256_out));
 					PRINT_STR("patch = %x\n", res);
 					
 					end_connection(connection);	
+					
+					return (res >= 0);
 				}
 			}
 		}	
