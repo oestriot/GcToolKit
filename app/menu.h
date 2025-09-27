@@ -18,9 +18,11 @@ void do_confirm_message(const char* title, const char* msg);
 int do_network_options(char* ip_address, unsigned short port);
 int do_error(int error);
 void do_ime();
-void do_kmodule_failed_message(const char* module_name);
 void do_device_info();
 int do_select_backup_format();
+
+void do_kmodule_failed_message(const char* module_name);
+void do_blacklisted_module_message(const char* module_name);
 
 void init_menus();
 void term_menus();

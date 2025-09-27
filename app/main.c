@@ -7,7 +7,7 @@
 
 #include "lock.h"
 #include "ctrl.h"
-#include "crypto.h"
+#include "auth.h"
 #include "gameinfo.h"
 #include "kernel.h"
 #include "draw.h"
@@ -421,14 +421,14 @@ void handle_menu_select_option() {
 		handle_select_input_device(selected);
 	if(selected == GET_GC_INFO)
 		do_device_info();
-	if(selected == OP_CANCELED)
-		do_gc_insert_prompt();\
 	
 	return;
 }
 
 int main(int argc, char** argv) {
 	int has_restarted = (argc >= 2 && argv != NULL && strcmp(argv[1], "-restarted") == 0);
+	const char* blacklisted_module = check_loaded_blacklisted_module();
+
 	PRINT_STR("has_restarted: 0x%x\n", has_restarted);
 	
 	if(!has_restarted){
@@ -443,14 +443,17 @@ int main(int argc, char** argv) {
 	init_sound();
 	init_shell();
 	
-	if(kernel_started()) {
-		do_gc_insert_prompt();
-		while(1) {
-			handle_menu_select_option();
-		}		
+	if(blacklisted_module != NULL) {
+		do_blacklisted_module_message(blacklisted_module);
+	}
+	else if(!is_module_started(KMODULE_NAME)) {
+		do_kmodule_failed_message(KMODULE_NAME);
 	}
 	else {
-		do_kmodule_failed_message(KMODULE_NAME);
+		while(1) {
+			do_gc_insert_prompt();
+			handle_menu_select_option();
+		}		
 	}
 		
 	

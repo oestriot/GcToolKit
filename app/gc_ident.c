@@ -1,5 +1,5 @@
 #include "gc_ident.h"
-#include "crypto.h"
+#include "auth.h"
 #include "log.h"
 
 #include <GcToolKit.h>

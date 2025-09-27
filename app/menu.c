@@ -1,7 +1,7 @@
 #include "menu.h"
 #include "draw.h"
 #include "ctrl.h"
-#include "crypto.h"
+#include "auth.h"
 #include "device.h"
 #include "gameinfo.h"
 #include "io.h"
@@ -361,6 +361,24 @@ int draw_format_confirm_menu(int* selected, int* window, const char* device) {
 
 }
 
+void draw_blacklisted_module_message(const char* module_name) {
+	start_draw();
+	draw_background();
+	draw_controls(0);
+	
+	char output_txt[MAX_PATH];
+	snprintf(output_txt, sizeof(output_txt), "Conflicting modules found!");
+	draw_title(output_txt);
+
+	snprintf(output_txt, sizeof(output_txt), "GcToolKit detected the module \"%s\"", module_name);
+	draw_text_center(250, output_txt);
+	draw_text_center(270, "It is known to cause issues with GcToolKit");
+	draw_text_center(290, "and with Game Cartridge Authentication more generally.");
+	draw_text_center(330, "Please remove this module then try again.");
+	
+	end_draw();
+}
+
 void draw_kmodule_failed_message(const char* module_name) {
 	start_draw();
 	draw_background();
@@ -513,6 +531,11 @@ void do_ime() {
 void do_confirm_message(const char* title, const char* msg) {
 	draw_confirmation_message(title, msg);
 
+	WAIT_FOR_CONFIRM();
+}
+
+void do_blacklisted_module_message(const char* module_name) {
+	draw_blacklisted_module_message(module_name);
 	WAIT_FOR_CONFIRM();
 }
 

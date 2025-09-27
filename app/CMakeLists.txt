@@ -44,7 +44,7 @@ add_executable(${PROJECT_NAME}
 	ctrl.c
 	draw.c
 	device.c
-	crypto.c
+	auth.c
 	kernel.c
 	lock.c
 	io.c

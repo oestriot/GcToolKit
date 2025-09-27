@@ -8,7 +8,7 @@
 
 #include "kernel.h"
 #include "log.h"
-#include "crypto.h"
+#include "auth.h"
 #include "device.h"
 
 #include "mbr.h"
@@ -274,7 +274,7 @@ error:
 int dump_device(const char* block_device, const char* output_path, BackupFormat format, GcCmd56Keys* keys, NetworkInfo* net_info, ProgressCallback* callback) {
 	int res = -1;
 	
-	if(!kernel_started()) return KERNEL_MODULE_FAILED_START;
+	if(!is_module_started(KMODULE_NAME)) return KERNEL_MODULE_FAILED_START;
 	
 	BackupState state;
 	memset(&state, 0x00, sizeof(BackupState));
@@ -314,7 +314,7 @@ int dump_device(const char* block_device, const char* output_path, BackupFormat 
 int restore_device(const char* block_device, char* output_path, ProgressCallback callback) {
 	int res = -1;
 	
-	if(!kernel_started()) return KERNEL_MODULE_FAILED_START;
+	if(!is_module_started(KMODULE_NAME)) return KERNEL_MODULE_FAILED_START;
 	DEVICE_WHITELIST_CHECK(block_device);
 
 	// start restore ..
@@ -354,7 +354,7 @@ error:
 int wipe_device(const char* block_device, ProgressCallback callback) {
 	int res = -1;
 	
-	if(!kernel_started()) return KERNEL_MODULE_FAILED_START;
+	if(!is_module_started(KMODULE_NAME)) return KERNEL_MODULE_FAILED_START;
 	DEVICE_WHITELIST_CHECK(block_device);
 	PRINT_STR("Begining wipe of %s\n", block_device);
 
@@ -383,7 +383,7 @@ error:
 }
 
 uint8_t device_exist(const char* block_device) {
-	if(!kernel_started()) return KERNEL_MODULE_FAILED_START;
+	if(!is_module_started(KMODULE_NAME)) return KERNEL_MODULE_FAILED_START;
 	
 	SceUID dfd = kOpenDevice(block_device, SCE_O_RDONLY);
 	if(dfd < 0) return 0;
@@ -399,7 +399,7 @@ uint64_t get_trimmed_size(const char* block_device) {
 }
 
 uint64_t get_device_size(const char* block_device) {
-	if(!kernel_started()) return KERNEL_MODULE_FAILED_START;
+	if(!is_module_started(KMODULE_NAME)) return KERNEL_MODULE_FAILED_START;
 
 	uint64_t device_size = 0;
 

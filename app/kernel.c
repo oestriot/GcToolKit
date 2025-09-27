@@ -41,12 +41,27 @@ static const char* load_locations[] = {
 	
 	NULL
 };
+
+static const char* module_blacklist[] = {
+	// YAMT breaks gamecart auth even if its not enabled
+	// even if not being used to load SD2Vita.
+	
+	// see: https://github.com/SKGleba/yamt-vita/issues/28
+	
+	"yamtKernel",
+	"yamtHelper",
+	"yamtUser", 
+	
+	"StorageMgrKernel", // VitaStorageMgr.skprx
+	"VitaShellKernel", // gamesd.skprx (seriously?)
+	NULL
+};
 		
-int kernel_started() {
+int is_module_started(const char* module_name) {
 	char buffer[0x8];
 	memset(buffer, 0x00, sizeof(buffer));
 	
-	SceUID uid = _vshKernelSearchModuleByName(KMODULE_NAME, buffer);
+	SceUID uid = _vshKernelSearchModuleByName(module_name, buffer);
 	
 	return (uid > 0);
 }
@@ -67,8 +82,19 @@ int try_load(const char* install_path) {
 	return (uid > 0);
 }
 
+const char* check_loaded_blacklisted_module() {
+	
+	for(int i = 0; module_blacklist[i] != NULL; i++) {
+		if(is_module_started(module_blacklist[i])) {
+			return module_blacklist[i];
+		}
+	}
+	
+	return NULL;
+}
+
 void load_kernel_modules() {
-	if(!kernel_started()) {
+	if(!is_module_started(KMODULE_NAME)) {
 		
 		// try load GcKernKit from all load locations.
 		for(int i = 0; load_locations[i] != NULL; i++) {

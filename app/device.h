@@ -1,7 +1,7 @@
 #ifndef DEVICE_H
 #define DEVICE_H 1
 #include <vitasdk.h>
-#include "crypto.h"
+#include "auth.h"
 #include "sha256.h"
 
 #define BLOCK_DEVICE_GC "sdstor0:gcd-lp-ign-entire"
