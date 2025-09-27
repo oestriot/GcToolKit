@@ -32,7 +32,7 @@ to do this requires running the program "GcNetworkBackup" program running on you
 this feature is useful if you don't have a memory card or otherwise, do not have an avalible storage device
 
 - [Windows](https://silica.codes/OEstriot/GcToolKit/releases/download/v1.6/GcNetworkBackup.exe) [(mirror)](https://github.com/oestriot/GcToolKit/releases/download/v1.6/GcNetworkBackup.exe)
-- [Linux](https://silica.codes/OEstriot/GcToolKit/releases/download/v1.6/GcNetworkBackup.exe) [(mirror)](https://github.com/oestriot/GcToolKit/releases/download/v1.6/GcNetworkBackup)
+- [Linux](https://silica.codes/OEstriot/GcToolKit/releases/download/v1.6/GcNetworkBackup) [(mirror)](https://github.com/oestriot/GcToolKit/releases/download/v1.6/GcNetworkBackup)
 
 the source code for it is in the "pc" folder of this repoistory.
 
