@@ -1,3 +1,6 @@
+#ifndef PACKET_H
+#define PACKET_H
+
 #include <stdlib.h>
 #include <stdint.h>
 #include <stddef.h>
@@ -29,3 +32,4 @@ typedef struct patch_file_packet {
 } __attribute__((packed)) patch_file_packet;
 static_assert(sizeof(patch_file_packet) == PACKET_SIZE);
 
+#endif // PACKET_H

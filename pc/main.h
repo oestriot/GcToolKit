@@ -1,3 +1,6 @@
+#ifndef MAIN_H
+#define MAIN_H 1
+
 #include <stdlib.h>
 #include <stdint.h>
 #include <stddef.h>
@@ -48,3 +51,5 @@
 
 #define WORKBUF_SIZE 0x20000
 #define DEFAULT_PORT 46327
+
+#endif

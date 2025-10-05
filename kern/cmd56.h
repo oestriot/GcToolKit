@@ -1,3 +1,6 @@
+#ifndef CMD56_H
+#define CMD56_H 1
+
 #include <stdint.h>
 #include <stdio.h>
 
@@ -9,3 +12,5 @@ typedef struct GcInteruptInfo{
 
 int cmd56_patch();
 int cmd56_unpatch();
+
+#endif // CMD56_H

@@ -1,3 +1,6 @@
+#ifndef NET_H
+#define NET_H 1
+
 #include <stdlib.h>
 #include <GcToolKit.h>
 #include "config.h"
@@ -15,3 +18,4 @@ uint8_t check_ip_address_valid(char* ip_address);
 int begin_connection(const char* ip_address, unsigned short port);
 int end_connection(SceUID socket);
 
+#endif // NET_H

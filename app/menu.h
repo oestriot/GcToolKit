@@ -1,3 +1,6 @@
+#ifndef MENU_H
+#define MENU_H 1
+
 #include <stdint.h>
 #include "device.h"
 #define OP_CANCELED (-9530)
@@ -76,3 +79,5 @@ enum select_backup_format_options {
 	SELECT_FMT_PSV_TRIM,
 	SELECT_FMT_RAW
 };
+
+#endif // MENU_H

@@ -1,3 +1,6 @@
+#ifndef LOG_H
+#define LOG_H 1
+
 #include <vitasdkkern.h>
 
 #ifdef ENABLE_LOGGING
@@ -11,3 +14,4 @@
 #define PRINT_BUFFER(buffer) /**/
 #endif
 
+#endif // LOG_H

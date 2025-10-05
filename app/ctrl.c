@@ -2,8 +2,12 @@
 #include <string.h>
 #include <vitasdk.h>
 
+#include "config.h"
 #include "device.h"
 #include "io.h"
+
+unsigned int SCE_CTRL_CONFIRM = SCE_CTRL_CROSS;
+unsigned int SCE_CTRL_CANCEL = SCE_CTRL_CIRCLE;
 
 static unsigned int buttons[] = {
 	SCE_CTRL_SELECT,
@@ -19,18 +23,10 @@ static unsigned int buttons[] = {
 	SCE_CTRL_CROSS,
 	SCE_CTRL_SQUARE,
 };
-	
-unsigned int SCE_CTRL_CONFIRM = SCE_CTRL_CROSS;
-unsigned int SCE_CTRL_CANCEL = SCE_CTRL_CIRCLE;
 
 // check what button is set as confirm (swap O/X for japanese)
 void init_ctrl() {
-	
-	int keySwap = 0;
-	int res = sceRegMgrGetKeyInt("/CONFIG/SYSTEM", "button_assign", &keySwap);
-	if(res < 0) return;
-	
-	if(keySwap == 0) {
+	if(is_circle_confirm()) {
 		SCE_CTRL_CONFIRM = SCE_CTRL_CIRCLE;
 		SCE_CTRL_CANCEL = SCE_CTRL_CROSS;		
 	}

@@ -1,3 +1,6 @@
+#ifndef SFO_H
+#define SFO_H 1
+
 #include <stdint.h>
 
 typedef struct GcSfoHeader {
@@ -24,3 +27,5 @@ enum GcSfoTypes {
 };
 
 int read_sfo_key(const char* sfo_file, const char* sfo_key, char* out_key, size_t out_key_size);
+
+#endif // SFO_H

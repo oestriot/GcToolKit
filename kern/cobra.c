@@ -4,18 +4,24 @@
 #include <vitasdkkern.h>
 #include "log.h"
 
-// bypass blackfin mitigation
+/*
+*	 bypass blackfin mitigations
+*
+*	 if gc takes too long to authenticate.
+*	 its considered a cobra blackfin
+* 	 and gc authentication is aborted.
+*/
+
+
 static int sceKernelGetSystemTimeWideHook = -1;
 static tai_hook_ref_t sceKernelGetSystemTimeWideHookRef;
 
 uint64_t return_0() {
-	PRINT_STR("res 0\n");
+	PRINT_STR("returning 0 called\n");
 	return 0;
 }
 
-
 void cobra_patch() {
-	// undo cobra blackfin patch
 	sceKernelGetSystemTimeWideHook = taiHookFunctionImportForKernel(KERNEL_PID,
 		&sceKernelGetSystemTimeWideHookRef, 
 		"SceSblGcAuthMgr",

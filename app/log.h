@@ -1,3 +1,6 @@
+#ifndef LOG_H
+#define LOG_H 1
+
 #include <vitasdk.h>
 #include <string.h>
 #include <stdio.h>
@@ -24,4 +27,4 @@ do { \
 	outStr[(inLen*2)] = 0; \
 } while(0)
 
-
+#endif // LOG_H

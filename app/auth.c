@@ -29,12 +29,12 @@ static uint8_t GCAUTHMGR_1_SEED[0x10] 	 = { 0x7f, 0x1f, 0xd0, 0x65, 0xdd, 0x2f, 
 static uint8_t GCAUTHMGR_1_IV[0x10] = { 0x8b, 0x14, 0xc8, 0xa1, 0xe9, 0x6f, 0x30, 0xa7, 0xf1, 0x01, 0xa9, 0x6a, 0x30, 0x33, 0xc5, 0x5b };
 static uint8_t ZERO_IV[0x10] = { 0 };
 
-void derive_master_key(uint8_t* cartRandom, uint8_t* masterkey, int keyId) {
+void derive_master_key(uint8_t* cartRandom, uint8_t* masterkey, int key_id) {
 	uint8_t* kseed = NULL;
 	uint8_t x21[0x10];
 	uint8_t cmac[0x10];
 	
-	switch (keyId) {
+	switch (key_id) {
 	case 0x8001:
 		kseed = GCAUTHMGR_8001_SEED;
 		break;
@@ -52,7 +52,7 @@ void derive_master_key(uint8_t* cartRandom, uint8_t* masterkey, int keyId) {
 	AES_ECB_decrypt(kseed, x21, sizeof(x21), BIGMAC_KEY_0x345, 0x20);
 	aes_cmac(cartRandom, 0x20, x21, cmac);
 	
-	if (keyId == 0x1) {
+	if (key_id == 0x1) {
 		AES_CBC_decrypt(cmac, masterkey, 0x10, BIGMAC_KEY_0x348, 0x10, GCAUTHMGR_1_IV);
 	}
 	else {
@@ -265,11 +265,11 @@ int extract_gc_keys(GcCmd56Keys* keys) {
 		CommsData cmdData;
 		kGetLastCmd20Input(&cmdData);
 		
-		int keyId = kGetLastCmd20KeyId();
-		PRINT_STR("keyId = %x\n", keyId);
+		int key_id = kGetLastCmd20KeyId();
+		PRINT_STR("key_id = %x\n", key_id);
 		
 		uint8_t masterKey[0x10];
-		derive_master_key(cmdData.packet6, masterKey, keyId);
+		derive_master_key(cmdData.packet6, masterKey, key_id);
 
 		PRINT_STR("masterKey ");
 		PRINT_BUFFER(masterKey);

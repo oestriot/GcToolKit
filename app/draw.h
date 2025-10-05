@@ -1,3 +1,6 @@
+#ifndef DRAW_H
+#define DRAW_H 1
+
 #include <vita2d.h>
 
 #define COLOR_WHITE ( RGBA8(255,255,255,255) )
@@ -34,3 +37,5 @@ void draw_title(const char* msg);
 void free_texture(vita2d_texture* texture);
 void draw_progress_bar(int y, uint64_t done, uint64_t total);
 vita2d_texture* load_texture(const char* path);
+
+#endif // DRAW_H

@@ -1,5 +1,6 @@
 #ifndef GC_ERROR_H
 #define GC_ERORR_H 1
+
 #include <GcToolKit.h>
 enum GcToolKitError {	
 	SIZE_IS_ZERO = -9584,

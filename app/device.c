@@ -59,9 +59,16 @@ static inline int create_vci_header(BackupState* state, DeviceAccessCallback* wr
 	memset(&vci, 0x00, sizeof(VciHeader));
 	
 	memcpy(vci.magic, VCI_MAGIC, sizeof(vci.magic));
-	vci.version = VCI_VER;
-	vci.devicesize = state->device_size;
+	
+	vci.major_version = VCI_MAJOR_VER;
+	vci.minor_version = VCI_MINOR_VER;
+	
+	vci.device_size = state->device_size;
 	memcpy(&vci.keys, state->keys, sizeof(GcCmd56Keys));
+	
+	vci.key_id = kGetLastCmd20KeyId();
+	kGetCardId(1, &vci.card_id);
+
 	
 	int wr = wr_func(state->wr_fd, &vci, sizeof(VciHeader));
 	PRINT_STR("wr_func = 0x%x\n", wr);
@@ -262,10 +269,8 @@ static inline int dump_device_phys(BackupState* state) {
 	if(FMT_IS_PSV(state->format)) res = finalize_psv_header(state);
 	
 error:
-	if(state->wr_fd >= 0)
-		sceIoClose(state->wr_fd);
-	if(state->rd_fd >= 0)
-		kCloseDevice(state->rd_fd);
+	if(state->wr_fd >= 0) sceIoClose(state->wr_fd);
+	if(state->rd_fd >= 0) kCloseDevice(state->rd_fd);
 	
 	return res;		
 }
@@ -284,7 +289,7 @@ int dump_device(const char* block_device, const char* output_path, BackupFormat 
 	state.device_size = get_device_size(block_device);	
 	state.trim_size = get_trimmed_size(block_device);
 	state.format = format;
-	state.keys = keys;
+	state.keys = keys;	
 	state.callback = callback;
 	state.net_info = net_info;
 

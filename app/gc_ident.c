@@ -5,9 +5,9 @@
 #include <GcToolKit.h>
 #include <string.h>
 
-const char* keyid_to_keygroup(uint16_t keyId) {
+const char* keyid_to_keygroup(uint16_t key_id) {
 	const char* keyType = "Unknown";
-	switch(keyId) {
+	switch(key_id) {
 		case 0x1:
 			keyType = "Retail";
 			break;
@@ -24,9 +24,9 @@ const char* keyid_to_keygroup(uint16_t keyId) {
 	return keyType;
 }
 
-const char* mmc_vendor_id_to_manufacturer(uint8_t vendorId) {
+const char* mmc_vendor_id_to_manufacturer(uint8_t vendor_id) {
 	const char* vendor = "Unknown";
-	switch(vendorId) {
+	switch(vendor_id) {
 		case 0x00:
 			vendor = "Sandisk";
 			break;
@@ -76,9 +76,6 @@ void mmc_datetime_from_byte(uint8_t rev, uint8_t mdt, uint16_t* year, uint16_t* 
 	
 	*year = 1997 + y;
 	
-	// sony doesnt set the rev bit to 0x4 in EXT_CSD ??
-	// clearly these carts are not created in 1994.
-	
 	if(rev > 4 && *year < 2010) {
 		*year = 2013 + y;
 	}
@@ -86,45 +83,54 @@ void mmc_datetime_from_byte(uint8_t rev, uint8_t mdt, uint16_t* year, uint16_t* 
 	*month = m;
 }
 
+
+const char* mmc_device_type_to_string(uint8_t device_type) {
+	switch(device_type) {
+		case 0b00:
+			return "Removable";
+		case 0b01:
+			return "Embedded";
+		case 0b10:
+			return "POP";
+		case 0b11:
+			return "Reserved";
+	}
+	return "Invalid";
+}
+
 void get_gc_info(GcInfo* info) {
 	memset(info, 0, sizeof(GcInfo));
 	
-	kGetCardId(1, info->Cid);
-	kGetCardCsd(1, info->Csd);
-	kGetCardExtCsd(1, info->ExtCsd);
+	kGetCardId(1, &info->card_id);
+	kGetCardCsd(1, info->card_descriptor);
+	kGetCardExtCsd(1, info->extra_card_descriptor);
 	
 	PRINT_STR("Cid: ");
-	PRINT_BUFFER(info->Cid);
+	PRINT_BUFFER(info->card_id);
 
 	PRINT_STR("Csd: ");
-	PRINT_BUFFER(info->Csd);
+	PRINT_BUFFER(info->card_descriptor);
 
 	PRINT_STR("ExtCsd: ");
-	PRINT_BUFFER(info->ExtCsd);
+	PRINT_BUFFER(info->extra_card_descriptor);
 	
-	info->Vendor = info->Cid[0xF];
-	PRINT_STR("Vendor: 0x%X\n", info->Vendor);
+	PRINT_STR("Crc7: %x\n", info->card_id.crc7);
+	PRINT_STR("ManufactureDate = 0x%x\n", info->card_id.manufacture_date);
+	PRINT_STR("Serial: %x\n", info->card_id.serial_number);
+	PRINT_STR("Revision: %x\n", info->card_id.revision);
+	PRINT_STR("ProductName: %.6s\n", info->card_id.product_name);
+	PRINT_STR("OemId: %x\n", info->card_id.oem_id);
+	PRINT_STR("DeviceType: %x\n", info->card_id.device_type);
+	PRINT_STR("Vendor: 0x%X\n", info->card_id.vendor);
 	
-	info->ExtCsdRev = info->ExtCsd[0xC0];
-	PRINT_STR("ExtCsdRev: 0x%X\n", info->ExtCsdRev);
 	
-	memcpy(&info->DeviceSerial, info->Cid + 0x2, 0x4);
-	PRINT_STR("DeviceSerial: %x\n", info->DeviceSerial);
+	info->extra_card_descriptor_revision = info->extra_card_descriptor[0xC0];
+	PRINT_STR("ExtCsdRev: 0x%X\n", info->extra_card_descriptor_revision);
 
-	info->DeviceRev = info->Cid[0x6];
-	PRINT_STR("DeviceRev: %x\n", info->DeviceRev);
-
-	memcpy(info->DeviceName, info->Cid + 0x7, 0x6);
-	PRINT_STR("DeviceName: %s\n", info->DeviceName);
-	
-	
-	uint8_t mdt = info->Cid[1];
-	PRINT_STR("mdt = 0x%x\n", mdt);
-	
-	mmc_datetime_from_byte(info->ExtCsdRev, mdt, &info->Year, &info->Month);
+	mmc_datetime_from_byte(info->extra_card_descriptor_revision, info->card_id.manufacture_date, &info->year, &info->month);
 	
 	if(kHasCmd20Captured()) {
-		info->KeyId = kGetLastCmd20KeyId();
-		extract_gc_keys(&info->KeySet);
+		info->key_id = kGetLastCmd20KeyId();
+		extract_gc_keys(&info->key_set);
 	}
 }

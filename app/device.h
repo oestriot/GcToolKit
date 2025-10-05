@@ -1,5 +1,6 @@
 #ifndef DEVICE_H
 #define DEVICE_H 1
+
 #include <vitasdk.h>
 #include "auth.h"
 #include "sha256.h"

@@ -1,5 +1,6 @@
 #ifndef MBR_H 
 #define MBR_H
+
 #define SECTOR_SIZE (0x200)
 
 enum ScePartitionCode {
@@ -50,4 +51,4 @@ typedef struct SceMbr {
 } __attribute__((packed)) SceMbr;
 
 
-#endif
+#endif // MBR_H

@@ -1,3 +1,4 @@
+#include "gc_ident.h"
 #include "menu.h"
 #include "draw.h"
 #include "ctrl.h"
@@ -7,7 +8,6 @@
 #include "io.h"
 #include "err.h"
 #include "net.h"
-#include "gc_ident.h"
 #include "lock.h"
 #include "log.h"
 
@@ -21,15 +21,34 @@
 static vita2d_texture* insertgc_tex = NULL;
 static uint8_t options[BUFFER_SIZE];
 
+static uint32_t oy = 0;
+const uint32_t ygap = 20;
+const uint32_t ystart = 200;
+const uint32_t ytop = 110;
+
+uint32_t starty(uint32_t new_y) {
+	oy = new_y;
+	return oy;
+}
+
+uint32_t nexty() {
+	oy += ygap;
+	return oy;
+}
+
+uint32_t yskip(uint32_t val) {
+	oy += val;
+	return oy;
+}
+
+
 #define DEFOPT(y) int option = 0;\
-				  int opt_y = y; \
-				  int increment_y = 20; \
+				  starty(y-ygap); \
 				  int total = 0; \
 				  memset(options, 0x00, sizeof(options))
 				  
 #define ADDOPT(cond,x) if(cond) { \
-					draw_option(opt_y, x, option == *selected); \
-					opt_y += increment_y; \
+					draw_option(nexty(), x, option == *selected); \
 					total++; \
 					options[option] = 1; \
 					PRINT_STR("options[%i] = 1\n", option); \
@@ -101,20 +120,24 @@ static uint8_t options[BUFFER_SIZE];
 					 start_draw(); \
 					 draw_background(); \
 					 \
-					 char output_txt[512]; \
+					 char output_txt[MAX_PATH]; \
 					 snprintf(output_txt, sizeof(output_txt), "%s %s ...", title, dev); \
 					 draw_title(output_txt); \
 					 \
 					 snprintf(output_txt, sizeof(output_txt), "%s: %s ...", what, to); \
-					 draw_text_center(200, output_txt); \
+					 draw_text_center(starty(ystart), output_txt); \
+					 draw_progress_bar(yskip(10), progress, total); \
+					 yskip(10);\
 					 \
-					 draw_progress_bar(210, progress, total); \
+					 nexty(); \
 					 \
 					 snprintf(output_txt, sizeof(output_txt), "%lluMiB / %lluMiB", (uint64_t)(((float)progress)/(1048576.0f)), (uint64_t)(((float)total)/(1048576.0f))); \
-					 draw_text_center(260, output_txt); \
+					 draw_text_center(nexty(), output_txt); \
 					 \
 					 snprintf(output_txt, sizeof(output_txt), "%llu bytes copied of %llu total ...", progress, total); \
-					 draw_text_center(280, output_txt); \
+					 draw_text_center(nexty(), output_txt); \
+					 \
+					 nexty(); \
 					 \
 					 snprintf(output_txt, sizeof(output_txt), "%s %i%% completed.", what, (int)((((float)progress) / ((float)total)) * 100.0)); \
 					 draw_text_center(330, output_txt); \
@@ -155,7 +178,7 @@ int draw_select_backup_format(int* selected, int* window, const char* unused) {
 
 	draw_title("Select backup format ...");
 	
-	DEFOPT(200);
+	DEFOPT(ystart);
 
 	ADDOPT(1, "Backup Vita Cartridge Image (.vci)");
 	ADDOPT(0, "Backup Trimmed Vita Cartridge Image (.trim.vci)");
@@ -177,7 +200,7 @@ int draw_gc_options(int* selected, int* window, char* title, uint8_t has_grw0, u
 	snprintf(what_title, sizeof(what_title), "What to do with %s ...", title);
 	draw_title(what_title);
 	
-	DEFOPT(200);
+	DEFOPT(ystart);
 
 	ADDOPT(1, "Backup Entire Game Cart");
 	ADDOPT(1, "Backup Game Cart Keys");
@@ -202,8 +225,8 @@ void draw_insert_gc_menu() {
 	draw_background();
 	
 	draw_title("Waiting for CMD56 authentication ...");
-	draw_texture_center(140, insertgc_tex);
-	draw_text_center(360, "Insert a PlayStation Vita Game Cartridge.");	
+	draw_texture_center(starty(140), insertgc_tex);
+	draw_text_center(starty(360), "Insert a PlayStation Vita Game Cartridge.");	
 	end_draw();
 }
 
@@ -220,7 +243,7 @@ int draw_select_input_location(int* selected, int* window, uint8_t have_ux0, uin
 	
 	draw_title("Select input device ...");
 	
-	DEFOPT(240);
+	DEFOPT(ystart);
 	
 	ADDOPT(have_ux0, "Load from \"ux0:\"");
 	ADDOPT(have_xmc, "Load from Sony Memory Card");
@@ -249,11 +272,13 @@ int draw_select_output_location(int* selected, int* window, char* output_file, u
 
 	char output_txt[MAX_PATH];
 	snprintf(output_txt, sizeof(output_txt), "%s", output_file);
-	draw_text_center(200, output_txt);
+	draw_text_center(starty(ystart), output_txt);
 	
 	PRINT_STR("output_txt: %s\n", output_txt);
 	
-	DEFOPT(240);
+	nexty();
+	
+	DEFOPT(nexty());
 	
 	ADDOPT(have_ux0, "Save to \"ux0:\"");
 	ADDOPT(have_xmc, "Save to Sony Memory Card");
@@ -278,7 +303,7 @@ int draw_select_file(int* selected, int* window, char* input_folder, char* folde
 	snprintf(title, sizeof(title), "Select a file from: %s ...", input_folder);
 	draw_title(title);
 	
-	DEFOPT(110);
+	DEFOPT(ytop);
 
 	// check if window - total_files is less than the window size.	
 	// reset window to window_size if it is
@@ -307,15 +332,19 @@ int draw_network_settings(int* selected, int* window, char* ip_address, unsigned
 	
 	draw_title("Enter Network Address ...");
 
-	draw_text_center(200, "Run the \"GcNetworkBackup\" program");
-	draw_text_center(220, "it can be found in the readme for GC ToolKit.");
-	draw_text_center(250, "and enter the IP of the device its running on.");
+	draw_text_center(starty(ystart), "Run the \"GcNetworkBackup\" program");
+	draw_text_center(nexty(), "it can be found in the readme for GC ToolKit.");
+	draw_text_center(nexty(), "and enter the IP of the device its running on.");
 
+	nexty();
+	
 	char output_txt[MAX_PATH];
 	snprintf(output_txt, sizeof(output_txt), "Current Setting: %s on port %u", ip_address, port);
-	draw_text_center(300, output_txt);
+	draw_text_center(nexty(), output_txt);
 	
-	DEFOPT(340);
+	nexty();
+	
+	DEFOPT(nexty());
 	
 	ADDOPT(1, "Change IP Address");
 	ADDOPT(1, "Change Port");
@@ -332,7 +361,7 @@ void draw_ime() {
 	
 	draw_title("Starting IME Dialog ...");
 
-	draw_text_center(200, "IME Dialog is opening...");
+	draw_text_center(starty(ystart), "IME Dialog is opening...");
 	
 	end_draw();
 }
@@ -346,11 +375,13 @@ int draw_format_confirm_menu(int* selected, int* window, const char* device) {
 	snprintf(output_txt, sizeof(output_txt), "Format %s to TexFAT? ...", device);
 	draw_title(output_txt);
 	
-	draw_text_center(250, "Warning: this will ERASE ALL DATA ...");
+	draw_text_center(starty(ystart), "Warning: this will ERASE ALL DATA ...");
 	snprintf(output_txt, sizeof(output_txt), "on partition \"%s\" ...", device);
-	draw_text_center(270, output_txt);
+	draw_text_center(nexty(), output_txt);
 	
-	DEFOPT(320);
+	nexty();
+	
+	DEFOPT(nexty());
 	ADDOPT(1, "Full format");
 	ADDOPT(1, "Quick format");
 	ADDOPT(1, "Cancel");
@@ -371,10 +402,11 @@ void draw_blacklisted_module_message(const char* module_name) {
 	draw_title(output_txt);
 
 	snprintf(output_txt, sizeof(output_txt), "GcToolKit detected the module \"%s\"", module_name);
-	draw_text_center(250, output_txt);
-	draw_text_center(270, "It is known to cause issues with GcToolKit");
-	draw_text_center(290, "and with Game Cartridge Authentication more generally.");
-	draw_text_center(330, "Please remove this module then try again.");
+	
+	draw_text_center(starty(ystart), output_txt);
+	draw_text_center(nexty(), "It is known to cause issues with GcToolKit");
+	draw_text_center(nexty(), "and with Game Cartridge Authentication more generally.");
+	draw_text_center(nexty(), "Please remove this module then try again.");
 	
 	end_draw();
 }
@@ -387,11 +419,11 @@ void draw_kmodule_failed_message(const char* module_name) {
 	char output_txt[MAX_PATH];
 	snprintf(output_txt, sizeof(output_txt), "Failed to load app0:%s.skprx", module_name);
 	draw_title(output_txt);
-
+	
 	snprintf(output_txt, sizeof(output_txt), "GcToolKit failed to load kernel module \"%s\"", module_name);
-	draw_text_center(250, output_txt);
-	draw_text_center(270, "Please ensure \"Unsafe Homebrew\" is enabled.");
-	draw_text_center(290, "This can also fail on \"Activated\" Dev & Test Kits.");
+	draw_text_center(starty(ystart), output_txt);
+	draw_text_center(nexty(), "Please ensure \"Unsafe Homebrew\" is enabled.");
+	draw_text_center(nexty(), "This can also fail on \"Activated\" Dev & Test Kits.");
 	
 	end_draw();
 }
@@ -404,7 +436,7 @@ void draw_confirmation_message(const char* title, const char* msg) {
 	
 	draw_title(title);
 
-	draw_text_center(200, msg);
+	draw_text_center(starty(ystart), msg);
 	
 	end_draw();
 }
@@ -422,44 +454,60 @@ void draw_device_info(GcInfo* info) {
 	memset(hex, 0x00, sizeof(hex));
 	memset(msg, 0x00, sizeof(msg));
 	
-	TO_HEX(info->Cid, sizeof(info->Cid), hex);
+	
+	TO_HEX(&info->card_id, sizeof(info->card_id), hex);
 	snprintf(msg, sizeof(msg)-1, "MMC CID: %s", hex);
-	draw_text_center(120, msg);
+	draw_text_center(starty(ytop), msg);
 	
-	TO_HEX(info->Csd, sizeof(info->Cid), hex);
+	TO_HEX(info->card_descriptor, sizeof(info->card_descriptor), hex);
 	snprintf(msg, sizeof(msg)-1, "MMC CSD: %s", hex);
-	draw_text_center(140, msg);
+	draw_text_center(nexty(), msg);
 
-	snprintf(msg, sizeof(msg)-1, "Extended CSD Revision: 0x%02X", info->ExtCsdRev);
-	draw_text_center(160, msg);
-	
-	snprintf(msg, sizeof(msg)-1, "Device Name: %s", info->DeviceName);
-	draw_text_center(180, msg);
+	snprintf(msg, sizeof(msg)-1, "Extended CSD Revision: 0x%02X", info->extra_card_descriptor_revision);
+	draw_text_center(nexty(), msg);
 
-	snprintf(msg, sizeof(msg)-1, "Device Serial Number: 0x%X", info->DeviceSerial);
-	draw_text_center(200, msg);
 	
-	snprintf(msg, sizeof(msg)-1, "Device Revision: 0x%X", info->DeviceRev);
-	draw_text_center(220, msg);
+	// card id breakdown:
+	nexty();
+
+	snprintf(msg, sizeof(msg)-1, "Crc7: 0x%02X", info->card_id.crc7);
+	draw_text_center(nexty(), msg);
+
+	snprintf(msg, sizeof(msg)-1, "Manufactured Date: %u/%u", info->month, info->year);
+	draw_text_center(nexty(), msg);
+
+	snprintf(msg, sizeof(msg)-1, "Serial Number: 0x%02X", info->card_id.serial_number);
+	draw_text_center(nexty(), msg);
+
+	snprintf(msg, sizeof(msg)-1, "Revision: 0x%02X", info->card_id.revision);
+	draw_text_center(nexty(), msg);
+
+	snprintf(msg, sizeof(msg)-1, "Product Name: %.6s", info->card_id.product_name);
+	draw_text_center(nexty(), msg);
+
+	snprintf(msg, sizeof(msg)-1, "Oem ID: 0x%02X", info->card_id.oem_id);
+	draw_text_center(nexty(), msg);
+
+	snprintf(msg, sizeof(msg)-1, "Device Type: %s (0x%02X)", mmc_device_type_to_string(info->card_id.device_type), info->card_id.device_type);
+	draw_text_center(nexty(), msg);
+
+	snprintf(msg, sizeof(msg)-1, "Vendor: %s (0x%02X)", mmc_vendor_id_to_manufacturer(info->card_id.vendor), info->card_id.vendor);
+	draw_text_center(nexty(), msg);
+
 	
+	// cmd56 breakdown	
+	nexty();	
 	
-	snprintf(msg, sizeof(msg)-1, "Vendor: %s (0x%02X)", mmc_vendor_id_to_manufacturer(info->Vendor), info->Vendor);
-	draw_text_center(240, msg);
-	
-	snprintf(msg, sizeof(msg)-1, "Manufactured Date: %u/%u", info->Month, info->Year);
-	draw_text_center(260, msg);
-	
-	
-	TO_HEX(info->KeySet.packet18_key, sizeof(info->KeySet.packet18_key), hex);
+	TO_HEX(info->key_set.packet18_key, sizeof(info->key_set.packet18_key), hex);
 	snprintf(msg, sizeof(msg)-1, "CMD56 Key18: %s", hex);
-	draw_text_center(310, msg);
+	draw_text_center(nexty(), msg);
 	
-	TO_HEX(info->KeySet.packet20_key, sizeof(info->KeySet.packet20_key), hex);
+	TO_HEX(info->key_set.packet20_key, sizeof(info->key_set.packet20_key), hex);
 	snprintf(msg, sizeof(msg)-1, "CMD56 Key20: %s", hex);
-	draw_text_center(330, msg);
+	draw_text_center(nexty(), msg);
 	
-	snprintf(msg, sizeof(msg)-1, "CMD56 KeyID: %s (0x%02X)", keyid_to_keygroup(info->KeyId), info->KeyId);
-	draw_text_center(350, msg);
+	snprintf(msg, sizeof(msg)-1, "CMD56 KeyID: %s (0x%02X)", keyid_to_keygroup(info->key_id), info->key_id);
+	draw_text_center(nexty(), msg);
 	
 		
 	end_draw();
@@ -467,7 +515,6 @@ void draw_device_info(GcInfo* info) {
 
 
 void do_device_info() {
-	
 	GcInfo info;
 	
 	get_gc_info(&info);

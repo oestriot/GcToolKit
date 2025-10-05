@@ -4,6 +4,7 @@
 
 #ifndef GC_KERN_KIT_H
 #define GC_KERN_KIT_H 1
+
 #include <stdint.h>
 #include <psp2common/kernel/iofilemgr.h>
 

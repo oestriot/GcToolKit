@@ -17,7 +17,7 @@ extern "C"
 	static SoLoud::WavStream bgm;
 	
 	void init_sound() {
-		if(!CONFIG.play_music) return;
+		if(!is_music_enabled()) return;
 		
 		soloud.init();
 		soloud.setGlobalVolume(1.0);

@@ -22,13 +22,19 @@
 #include <GcToolKit.h>
 
 
-void get_output_filename(char* output, char* extension, int size_output) {
+void get_output_filename(char* output, char* extension, size_t number, size_t size_output) {
 	char title_id[64];
 	char title[64];
 	read_gameinfo(title_id, title, sizeof(title));
 	
-	snprintf(output, size_output, "%s [%s].%s", title, title_id, extension);
-	remove_illegal_chars(output);
+	if(number > 0) {
+		snprintf(output, size_output, "%s [%s] (%02d).%s", title, title_id, number, extension);
+	}
+	else {
+		snprintf(output, size_output, "%s [%s].%s", title, title_id, extension);
+	}
+	
+	remove_illegal_chars(output);	
 	return;
 }
 
@@ -111,7 +117,7 @@ void handle_menu_set_output(char* ext, BackupFormat format, int what) {
 		// get output_folder
 		int res = 0;
 		char output_folder[MAX_PATH];
-		char output_filename[MAX_PATH/2];
+		char output_filename[MAX_PATH];
 
 		char* block_device = NULL;
 		char* output_device = NULL;
@@ -132,9 +138,9 @@ void handle_menu_set_output(char* ext, BackupFormat format, int what) {
 		}
 
 		PRINT_STR("block_device: %s\n", block_device);
-
+		
 		// get filename
-		get_output_filename(output_filename, ext, sizeof(output_filename));		
+		get_output_filename(output_filename, ext, 0, sizeof(output_filename));		
 		PRINT_STR("output_filename: %s\n", output_filename);
 
 		// get required space for the file
@@ -178,10 +184,16 @@ void handle_menu_set_output(char* ext, BackupFormat format, int what) {
 					break;
 			};
 			PRINT_STR("output_device %s\n", output_device);
+			snprintf(output_folder, sizeof(output_folder)-1, "%s%s/%s", output_device, CONFIG.backup_folder, output_filename);
+				
+			// rename file to eg "Minecraft PlayStation Vita Edition [PCSG10023] (01).vci" if the file already exists
+			for(size_t num = 1; file_exist(output_folder); num++) {	
+				get_output_filename(output_filename, ext, num, sizeof(output_filename));
+				snprintf(output_folder, sizeof(output_folder)-1, "%s%s/%s", output_device, CONFIG.backup_folder, output_filename);
+			};
+			
 
 			if(selected != DUMP_LOCATION_NET) {
-				// get full output path, (eg, ux0:bak/game.vci)
-				snprintf(output_folder, sizeof(output_folder)-1, "%s%s/%s", output_device, CONFIG.backup_folder, output_filename);
 				PRINT_STR("DUMP PHYSICAL : what = %x, format = %x, output_folder = %s\n", what, format, output_folder);
 
 				res = handle_dump_device(what, format, block_device, output_folder, NULL, 0);

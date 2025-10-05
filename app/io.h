@@ -1,5 +1,6 @@
 #ifndef IO_H
 #define IO_H 1
+
 #include <GcToolKit.h>
 
 typedef struct SearchFilter {
