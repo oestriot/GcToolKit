@@ -69,7 +69,7 @@ uint32_t yskip(uint32_t val) {
 #define PROCESS_MENU(func, ...) \
 					  int window = 0; \
 					  int selected = 0; \
-					  memset(options, 0x00, sizeof(options));\
+					  memset(options, 0x00, sizeof(options)); \
 					  int total_options = func(&selected, &window, __VA_ARGS__); \
 					  int first_option = 0;\
 					  int last_option = 0;\
@@ -139,7 +139,7 @@ uint32_t yskip(uint32_t val) {
 					 \
 					 nexty(); \
 					 \
-					 snprintf(output_txt, sizeof(output_txt), "%s %i%% completed.", what, (int)((((float)progress) / ((float)total)) * 100.0)); \
+					 snprintf(output_txt, sizeof(output_txt), "%s %u%% completed.", what, (uint32_t)((((float)progress) / ((float)total)) * 100.0)); \
 					 draw_text_center(330, output_txt); \
 					 \
 					 end_draw()
@@ -446,14 +446,13 @@ void draw_device_info(GcInfo* info) {
 	draw_background();
 	draw_controls(1);
 	
-	draw_title("GC Information");
+	draw_title("GameCart Information");
 	
 	char hex[MAX_PATH];
 	char msg[MAX_PATH];
 	
 	memset(hex, 0x00, sizeof(hex));
 	memset(msg, 0x00, sizeof(msg));
-	
 	
 	TO_HEX(&info->card_id, sizeof(info->card_id), hex);
 	snprintf(msg, sizeof(msg)-1, "MMC CID: %s", hex);
@@ -466,14 +465,13 @@ void draw_device_info(GcInfo* info) {
 	snprintf(msg, sizeof(msg)-1, "Extended CSD Revision: 0x%02X", info->extra_card_descriptor_revision);
 	draw_text_center(nexty(), msg);
 
-	
 	// card id breakdown:
 	nexty();
 
 	snprintf(msg, sizeof(msg)-1, "Crc7: 0x%02X", info->card_id.crc7);
 	draw_text_center(nexty(), msg);
 
-	snprintf(msg, sizeof(msg)-1, "Manufactured Date: %u/%u", info->month, info->year);
+	snprintf(msg, sizeof(msg)-1, "Manufactured Date: %u/%u (0x%02X)", info->month, info->year, info->card_id.manufacture_date);
 	draw_text_center(nexty(), msg);
 
 	snprintf(msg, sizeof(msg)-1, "Serial Number: 0x%02X", info->card_id.serial_number);
