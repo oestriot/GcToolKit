@@ -53,7 +53,7 @@ static inline void setup_state(BackupState* state, const char* block_device, con
 	state->callback = callback;
 
 	state->have_sha = FMT_IS_PSV(format);
-	if(state->have_sha) { sha256_init(&state->sha_ctx); }
+	if(state->have_sha) sha256_init(&state->sha_ctx);
 	
 	PRINT_STR("state->block_device = %s\n", state->block_device);
 	PRINT_STR("state->output_path = %s\n", state->output_path);
