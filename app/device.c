@@ -64,7 +64,7 @@ static inline void setup_state(BackupState* state, const char* block_device, con
 	PRINT_STR("state->effective_size = 0x%llX\n", state->header_size);
 
 	PRINT_STR("state->format = 0x%02X\n", state->format);
-	PRINT_STR("state->have_sha = 0x02X\n", state->have_sha);
+	PRINT_STR("state->have_sha = 0x%02X\n", state->have_sha);
 	
 	PRINT_STR("state->keys = %p\n", state->keys);
 	PRINT_STR("state->callback = %p\n", state->callback);
