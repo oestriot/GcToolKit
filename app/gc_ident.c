@@ -106,7 +106,7 @@ void get_gc_info(GcInfo* info) {
 	kGetCardExtCsd(1, info->extra_card_descriptor);
 	
 	PRINT_STR("Cid: ");
-	PRINT_BUFFER(info->card_id);
+	PRINT_BUFFER(&info->card_id);
 
 	PRINT_STR("Csd: ");
 	PRINT_BUFFER(info->card_descriptor);

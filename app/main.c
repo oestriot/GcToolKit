@@ -145,7 +145,7 @@ void handle_menu_set_output(char* ext, BackupFormat format, int what) {
 
 		// get required space for the file
 		uint64_t required_space = sizeof(GcCmd56Keys);
-		if(block_device != NULL) required_space = get_device_size(block_device);
+		if(block_device != NULL) required_space = get_effective_size(block_device, format);
 		PRINT_STR("required_space %llx\n", required_space);
 		
 		int selected = -1;
@@ -278,7 +278,7 @@ void handle_select_file(int what, char* folder) {
 	
 	// get total size
 	uint64_t total_device_size = 0;
-	if(block_device != NULL) total_device_size = get_device_size(block_device);
+	if(block_device != NULL) total_device_size = get_effective_size(block_device, BACKUP_FORMAT_RAW);
 	PRINT_STR("total_device_size %llx\n", total_device_size);
 	
 	// show file selection

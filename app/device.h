@@ -13,6 +13,7 @@
 #define FMT_IS_PSV(fmt) (fmt == BACKUP_FORMAT_PSV || fmt == BACKUP_FORMAT_PSV_TRIM)
 #define FMT_IS_VCI(fmt) (fmt == BACKUP_FORMAT_VCI || fmt == BACKUP_FORMAT_VCI_TRIM)
 #define FMT_IS_RAW(fmt) (fmt == BACKUP_FORMAT_RAW)
+#define FMT_IS_TRIM(fmt) (fmt == BACKUP_FORMAT_PSV_TRIM || fmt == BACKUP_FORMAT_VCI_TRIM)
 
 typedef enum BackupFormat {
 	BACKUP_FORMAT_VCI,
@@ -37,6 +38,10 @@ typedef struct BackupState {
 	uint64_t device_size;
 	uint64_t trim_size;
 	
+	uint64_t header_size;
+	uint64_t effective_size;
+	
+	uint8_t have_sha;
 	SHA256_CTX sha_ctx;
 	
 	SceUID rd_fd;
@@ -56,5 +61,8 @@ int restore_device(const char* block_device, char* input_path, ProgressCallback*
 uint8_t device_exist(const char* block_device);
 uint64_t get_device_size(const char* block_device);
 uint64_t get_trimmed_size(const char* block_device);
+
+uint64_t get_header_size(BackupFormat format);
+uint64_t get_effective_size(const char* block_device, BackupFormat format);
 
 #endif //DEVICE_H

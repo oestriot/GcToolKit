@@ -1,7 +1,9 @@
 #ifndef MBR_H 
 #define MBR_H
+#include <assert.h>
 
 #define SECTOR_SIZE (0x200)
+#define SCE_MBR_MAGIC "Sony Computer Entertainment Inc."
 
 enum ScePartitionCode {
 	ScePartitionCode_EMPTY = 0x00,
@@ -42,7 +44,7 @@ typedef struct ScePartiton {
 typedef struct SceMbr {
 	char magic[0x20];
 	uint32_t version;
-	uint32_t devicesize;
+	uint32_t device_size;
 	char unk1[0x28];
 	ScePartiton partitions[0x10];
 	char unk2[0x5e];
@@ -50,5 +52,6 @@ typedef struct SceMbr {
 	uint16_t sig;
 } __attribute__((packed)) SceMbr;
 
+static_assert(sizeof(SceMbr) == SECTOR_SIZE);
 
 #endif // MBR_H

@@ -8,10 +8,12 @@
 
 #ifdef ENABLE_LOGGING
 #define PRINT_STR(...) do { sceClibPrintf("[GcToolKit] %s: ", __FUNCTION__); sceClibPrintf(__VA_ARGS__); } while(0);
-#define PRINT_BUFFER(buffer) for(int i = 0; i < sizeof(buffer); i++) { \
-									sceClibPrintf("%02X ", (uint8_t)(buffer[i]));	\
-							 } \
-							 sceClibPrintf("\n")
+#define PRINT_BUFFER(buffer) do { \
+								 for(int i = 0; i < sizeof(buffer); i++) { \
+										sceClibPrintf("%02X ", *((uint8_t*)buffer + i)); \
+								 } \
+								 sceClibPrintf("\n"); \
+							} while(0);
 #else
 #define PRINT_STR(...) /**/
 #define PRINT_BUFFER(buffer) /**/
