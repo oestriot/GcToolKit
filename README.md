@@ -45,7 +45,7 @@ however this only works with OTG cables with an external power source; or "Y-Cab
 for example this one for the [Amazon Fire Stick](https://www.amazon.com/ANDTOBO-Micro-Adapter-Power-Devices/dp/B083M1S6QT).
 
 # Requires disabling SD2Vita driver
-YAMT disables GC Authentication entirely; and enables the (offical) SD Card driver instead;
+YAMT disables GC Authentication entirely; and uses the (offical) SD Card driver instead;
 
 and obviously SD2Vita takes place of the gamecart, so it's not possible to use it with this
 
