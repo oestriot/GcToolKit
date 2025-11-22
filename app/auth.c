@@ -155,7 +155,7 @@ void derive_packet20_hash(GcCmd56Keys* keys, uint8_t* packet20_hash) {
 }
 
 void derive_cart_secret(GcCmd56Keys* keys, uint8_t* cart_secret) {
-	// final cart secret == sha256 of packet18_key+packet20_key
+	// final cart secret == sha256 of packet20_key+packet18_key
 	
 	PRINT_STR("derive_cart_secret %p %p\n", keys, cart_secret);
 	
