@@ -108,10 +108,6 @@ static inline int create_vci_header(BackupState* state, DeviceAccessCallback* wr
 	vci.device_size = state->device_size;
 	memcpy(&vci.keys, state->keys, sizeof(GcCmd56Keys));
 	
-	vci.key_id = kGetKeyId();
-	kGetCardId(1, &vci.card_id);
-
-	
 	int wr = wr_func(state->wr_fd, &vci, sizeof(VciHeader));
 	PRINT_STR("wr_func = 0x%x\n", wr);
 	
