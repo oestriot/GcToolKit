@@ -28,12 +28,21 @@ link_directories(
 add_executable(${PROJECT_NAME}
 	main.c
 	io.c
-	cobra.c
 	otg.c
 	format.c
-	mod.c
-	cmd56.c
 	gc.c
+	sha1.c
+	auth_emu.c
+	module.c
+	sha256.c	
+	sd2vita.c
+	
+	cmd56/cmd56.c
+	cmd56/cmd56_sm.c
+	cmd56/gc.c
+	cmd56/vita.c	
+	cmd56/crypto/aes.c
+	cmd56/crypto/aes_cmac.c
 )
 
 target_link_libraries(${PROJECT_NAME}

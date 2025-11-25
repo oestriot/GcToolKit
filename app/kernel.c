@@ -76,16 +76,20 @@ int try_load(const char* install_path) {
 	sceAppMgrAppParamGetString(0, 12, titleid , 256);
 
 	snprintf(kplugin_path, sizeof(kplugin_path)-1, "%s/%s/%s.skprx", install_path, titleid, KMODULE_NAME);
+	PRINT_STR("trying to load kernel module: %s(%s)\n", __FUNCTION__, kplugin_path);
 	SceUID uid = taiLoadStartKernelModule(kplugin_path, 0, NULL, 0);
-	PRINT_STR("%s(%s) = %x\n", __FUNCTION__, kplugin_path, uid);
 	
 	return (uid > 0);
 }
 
 const char* check_loaded_blacklisted_module() {
 	
+	PRINT_STR("Checking for blacklisted modules\n");
 	for(int i = 0; module_blacklist[i] != NULL; i++) {
+		PRINT_STR("Checking: %s\n", module_blacklist[i]);
+		
 		if(is_module_started(module_blacklist[i])) {
+			PRINT_STR("Found!\n");
 			return module_blacklist[i];
 		}
 	}
@@ -94,8 +98,9 @@ const char* check_loaded_blacklisted_module() {
 }
 
 void load_kernel_modules() {
+	PRINT_STR("Checking kernel module ...\n");
 	if(!is_module_started(KMODULE_NAME)) {
-		
+		PRINT_STR("Attempting to load ...\n")
 		// try load GcKernKit from all load locations.
 		for(int i = 0; load_locations[i] != NULL; i++) {
 			if(try_load(load_locations[i])) break;
@@ -105,5 +110,5 @@ void load_kernel_modules() {
 		char* argv[2] = {"-restarted", NULL};
 		sceAppMgrLoadExec(EBOOT_PATH, argv, NULL);
 	}
-	
+	PRINT_STR("Already loaded!\n");
 }

@@ -135,7 +135,10 @@ int mount_partition(int id, const char *path, int permission, int a4, int a5, in
   buf[1] = a5;
   buf[2] = a6;
 
-  return _vshIoMount(id, path, permission, buf);
+  int res =  _vshIoMount(id, path, permission, buf);
+  PRINT_STR("_vshIoMount: %x %s %i = 0x%x\n", id, path, permission, res);
+  
+  return res;
 }
 
 int mount_uma() {
@@ -156,6 +159,10 @@ int mount_gro0() {
 
 int mount_grw0() {
 	return mount_partition(0xA00, NULL, 2, 0, 0, 0); // mount grw0
+}
+
+int mount_ux0() {
+	return mount_partition(0x800, NULL, 2, 0, 0, 0); // mount ux0
 }
 
 void umount_gro0() {
@@ -182,6 +189,12 @@ void umount_imc() {
 	vshIoUmount(0xD00, 0, 0, 0);
 	vshIoUmount(0xD00, 1, 0, 0);
 }
+
+void umount_ux0() {
+	vshIoUmount(0x800, 0, 0, 0);
+	vshIoUmount(0x800, 1, 0, 0);
+}
+
 
 void umount_devices() {
 	umount_uma();

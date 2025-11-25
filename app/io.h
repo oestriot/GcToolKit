@@ -24,6 +24,7 @@ int wait_for_partition(char* partiton);
 int mount_uma();
 int mount_xmc();
 int mount_imc();
+int mount_ux0();
 
 int mount_gro0();
 int mount_grw0();
@@ -35,6 +36,7 @@ void mount_devices();
 void umount_uma();
 void umount_xmc();
 void umount_imc();
+void umount_ux0();
 void umount_devices();
 
 uint64_t get_file_size(const char* filepath);

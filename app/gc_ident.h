@@ -3,9 +3,11 @@
 
 #include <stdint.h>
 #include <stdio.h>
-#include "auth.h"
+#include <assert.h>
+#include <GcToolKit.h>
 
 #define CARD_ID_SIZE 0x10
+
 
 typedef struct EmmcCardId {
 	uint8_t unused : 1;
@@ -22,8 +24,8 @@ typedef struct EmmcCardId {
 static_assert(sizeof(EmmcCardId) == CARD_ID_SIZE);
 
 typedef struct GcInfo {
-	EmmcCardId card_id;
-	uint8_t card_descriptor[0x10];
+	EmmcCardId card_id; 
+	uint8_t card_descriptor[0x10]; 
 	uint8_t extra_card_descriptor[0x200];
 	uint8_t extra_card_descriptor_revision;
 

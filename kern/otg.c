@@ -55,7 +55,7 @@ int load_umass() {
 		PRINT_STR("ksceSblAimgrIsDolceHook 0x%04X\n", ksceSblAimgrIsDolceHook);
 		PRINT_STR("ksceSblAimgrIsDolceHookRef 0x%04X\n", ksceSblAimgrIsDolceHookRef);
 		
-		// load from the bootimage
+		// TODO: load from the bootimage
 		SceUID umass_modid = ksceKernelLoadStartModule("ux0:VitaShell/module/umass.skprx", 0, NULL, 0, NULL, NULL);
 		PRINT_STR("Load umass.skprx 0x%04X\n", umass_modid);
 				

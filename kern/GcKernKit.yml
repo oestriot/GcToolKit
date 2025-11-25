@@ -2,27 +2,32 @@ GcKernKit:
   attributes: 0
   version:
     major: 1
-    minor: 7
+    minor: 8
   main:
     start: module_start
     stop: module_stop
   libraries:
-    libGcAuthDumper:
+    libGcAuthenticationHelper:
       syscall: true
       functions:
+        - kGetCardCsd
+        - kGetCardId
+        - kGetCardExtCsd
         - kResetGc
         - kClearCartSecret
         - kGetCartSecret
-        - kGetLastCmd20Input
-        - kGetLastCmd20KeyId
-        - kHasCmd20Captured
-        - kResetCmd20Input
+        - kCheckCartHash
+        - kGetCartHash
         - kOpenDevice
         - kReadDevice
         - kWriteDevice
         - kCloseDevice
         - kGetDeviceSize
         - kFormatDevice
-        - kGetCardCsd
-        - kGetCardId
-        - kGetCardExtCsd
+        - kEnableGcEmuMgr
+        - kDisableGcEmuMgr
+        - kGetKeyId
+        - kGetPerCartKeys
+        - kIsAuthenticated
+        - kUndoSd2Vita
+        - kUndoneSd2VitaPatches

@@ -129,8 +129,8 @@ void get_gc_info(GcInfo* info) {
 
 	mmc_datetime_from_byte(info->extra_card_descriptor_revision, info->card_id.manufacture_date, &info->year, &info->month);
 	
-	if(kHasCmd20Captured()) {
-		info->key_id = kGetLastCmd20KeyId();
-		extract_gc_keys(&info->key_set);
+	if(kIsAuthenticated()) {
+		info->key_id = kGetKeyId();
+		kGetPerCartKeys(&info->key_set);
 	}
 }

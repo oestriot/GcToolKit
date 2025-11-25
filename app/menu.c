@@ -8,6 +8,7 @@
 #include "io.h"
 #include "err.h"
 #include "net.h"
+#include "kernel.h"
 #include "lock.h"
 #include "log.h"
 
@@ -145,8 +146,7 @@ uint32_t next_y() {
 #define WAIT_FOR_CONFIRM() \
 					do {\
 						int ctrl = get_key(); \
-						if(ctrl == SCE_CTRL_CONFIRM) break; \
-						else if(ctrl == SCE_CTRL_CANCEL) break; \
+						if(ctrl == SCE_CTRL_CONFIRM) break;\
 					} while(1)\
 
 void init_menus() {
@@ -534,6 +534,17 @@ int do_gc_options() {
 	char title[64];
 	
 	lock_gc();
+	
+	// check for sd2vita plugins and patch if its done
+	if(!kUndoneSd2VitaPatches() && check_loaded_blacklisted_module() != NULL) {
+		kUndoSd2Vita();
+		
+		// cleanup leftover stuff ...
+		umount_ux0();
+		lock_shell();
+		unlock_shell();
+	}
+	
 
 	mount_gro0();
 	mount_grw0();
@@ -659,8 +670,7 @@ int do_device_dump(const char* block_device, char* output_file, BackupFormat for
 	GcCmd56Keys keys;
 	NetworkInfo net_info;
 	
-	extract_gc_keys(&keys);
-	if(res < 0) return res;
+	kGetPerCartKeys(&keys);
 	
 	if(ip_address != NULL) {
 		strncpy(net_info.ip_address, ip_address, sizeof(net_info.ip_address)-1);

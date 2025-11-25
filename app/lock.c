@@ -82,18 +82,27 @@ error:
 
 void lock_shell() {
 	sceShellUtilLock(SCE_SHELL_UTIL_LOCK_TYPE_QUICK_MENU |
-					SCE_SHELL_UTIL_LOCK_TYPE_POWEROFF_MENU |
-					SCE_SHELL_UTIL_LOCK_TYPE_USB_CONNECTION |
-					SCE_SHELL_UTIL_LOCK_TYPE_MUSIC_PLAYER |
-					SCE_SHELL_UTIL_LOCK_TYPE_PS_BTN);
+					 SCE_SHELL_UTIL_LOCK_TYPE_POWEROFF_MENU |
+					 SCE_SHELL_UTIL_LOCK_TYPE_USB_CONNECTION |
+					 SCE_SHELL_UTIL_LOCK_TYPE_MUSIC_PLAYER |
+					 SCE_SHELL_UTIL_LOCK_TYPE_PS_BTN);
 }
 
 void unlock_shell() {
-	 sceShellUtilUnlock(SCE_SHELL_UTIL_LOCK_TYPE_QUICK_MENU |
-					SCE_SHELL_UTIL_LOCK_TYPE_POWEROFF_MENU |
-					SCE_SHELL_UTIL_LOCK_TYPE_USB_CONNECTION |
-					SCE_SHELL_UTIL_LOCK_TYPE_MUSIC_PLAYER |
-					SCE_SHELL_UTIL_LOCK_TYPE_PS_BTN);
+	// if their using an sd2vita patch then we have effectively broken it until next reboot
+	// by removing teh sd2vita while its running, therefore we want to just unlock power off
+	if(!kUndoneSd2VitaPatches()) {
+		sceShellUtilUnlock(SCE_SHELL_UTIL_LOCK_TYPE_QUICK_MENU |
+						   SCE_SHELL_UTIL_LOCK_TYPE_POWEROFF_MENU |
+						   SCE_SHELL_UTIL_LOCK_TYPE_USB_CONNECTION |
+						   SCE_SHELL_UTIL_LOCK_TYPE_MUSIC_PLAYER |
+						   SCE_SHELL_UTIL_LOCK_TYPE_PS_BTN);
+	}
+	else {
+		sceShellUtilUnlock(SCE_SHELL_UTIL_LOCK_TYPE_POWEROFF_MENU);
+
+	}
+	
 }
 
 // disable memory card remove/insert prompt everywhere;

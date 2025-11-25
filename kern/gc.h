@@ -1,6 +1,8 @@
 #ifndef GC_H
 #define GC_H 1
 
+int module_get_offset(SceUID pid, SceUID modid, int segidx, size_t offset, uintptr_t *addr);
+
 // shamelessly stolen from the henkaku wiki. 
 typedef struct sd_context_part_base {
    struct sd_context_global* gctx_ptr;
@@ -11,6 +13,13 @@ typedef struct sd_context_part_base {
    uint8_t CID[0x10]; // this is CID data but in reverse
    uint8_t CSD[0x10]; // this is CSD data but in reverse
 } sd_context_part_base;
+
+
+typedef struct GcInteruptInfo {
+	SceUID request_id;
+	SceUID op_sync_id;
+	char unk[0x20];
+} GcInteruptInfo;
 
 
 typedef struct cmd_info {
@@ -255,5 +264,7 @@ typedef struct bulk_transfer {
     void * (*get_next)(void *); // callback to get next buffer
     uint32_t unk4;
 } bulk_transfer;
+
+void get_interupt_location();
 
 #endif

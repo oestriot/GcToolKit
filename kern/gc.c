@@ -1,9 +1,27 @@
 #include <vitasdkkern.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <taihen.h>
 #include <GcToolKit.h>
 #include "gc.h"
 #include "log.h"
+
+static GcInteruptInfo* interupt_info = NULL;
+
+void get_interupt_location() {
+	tai_module_info_t sdstor_info;
+	sdstor_info.size = sizeof(tai_module_info_t);
+	int res = taiGetModuleInfoForKernel(KERNEL_PID, "SceSdstor", &sdstor_info);
+	PRINT_STR("get module SceSdstor 0x%04X\n", res);
+	
+	if(res >= 0){
+		PRINT_STR("sdstor_info.modid 0x%04X\n", sdstor_info.modid);
+		res = module_get_offset(KERNEL_PID, sdstor_info.modid, 1, 0x1B24, (uintptr_t*)&interupt_info);
+		
+		PRINT_STR("module_get_offset sdstor_info 0x%04X\n", res);
+		PRINT_STR("interupt_info 0x%04X\n", interupt_info);
+	}		
+}
 
 int kGetCardId(int deviceIndex, void* cardId) {
 	sd_context_part_mmc* k_deviceInfo = (sd_context_part_mmc*)ksceSdifGetSdContextPartValidateMmc(deviceIndex);	
@@ -53,4 +71,42 @@ int kGetCardExtCsd(int deviceIndex, void* cardExtCsd) {
 	ksceKernelMemcpyKernelToUser(cardExtCsd, (const void*)k_cardExtCsd, sizeof(k_cardExtCsd));	
 
 	return 0;
+}
+
+
+int kResetGc() {
+	int res = 0;	
+	PRINT_STR("Resetting GC ...\n");
+	
+	// power down gc slot
+	res = ksceSysconCtrlSdPower(0);
+	PRINT_STR("ksceSysconCtrlSdPower(0) 0x%04X\n", res);
+	if(res < 0) return res;
+	
+	// trigger gc remove interupt	
+	res = ksceKernelSetEventFlag(interupt_info[1].request_id, 0x100);
+	PRINT_STR("ksceKernelSetEventFlag(0x%02X, 0x100) 0x%04X\n", interupt_info[1].request_id, res);
+	if(res < 0) return res;
+	
+	// wait for event to finish.
+	res = ksceKernelWaitEventFlag(interupt_info[1].op_sync_id, 0x100,5,0,0);
+	PRINT_STR("ksceKernelWaitEventFlag(0x%02X, 0x100,5,0,0) 0x%04X\n", interupt_info[1].op_sync_id, res);
+	if(res < 0) return res;
+	
+	ksceKernelDelayThread(1000 * 5); // 5ms
+	
+	// power up gc slot
+	res = ksceSysconCtrlSdPower(1);
+	PRINT_STR("ksceSysconCtrlSdPower(1) 0x%04X\n", res);
+	if(res < 0) return res;
+	
+	// trigger gc insert interupt	
+	res = ksceKernelSetEventFlag(interupt_info[1].request_id, 0x1000);
+	PRINT_STR("ksceKernelSetEventFlag(0x%02X, 0x1000) 0x%04X\n", interupt_info[1].request_id, res);
+	if(res < 0) return res;
+	
+	// wait for event to finish
+	res = ksceKernelWaitEventFlag(interupt_info[1].op_sync_id,0x1000,5,0,0);
+	PRINT_STR("ksceKernelWaitEventFlag(0x%02X, 0x1000,5,0,0) 0x%04X\n", interupt_info[1].op_sync_id, res);
+	return res;
 }

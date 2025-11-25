@@ -352,6 +352,7 @@ void handle_menu_select_backup_format(int what) {
 	BackupFormat format = BACKUP_FORMAT_VCI;
 	char* ext = "vci";
 	int selected = -1;
+
 	while(1) {
 		selected = do_select_backup_format();
 		switch(selected) {
@@ -441,13 +442,6 @@ void handle_menu_select_option() {
 
 int main(int argc, char** argv) {
 	int has_restarted = (argc >= 2 && argv != NULL && strcmp(argv[1], "-restarted") == 0);
-	const char* blacklisted_module = check_loaded_blacklisted_module();
-
-	PRINT_STR("has_restarted: 0x%x\n", has_restarted);
-	
-	if(!has_restarted){
-		load_kernel_modules();
-	}
 	
 	init_config();
 	init_ctrl();
@@ -457,17 +451,22 @@ int main(int argc, char** argv) {
 	init_sound();
 	init_shell();
 	
-	if(blacklisted_module != NULL) {
-		do_blacklisted_module_message(blacklisted_module);
+	
+	PRINT_STR("has_restarted: 0x%x\n", has_restarted);
+	
+	if(!has_restarted){
+		load_kernel_modules();
 	}
-	else if(!is_module_started(KMODULE_NAME)) {
+	
+	if(!is_module_started(KMODULE_NAME)) {
+		PRINT_STR("Showing kmodule failed to load screen\n");
 		do_kmodule_failed_message(KMODULE_NAME);
+		return 0;
 	}
-	else {
-		do_gc_insert_prompt();
-		while(1) {
-			handle_menu_select_option();
-		}
+
+	do_gc_insert_prompt();
+	while(1) {
+		handle_menu_select_option();
 	}
 		
 	

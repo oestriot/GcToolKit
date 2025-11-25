@@ -18,7 +18,6 @@
 #include "err.h"
 #include "net.h"
 
-#include "sha1.h"
 #include "sha256.h"
 
 
@@ -80,9 +79,9 @@ static inline int create_psv_header(BackupState* state, DeviceAccessCallback* wr
 	psv.version = PSV_VER;
 	psv.flags = PSV_FLAGS;
 	
-	derive_cart_secret(state->keys, psv.cart_secret);
-	derive_packet20_hash(state->keys, psv.packet20_sha1);
-	
+	kGetCartSecret(psv.cart_secret);
+	kGetCartHash(psv.packet20_sha1);
+		
 	memset(psv.all_sectors_sha256, 0xFF, sizeof(psv.all_sectors_sha256));
 		
 	psv.image_size = state->device_size;
@@ -109,7 +108,7 @@ static inline int create_vci_header(BackupState* state, DeviceAccessCallback* wr
 	vci.device_size = state->device_size;
 	memcpy(&vci.keys, state->keys, sizeof(GcCmd56Keys));
 	
-	vci.key_id = kGetLastCmd20KeyId();
+	vci.key_id = kGetKeyId();
 	kGetCardId(1, &vci.card_id);
 
 	
@@ -507,3 +506,4 @@ uint64_t get_effective_size(const char* block_device, BackupFormat format) {
 			return get_device_size(block_device) + header_size;
 	}
 }
+

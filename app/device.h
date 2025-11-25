@@ -2,6 +2,7 @@
 #define DEVICE_H 1
 
 #include <vitasdk.h>
+#include <GcToolKit.h>
 #include "auth.h"
 #include "sha256.h"
 
@@ -53,6 +54,7 @@ typedef struct BackupState {
 	NetworkInfo* net_info;
 	
 } BackupState;
+
 
 int dump_device(const char* block_device, const char* output_path, BackupFormat format, GcCmd56Keys* keys, NetworkInfo* net_info, ProgressCallback* callback);
 int wipe_device(const char* block_device, ProgressCallback* callback);

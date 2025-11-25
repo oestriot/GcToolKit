@@ -42,20 +42,21 @@ int get_key() {
 
 	while (1) {
 		memset(&pad, 0, sizeof(pad));
-		
-		// this is a stupid hack, i hate this ...
-		// if theres no gamecart inserted, just press cancel everywhere.
-		if(!device_exist(BLOCK_DEVICE_GC)) return SCE_CTRL_CANCEL; 
-		
+				
 		sceCtrlPeekBufferPositive(0, &pad, 1);
 		unsigned int new_buttons = prev ^ (pad.buttons & prev);
 		prev = pad.buttons;
 		for (int i = 0; i < sizeof(buttons)/sizeof(*buttons); ++i) {
 			if (new_buttons & buttons[i]) {
-				return buttons[i];	
+				return buttons[i];
 			}				
 		}
 
+		// this is a stupid hack, i hate this ...
+		// if theres no gamecart inserted, just press cancel everywhere.
+		if(!device_exist(BLOCK_DEVICE_GC)) return SCE_CTRL_CANCEL; 
+		
+		
 		sceKernelDelayThread(1000); // 1ms
 	}
 }
