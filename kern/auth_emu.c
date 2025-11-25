@@ -14,7 +14,6 @@ static vita_cmd56_state vita_state = { 0 };
 static SceSdifDeviceContext* ctx = NULL;
 static int is_authenticated = 0;
 
-
 static int authHook = -1;
 static tai_hook_ref_t authHookRef;
 
@@ -76,7 +75,7 @@ void k_gc_cmd56_read(uint8_t* buf, uint32_t size) {
 
 int k_run_authentication(uint16_t key_id) {
 	k_clear_secret();
-	is_authenticated = 0;
+	kDisableGcEmuMgr();
 	
 	ctx = ksceSdifGetSdContextPartValidateMmc(1);
 	PRINT_STR("key_id: %x\n", key_id);
@@ -160,45 +159,28 @@ int kEnableGcEmuMgr() {
 	PRINT_STR("GcAuthEmuMgr -- VITA mode\n");
 	k_clear_secret();
 	
-	authHook = taiHookFunctionExportForKernel(KERNEL_PID,
-		&authHookRef, 
-		"SceSblGcAuthMgr",
-		0xC6627F5E, // SceSblGcAuthMgrGcAuthForDriver
-		0x68781760, // ksceSblGcAuthMgrGcAuthCartAuthentication	
-		k_run_authentication);
-	PRINT_STR("%x %x\n", authHook, authHookRef);
+	if(authHook <= 0) {
+		authHook = taiHookFunctionExportForKernel(KERNEL_PID,
+			&authHookRef, 
+			"SceSblGcAuthMgr",
+			0xC6627F5E, // SceSblGcAuthMgrGcAuthForDriver
+			0x68781760, // ksceSblGcAuthMgrGcAuthCartAuthentication	
+			k_run_authentication);
+		PRINT_STR("%x %x\n", authHook, authHookRef);		
+	}
 
-	getCartSecretHook = taiHookFunctionExportForKernel(KERNEL_PID,
-		&getCartSecretHookRef, 
-		"SceSblGcAuthMgr",
-		0x1926B182, // SceSblGcAuthMgrDrmBBForDriver
-		0xBB70DDC0, // ksceSblGcAuthMgrDrmBBGetCartSecret	
-		k_get_secret);
-	PRINT_STR("%x %x\n", getCartSecretHook, getCartSecretHookRef);
-
-	clearCartSecretHook = taiHookFunctionExportForKernel(KERNEL_PID,
-		&clearCartSecretHookRef, 
-		"SceSblGcAuthMgr",
-		0x1926B182, // SceSblGcAuthMgrDrmBBForDriver
-		0xBB451E83, // ksceSblGcAuthMgrDrmBBClearCartSecret	
-		k_clear_secret);
-	PRINT_STR("%x %x\n", clearCartSecretHook, clearCartSecretHookRef);
-	
-	checkCartHashHook = taiHookFunctionExportForKernel(KERNEL_PID,
-		&checkCartHashHookRef, 
-		"SceSblGcAuthMgr",
-		0x1926B182, // SceSblGcAuthMgrDrmBBForDriver
-		0x22FD5D23, // ksceSblGcAuthMgrDrmBBCheckCartHash	
-		k_check_hash);
-	PRINT_STR("%x %x\n", checkCartHashHook, checkCartHashHookRef);
 	return 0;
 }
 
 int kDisableGcEmuMgr() {
-	if (authHook >= 0)			  taiHookReleaseForKernel(authHook, authHookRef);
-	if (getCartSecretHook >= 0)	  taiHookReleaseForKernel(getCartSecretHook, getCartSecretHookRef);
-	if (clearCartSecretHook >= 0) taiHookReleaseForKernel(clearCartSecretHook, clearCartSecretHookRef);
-	if (checkCartHashHook >= 0)	  taiHookReleaseForKernel(checkCartHashHook, checkCartHashHookRef);
+	if (authHook >= 0) { 
+		int res = taiHookReleaseForKernel(authHook, authHookRef); 
+		if(res >= 0) {
+			authHook = -1;
+		}
 		
-	return 0;
+		PRINT_STR("taiHookReleaseForKernel %x\n", res);
+		return res;
+	}
+	return -1;
 }

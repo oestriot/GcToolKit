@@ -8,7 +8,7 @@
 #include "log.h"
 int module_get_offset(SceUID pid, SceUID modid, int segidx, size_t offset, uintptr_t *addr);
 static SceIoMountPoint *(* sceIoFindMountPoint)(int id) = NULL;
-static undone_sd2vita_patch = 0;
+static int undone_sd2vita_patch = 0;
 
 int fix_up_mountpoint(int id, const char* new_dev, const char* new_blkdev) {
 	SceIoMountPoint* part = sceIoFindMountPoint(id);

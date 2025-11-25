@@ -70,6 +70,4 @@ void wait_for_gc_auth() {
 				
 		sceKernelDelayThread(1000 * 10); // 10ms
 	} while(!kIsAuthenticated());
-	
-	kDisableGcEmuMgr();
 }
