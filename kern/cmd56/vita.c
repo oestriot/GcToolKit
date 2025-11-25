@@ -26,12 +26,12 @@ vita_error_code start_request(vita_cmd56_state* state, cmd56_request* request, c
 
 	if (resp->start[0xD] == 0x1 && resp->start[0xE] == 0x1 && resp->start[0xF] == 0x4) {
 		PRINT_STR("(VITA) START Response is what is expected.\n");
-		return GC_AUTH_RETURN_STATUS;
 	}
 	PRINT_STR("(VITA) START Response is not what is expected: ");
 	PRINT_BUFFER_LEN(resp->start, sizeof(resp->start));
+	PRINT_STR("(VITA) you might have a unicorn\n");
 
-	return GC_AUTH_ERROR_START_FAIL;
+	return GC_AUTH_RETURN_STATUS;
 }
 
 vita_error_code get_status(vita_cmd56_state* state, cmd56_request* request, cmd56_response* response) {

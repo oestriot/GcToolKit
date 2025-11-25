@@ -14,7 +14,6 @@
 #define VCI_MINOR_VER 0
 
 typedef struct VciHeader {
-	// essential fields :
 	
 	char magic[0x4]; // 0x4
 	uint16_t major_version; // 0x6
