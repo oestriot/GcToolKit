@@ -44,33 +44,9 @@ however this only works with OTG cables with an external power source; or "Y-Cab
 
 for example this one for the [Amazon Fire Stick](https://www.amazon.com/ANDTOBO-Micro-Adapter-Power-Devices/dp/B083M1S6QT).
 
-# Requires disabling SD2Vita driver
-YAMT disables GC Authentication entirely; and uses the (offical) SD Card driver instead;
-
-and obviously SD2Vita takes place of the gamecart, so it's not possible to use it with this
-
-to disable YAMT comment out
-```
-- load	ur0:tai/yamt.skprx
-```
-in `ur0:/tai/boot_config.txt`
-
-then 
-```
-# YAMT
-*NPXS10015
-ur0:tai/yamt.suprx
-*KERNEL
-ur0:tai/yamt_helper.skprx
-```
-
-in `ur0:/tai/config.txt`
-
-it may differ if your using a different SD2Vita driver;
-
-keep in mind that you have to do this to use gamecarts *in general* not just with GCToolKit.
-
-NOTE: simply disabling it in settings isn't enough due to a bug; see [this issue](https://github.com/SKGleba/yamt-vita/issues/28)
+# YAMT Notice:
+- This tool now supports working even with YAMT installed,
+you can hot-swap a SD2VITA for a game cartridge- however doing so will require a reboot to get the sd2vita to work again.
 
 # Credits
 -  <sup>The Crystal System</sup> Li- Programming the thing, VCI Format, Reverse engineering gamecart CMD56

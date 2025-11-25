@@ -539,10 +539,9 @@ int do_gc_options() {
 	if(!kUndoneSd2VitaPatches() && check_loaded_blacklisted_module() != NULL) {
 		kUndoSd2Vita();
 		
-		// cleanup leftover stuff ...
+		// umount ux0;
 		umount_ux0();
-		lock_shell();
-		unlock_shell();
+		
 	}
 	
 
