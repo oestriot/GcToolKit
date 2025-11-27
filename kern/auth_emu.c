@@ -64,43 +64,49 @@ int k_clear_secret() {
 
 
 void k_gc_cmd56_write(const uint8_t* buf, uint32_t size) {
-	PRINT_STR("k_gc_write\n");
-	ksceSdifWriteCmd56(ctx, buf, size);
+	PRINT_BUFFER_LEN(buf, size);
+	int ret = ksceSdifWriteCmd56(ctx, buf, size);
+	PRINT_STR("ret = %x\n", ret);
+	
 }
 
 void k_gc_cmd56_read(uint8_t* buf, uint32_t size) {
-	PRINT_STR("k_gc_read\n");
-	ksceSdifReadCmd56(ctx, buf, size);
+	int ret = ksceSdifReadCmd56(ctx, buf, size);
+	PRINT_STR("ret = %x\n", ret);
+	PRINT_BUFFER_LEN(buf, size);
 }
 
 int k_run_authentication(uint16_t key_id) {
 	k_clear_secret();
-	kDisableGcEmuMgr();
 	
 	ctx = ksceSdifGetSdContextPartValidateMmc(1);
 	PRINT_STR("key_id: %x\n", key_id);
-	if(ctx != NULL) {
-		vita_cmd56_init(&vita_state, k_gc_cmd56_write, k_gc_cmd56_read); // initalize VITA emu 
-		vita_state.allow_prototype_keys = 1;
-		
-		int ret = vita_cmd56_run(&vita_state);
-		
-		if(ret == GC_AUTH_OK) {
-			PRINT_STR("vita_state.per_cart_keys.packet18_key\n");
-			PRINT_BUFFER(vita_state.per_cart_keys.packet18_key);
-
-			PRINT_STR("vita_state.per_cart_keys.packet20_key\n");
-			PRINT_BUFFER(vita_state.per_cart_keys.packet20_key);		
-			
-			is_authenticated = 1;
-			return ret;
-		}
-		else{
-			PRINT_STR("ret = 0x%x\n", ret);
-			k_clear_secret();
-		}
+	
+	if(ctx == NULL) { 
+		int res = ksceSdifInitializeMmcDevice(1, &ctx);
+		if(res != 0) return res;
 	}
-	return POINTER_WAS_NULL;
+	
+	vita_cmd56_init(&vita_state, k_gc_cmd56_write, k_gc_cmd56_read); // initalize VITA emu 
+	vita_state.allow_prototype_keys = 1;
+	
+	int ret = vita_cmd56_run(&vita_state);
+	
+	if(ret == GC_AUTH_OK) {
+		PRINT_STR("vita_state.per_cart_keys.packet18_key\n");
+		PRINT_BUFFER(vita_state.per_cart_keys.packet18_key);
+
+		PRINT_STR("vita_state.per_cart_keys.packet20_key\n");
+		PRINT_BUFFER(vita_state.per_cart_keys.packet20_key);		
+
+		is_authenticated = 1;
+		kDisableGcEmuMgr();
+		return ret;
+	}
+	else{
+		PRINT_STR("ret = 0x%x\n", ret);
+		k_clear_secret();
+	}
 }
 
 

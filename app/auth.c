@@ -7,6 +7,7 @@
 #include "device.h"
 
 #include <GcToolKit.h>
+#include "kernel.h"
 #include "auth.h"
 #include "net.h"
 #include "err.h"
@@ -55,19 +56,31 @@ int key_dump(char* output_file) {
 
 
 void wait_for_gc_auth() {
+	// handle case if an sdcard is inserted ...
+	while(kIsSdInserted()) { 
+		sceKernelDelayThread(1000 * 30); // 10ms
+	}
+	
+	// after that undo sd2vita patches if appliciable ./
+	if(!kUndoneSd2VitaPatches() && check_loaded_blacklisted_module() != NULL) {
+		//umount_ux0();
+		kUndoSd2Vita();
+		kResetGc();
+	}
+	
+	// enable emulated gamecart authentication
 	kEnableGcEmuMgr();
 	
-	do {
-		
-		// check if there is already a GC inserted, if there is 
-		// reset the gc device to capture authentication step
-		// we, dont do this if there is not a gc inserted, incase someone is using an sd2vita.
-		
-		if( file_exist("gro0:") || file_exist("grw0:") || device_exist(BLOCK_DEVICE_MEDIAID) ) {
-			int res = kResetGc();
-			PRINT_STR("kResetGc = %x\n", res);
-		}		
-				
-		sceKernelDelayThread(1000 * 10); // 10ms
-	} while(!kIsAuthenticated());
+	// reset the current gamecart if there is one already ...
+	if( !kIsAuthenticated() && kIsMmcInserted() ) {
+		kResetGc();
+	}
+	
+	while(!kIsAuthenticated()) {
+		sceKernelDelayThread(1000 * 30); // 10ms
+	};
+
+	// disable custom gc handling ..
+	kDisableGcEmuMgr();
+	
 }

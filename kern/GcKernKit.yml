@@ -28,6 +28,8 @@ GcKernKit:
         - kDisableGcEmuMgr
         - kGetKeyId
         - kGetPerCartKeys
+        - kIsSdInserted
+        - kIsMmcInserted
         - kIsAuthenticated
         - kUndoSd2Vita
         - kUndoneSd2VitaPatches

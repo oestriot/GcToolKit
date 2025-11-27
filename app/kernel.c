@@ -43,11 +43,6 @@ static const char* load_locations[] = {
 };
 
 static const char* module_blacklist[] = {
-	// YAMT breaks gamecart auth even if its not enabled
-	// even if not being used to load SD2Vita.
-	
-	// see: https://github.com/SKGleba/yamt-vita/issues/28
-	
 	"yamtKernel",
 	"yamtHelper",
 	"yamtUser", 

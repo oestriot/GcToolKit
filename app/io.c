@@ -8,6 +8,18 @@
 #include "err.h"
 #include <GcToolKit.h>
 
+// check a partition is actually usable not just present.
+int check_partition(const char* partition) {
+	if(file_exist(partition)) {
+		PRINT_STR("Partition: %s exists\n", partition);
+		if(read_first_filename(partition, NULL, 1) >= 0) {
+			PRINT_STR("Read first filename passed: %s\n", partition);
+			return 1;
+		}
+	}
+	return 0;
+}
+
 int file_exist(const char* path) {
 	SceIoStat stat;
 	int res = sceIoGetstat(path, &stat);
@@ -16,7 +28,7 @@ int file_exist(const char* path) {
 }
 
 int wait_for_partition(char* partiton) {
-	for(int i = 0; i < 50; i++) {
+	for(int i = 0; i < 30; i++) {
 		if(file_exist(partiton)) break;
 		sceKernelDelayThread(5000);
 	}
@@ -93,15 +105,16 @@ int get_files_in_folder(char* folder, char* out_filenames, int* total_folders, S
 	return res;	
 }
 
-int read_first_filename(char* path, char* output, size_t out_size) {
+int read_first_filename(const char* path, char* output, size_t out_size) {
 	int res = -1;
 	int dfd = sceIoDopen(path);
 	if(dfd < 0) ERROR(dfd);
 	
 	SceIoDirent ent;
 	res = sceIoDread(dfd, &ent);
-	
-	strncpy(output, ent.d_name, out_size);
+	if(res >= 0 && output != NULL) {
+		strncpy(output, ent.d_name, out_size);
+	}
 	
 error:
 	if(dfd >= 0)
@@ -128,12 +141,9 @@ void remove_illegal_chars(char* str) {
 	}
 }
 
-int mount_partition(int id, const char *path, int permission, int a4, int a5, int a6) {
-  uint32_t buf[3];
-
-  buf[0] = a4;
-  buf[1] = a5;
-  buf[2] = a6;
+int mount_partition(int id, const char *path, int permission) {
+  uint8_t buf[0x100];
+  memset(buf, 0x00, sizeof(buf));
 
   int res =  _vshIoMount(id, path, permission, buf);
   PRINT_STR("_vshIoMount: %x %s %i = 0x%x\n", id, path, permission, res);
@@ -142,27 +152,23 @@ int mount_partition(int id, const char *path, int permission, int a4, int a5, in
 }
 
 int mount_uma() {
-	return mount_partition(0xF00, NULL, 2, 0, 0, 0); // mount uma0
+	return mount_partition(0xF00, NULL, 2); // mount uma0
 }
 
 int mount_xmc() {
-	return mount_partition(0xE00, NULL, 2, 0, 0, 0); // mount xmc
+	return mount_partition(0xE00, NULL, 2); // mount xmc
 }
 
 int mount_imc() {
-	return mount_partition(0xD00, NULL, 2, 0, 0, 0); // mount imc
+	return mount_partition(0xD00, NULL, 2); // mount imc
 }
 
 int mount_gro0() {
-	return mount_partition(0x900, NULL, 1, 0, 0, 0); // mount gro0
+	return mount_partition(0x900, NULL, 1); // mount gro0
 }
 
 int mount_grw0() {
-	return mount_partition(0xA00, NULL, 2, 0, 0, 0); // mount grw0
-}
-
-int mount_ux0() {
-	return mount_partition(0x800, NULL, 2, 0, 0, 0); // mount ux0
+	return mount_partition(0xA00, NULL, 2); // mount grw0
 }
 
 void umount_gro0() {
@@ -190,15 +196,25 @@ void umount_imc() {
 	vshIoUmount(0xD00, 1, 0, 0);
 }
 
-void umount_ux0() {
-	vshIoUmount(0x800, 0, 0, 0);
-	vshIoUmount(0x800, 1, 0, 0);
-}
 
 
 void umount_devices() {
 	umount_uma();
 	umount_xmc();		
+}
+
+void mount_gamecart() {
+	if(!file_exist("gro0:")) {
+		PRINT_STR("Mounting: gro0\n");
+		int res = mount_gro0();
+		if(res >= 0) wait_for_partition("gro0:");		
+	}
+
+	if(!file_exist("grw0:")) {
+		PRINT_STR("Mounting: grw0\n");
+		int res = mount_grw0();
+		if(res >= 0) wait_for_partition("grw0:");
+	}
 }
 
 void mount_devices() {

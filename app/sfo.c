@@ -16,19 +16,23 @@ int read_sfo_key(const char* sfo_file, const char* sfo_key, char* out_key, size_
 	SceUID sfo_fd = -1;
 	
 	uint64_t sfo_size = get_file_size(sfo_file);
+	PRINT_STR("sfo size: %llx\n", sfo_size);
 	if(sfo_size <= 0) ERROR(sfo_size);
 	
 	sfo_buffer = malloc(sfo_size);
+	PRINT_STR("sfo buffer: %p\n", sfo_buffer);
 	if(sfo_buffer == NULL) ERROR(POINTER_WAS_NULL);
 
 	memset(sfo_buffer, 0x00, sfo_size);
 	
 	// open sfo file
 	sfo_fd = sceIoOpen(sfo_file, SCE_O_RDONLY, 0777);	
+	PRINT_STR("sfo fd: %x\n", sfo_fd);
 	if(sfo_fd < 0) ERROR(sfo_fd);
 	// read sfo
 	
 	int rd = sceIoRead(sfo_fd, sfo_buffer, sfo_size);
+	PRINT_STR("rd: %x\n", rd);
 	if(rd != sfo_size) ERROR(SIZE_NOT_MATCH);
 	
 	// close sfo

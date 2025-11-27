@@ -73,6 +73,13 @@ int kGetCardExtCsd(int deviceIndex, void* cardExtCsd) {
 	return 0;
 }
 
+int kIsSdInserted() { 
+	return (ksceSdifGetSdContextPartValidateSd(1) != NULL);
+}
+
+int kIsMmcInserted() { 
+	return (ksceSdifGetSdContextPartValidateMmc(1) != NULL);
+}
 
 int kResetGc() {
 	int res = 0;	

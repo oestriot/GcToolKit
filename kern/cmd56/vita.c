@@ -24,14 +24,18 @@ vita_error_code start_request(vita_cmd56_state* state, cmd56_request* request, c
 	send_packet(state, request, response);
 	get_response(start_response);
 
-	if (resp->start[0xD] == 0x1 && resp->start[0xE] == 0x1 && resp->start[0xF] == 0x4) {
-		PRINT_STR("(VITA) START Response is what is expected.\n");
-	}
-	PRINT_STR("(VITA) START Response is not what is expected: ");
-	PRINT_BUFFER_LEN(resp->start, sizeof(resp->start));
-	PRINT_STR("(VITA) you might have a unicorn\n");
+	// NOTE: i removed the code checking the exact response here; 
+	// 
+	// as it seems response on START can actually differ between different carts, 
+	// my copy of minecraft seems to have a different response sometimes here,
+	// the kernel only checks the first two bytes anyway it seems.
 
-	return GC_AUTH_RETURN_STATUS;
+	if (resp->start[0] == 0x00 && resp->start[1] == 0x00) {
+		PRINT_STR("(VITA) First two bytes are zeros, so start completed successfully.\n");
+		return GC_AUTH_RETURN_STATUS;
+	}
+
+	return GC_AUTH_ERROR_START_FAIL;
 }
 
 vita_error_code get_status(vita_cmd56_state* state, cmd56_request* request, cmd56_response* response) {
@@ -40,6 +44,7 @@ vita_error_code get_status(vita_cmd56_state* state, cmd56_request* request, cmd5
 	get_response(get_status_response);
 
 	state->lock_status = resp->status;
+	PRINT_STR("(VITA) lock status is: %x\n", state->lock_status);
 
 	return GC_AUTH_RETURN_STATUS;
 }
@@ -58,12 +63,12 @@ vita_error_code get_session_key(vita_cmd56_state* state, cmd56_request* request,
 
 	if (state->allow_prototype_keys == 1 && state->key_id > PROTOTYPE_KEY_ID1) {
 		PRINT_STR("(VITA) KeyID is > 0x8001, so PSVITA Firmware 1.04+ will reject this cart ...");
-		return GC_AUTH_ERROR_GET_CART_RANDOM_PROTOTYPE_KEY;
+		return GC_AUTH_ERROR_INVALID_KEYID;
 	}
 
 	// generate session key
 	uint8_t session_key[0x10];
-	derive_session_key(session_key, state->cart_random, state->key_id);
+	if (!derive_session_key(session_key, state->cart_random, state->key_id)) return GC_AUTH_ERROR_INVALID_KEYID;
 
 	PRINT_STR("(VITA) Session key: ");
 	PRINT_BUFFER_LEN(session_key, 0x10);

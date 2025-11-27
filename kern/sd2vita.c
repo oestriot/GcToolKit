@@ -18,11 +18,11 @@ int fix_up_mountpoint(int id, const char* new_dev, const char* new_blkdev) {
 		// fix part->dev
 		if(part->dev != NULL) {
 			if(part->dev->blkdev == NULL || strcmp(part->dev->blkdev, new_blkdev) != 0) {
-				PRINT_STR("Setting part->dev->blkdev %s\n", new_blkdev);
+				PRINT_STR("%s -> part->dev->blkdev %s\n", part->dev->blkdev, new_blkdev);
 				DACR_OFF(part->dev->blkdev = new_blkdev);
 			}
 			if(part->dev->dev == NULL || strcmp(part->dev->dev, new_dev) != 0) {
-				PRINT_STR("Setting part->dev->dev %s\n", new_dev);
+				PRINT_STR("%s -> part->dev->dev %s\n", part->dev->dev, new_dev);
 				DACR_OFF(part->dev->dev = new_dev);
 			}
 		}
@@ -30,11 +30,11 @@ int fix_up_mountpoint(int id, const char* new_dev, const char* new_blkdev) {
 		// fix part->dev2
 		if(part->dev2 != NULL) {
 			if(part->dev2->blkdev == NULL || strcmp(part->dev2->blkdev, new_blkdev) != 0) {
-				PRINT_STR("Setting part->dev2->blkdev %s\n", new_blkdev);
+				PRINT_STR("%s -> part->dev2->blkdev %s\n", part->dev2->blkdev, new_blkdev);
 				DACR_OFF(part->dev2->blkdev = new_blkdev);
 			}
 			if(part->dev2->dev == NULL || strcmp(part->dev2->dev, new_dev) != 0) {
-				PRINT_STR("Setting part->dev->dev %s\n", new_dev);
+				PRINT_STR("%s -> part->dev->dev %s\n", part->dev2->dev, new_dev);
 				DACR_OFF(part->dev2->dev = new_dev);
 			}
 		}
@@ -85,6 +85,6 @@ void kUndoSd2Vita() {
 	fix_up_mountpoint(0xA00, "grw0:", "sdstor0:gcd-lp-ign-gamerw");
 	fix_up_mountpoint(0xD00, "imc0:", "sdstor0:int-lp-ign-userext");
 	fix_up_mountpoint(0xE00, "xmc0:", "sdstor0:xmc-lp-ign-userext");
-	fix_up_mountpoint(0xF00, "uma0:", "sdstor0:uma-lp-act-entire");
+	fix_up_mountpoint(0xF00, "uma0:", "sdstor0:uma-pp-act-a");
 	
 }

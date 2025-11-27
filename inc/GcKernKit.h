@@ -52,6 +52,8 @@ int kGetCartHash(uint8_t* hash);
 int kGetCartSecret(uint8_t* keys);
 int kClearCartSecret();
 int kResetGc();
+int kIsSdInserted();
+int kIsMmcInserted();
 
 // sd2vita.c
 

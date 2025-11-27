@@ -8,6 +8,7 @@
 #include "crypto/aes_cmac.h"
 #include "cmd56_sm.h"
 #include "compiler_defs.h"
+#include "cmd56.h"
 
 /*
 * 
@@ -35,7 +36,7 @@ static const uint8_t GCAUTHMGR_0x1_IV[0x10]     = { 0x8b, 0x14, 0xc8, 0xa1, 0xe9
 
 // gcauthmgr_sm
 
-void derive_session_key(uint8_t* session_key_out, uint8_t* cart_random, int key_id) {
+int derive_session_key(uint8_t* session_key_out, uint8_t* cart_random, int key_id) {
 	const uint8_t* keyseed;
 
 	switch (key_id) {
@@ -53,7 +54,7 @@ void derive_session_key(uint8_t* session_key_out, uint8_t* cart_random, int key_
 			break;
 		default:
 			PRINT_STR("(F00D) invalid key id passed to derive_session_key 0x%x\n", key_id);
-			return;
+			return 0;
 	}
 
 	AES_CMAC_buffer_key(keyseed, cart_random, 0x20, session_key_out);
@@ -68,6 +69,7 @@ void derive_session_key(uint8_t* session_key_out, uint8_t* cart_random, int key_
 		PRINT_BUFFER_LEN(session_key_out, 0x10);
 	}
 
+	return 1;
 }
 
 void do_cmd56_cmac_hash(AES_ctx* ctx, void* data, uint32_t header, uint8_t* output, size_t size) {

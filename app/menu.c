@@ -8,7 +8,6 @@
 #include "io.h"
 #include "err.h"
 #include "net.h"
-#include "kernel.h"
 #include "lock.h"
 #include "log.h"
 
@@ -146,7 +145,7 @@ uint32_t next_y() {
 #define WAIT_FOR_CONFIRM() \
 					do {\
 						int ctrl = get_key(); \
-						if(ctrl == SCE_CTRL_CONFIRM) break;\
+						if(ctrl == SCE_CTRL_CONFIRM || ctrl == SCE_CTRL_CANCEL) break;\
 					} while(1)\
 
 void init_menus() {
@@ -535,19 +534,7 @@ int do_gc_options() {
 	
 	lock_gc();
 	
-	// check for sd2vita plugins and patch if its done
-	if(!kUndoneSd2VitaPatches() && check_loaded_blacklisted_module() != NULL) {
-		kUndoSd2Vita();
-		
-		// umount ux0;
-		umount_ux0();
-		
-	}
-	
-
-	mount_gro0();
-	mount_grw0();
-
+	mount_gamecart();
 	read_gameinfo(title_id, title, sizeof(title));
 	
 	remove_illegal_chars(title);
@@ -700,10 +687,10 @@ int do_select_input_location() {
 	PRINT_STR("mount_devices\n");
 	mount_devices();
 	
-	uint8_t ux_exist = file_exist("ux0:");
-	uint8_t xmc_exist = file_exist("xmc0:");
-	uint8_t uma_exist = file_exist("uma0:");
-	uint8_t host_exist = file_exist("host0:");
+	uint8_t ux_exist = check_partition("ux0:");
+	uint8_t xmc_exist = check_partition("xmc0:");
+	uint8_t uma_exist = check_partition("uma0:");
+	uint8_t host_exist = check_partition("host0:");
 	
 	PROCESS_MENU(draw_select_input_location, 
 				ux_exist, 
@@ -734,10 +721,10 @@ int do_select_output_location(char* output, uint64_t dev_size) {
 	uint64_t uma_size = get_free_space("uma0:");
 	uint64_t ux_size  = get_free_space("ux0:");
 
-	uint8_t ux_exist = file_exist("ux0:");
-	uint8_t xmc_exist = file_exist("xmc0:");
-	uint8_t uma_exist = file_exist("uma0:");
-	uint8_t host_exist = file_exist("host0:");
+	uint8_t ux_exist = check_partition("ux0:");
+	uint8_t xmc_exist = check_partition("xmc0:");
+	uint8_t uma_exist = check_partition("uma0:");
+	uint8_t host_exist = check_partition("host0:");
 
 	PRINT_STR("device_size %llx\n", dev_size);
 	PRINT_STR("xmc_size %llx\n", xmc_size);

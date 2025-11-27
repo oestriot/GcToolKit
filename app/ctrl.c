@@ -55,8 +55,7 @@ int get_key() {
 		// this is a stupid hack, i hate this ...
 		// if theres no gamecart inserted, just press cancel everywhere.
 		if(!device_exist(BLOCK_DEVICE_GC)) return SCE_CTRL_CANCEL; 
-		
-		
+				
 		sceKernelDelayThread(1000); // 1ms
 	}
 }
