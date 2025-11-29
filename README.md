@@ -2,15 +2,15 @@
 
 ![screenshot](https://git.silica.codes/Estradrive/GcToolKit/raw/branch/main/images/screenshot1.jpg)
 
-
 Tool to create 1:1 backups of PSV Game Cartridges
 including CMD56 authentication data.
 
 This can also be used to format, backup and restore the writable grw0 and mediaid sections of gamecarts.
 
-This writes *.vci* files, (vita cartridge image) which is essentially
-cmd56 authentication data + raw image of gc, 
-
+This can backup game cartridges in the following formats:  
+- VCI (Vita Cartridge Image)
+- PSV (PSVGameSD Format)
+- IMG (Raw Image File)
 
 # Backup locations
 
@@ -18,11 +18,11 @@ GCToolKit can backup GameCarts to the following locations:
 
 - An Offical Sony Memory Card
 - PSVSD (3G modem replacement)
-- ExFAT formatted USB Drive connected to PlayStation Vita TV.
-- ExFAT formatted USB Drive connected to Vita 2000 via OTG cable.
-- ExFAT formatted USB Drive connected to Vita 1000 via Accessory Port.
+- A ExFAT formatted USB Drive connected to PlayStation Vita TV.
+- A ExFAT formatted USB Drive connected to Vita 2000 via OTG cable.
+- A ExFAT formatted USB Drive connected to Vita 1000 via Accessory Port.
 - ``host0:`` on Vita Development Kit.
-- a Computer listening on same local network.
+- A Computer listening on same local network.
 
 Vita GameCart's are always either 2gb or 4gb in size, 
 for this reason the 1gb internal storage on a Vita 2k- cannot be used.
@@ -53,13 +53,12 @@ for example this one for the [Amazon Fire Stick](https://www.amazon.com/ANDTOBO-
 you can hot-swap a SD2VITA for a game cartridge- however doing so will require a reboot to get the sd2vita to work again.
 
 # Credits
--  <sup>The Crystal System</sup> Li- Programming the thing, VCI Format, Reverse engineering gamecart CMD56
+-  <sup>The Crystal System</sup> Li- Programming the thing, VCI Format, Graphics, Reverse engineering GC CMD56
 - olebeck - CMD56 helps
 - Robots System - Selecting music, choosing port numbers, ~~emotional support~~
 - Princess of Sleeping - ExFAT Format code, CMD56 helps
 - dots_tb - original research into USB OTG, and Accessory Port
 - EA Games 1997 - BGM Music from Dungeon Keeper 1 https://www.youtube.com/watch?v=RXfUV_z7i0c
-~~- SKGLeba - psp2spl for F00D Code execution~~ (no longer used)
 
 # Difference between .vci and .psv formats (why a new format?)
 
