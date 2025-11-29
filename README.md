@@ -46,7 +46,7 @@ This program allows backup vita GCs with a USB device connected via an OTG cable
 however this only works with OTG cables with an external power source; or "Y-Cable"
 for example this one for the [Amazon Fire Stick](https://www.amazon.com/ANDTOBO-Micro-Adapter-Power-Devices/dp/B083M1S6QT).
 
-![otg setup](https://git.silica.codes/Estradrive/GcToolKit/raw/branch/main/images/psvita_otg_example.jpgg)
+![otg setup](https://git.silica.codes/Estradrive/GcToolKit/raw/branch/main/images/psvita_otg_example.jpg)
 
 # YAMT Notice:
 - This tool now supports working even with YAMT installed,
