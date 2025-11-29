@@ -5,7 +5,8 @@
 Tool to create 1:1 backups of PSV Game Cartridges
 as well as the per-cartridge keys obtained from CMD56 data.
 
-# Features
+which are required for proper archival to allow emulating cards in hardware,
+
 
 ## Backup entire gamecart
 This can backup game cartridges in the following formats:  
@@ -14,18 +15,20 @@ This can backup game cartridges in the following formats:
 - IMG (Raw Image File)
 
 ## Features
-Backup an entire gamecar the formats supported by this are:
+Backup an entire gamecart the formats supported by this are:
 
 - Vita Cartridge Image (.vci)
-- Triimmed Vita Cartridge Image (.trim.vci)
 - PSVGameSD (.psv)
-- Trimmed PSVGameSD (.psv)
 - Raw (.img)
 
-it can also format, restore and backup the "grw0" & "mediaid" section of any games that use it;
-these options can sometimes be used in some cases to unbrick vita games- or just to make a more overpowered backup of your save files
+it also has a trimmed verison of the same formats, which should be a bit smaller; 
+as it only copies the whole partition(s) size, not the whole disk size
 
-it is also has an option to view information about your gamecarts such as manufacturer or serial number.
+finally it has some options for format, restore and backup the "grw0" & "mediaid" section of any games that use them;
+these options can sometimes be used in some cases to unbrick vita games, or just as an overpowered save backup.
+
+it is also has an option to view information about your gamecarts such as card id, manufacturer; serial number; 
+key information and so on-
 ![gc info](https://git.silica.codes/OEstriot/GcToolKit/raw/branch/main/images/gcinfo.jpg)
 
 ## Backup locations
@@ -40,10 +43,10 @@ GCToolKit can backup GameCarts to the following locations:
 - ``host0:`` on Vita Development Kit.
 - A Computer listening on same local network.
 
-Vita GameCart's are always either 2gb or 4gb in size, 
-for this reason the 1gb internal storage on a Vita 2k- cannot be used.
+Vita GameCart's are either 2gb or 4gb in size, 
+for this reason the 1gb internal storage on a Vita 2k- cannot be used; it is never big enough;
 
-# Network Backup
+## Network Backup
 GCToolKit allows to save a VCI of a game over the local network;
 
 to do this requires running the program "GcNetworkBackup" program running on your computer;
@@ -55,7 +58,7 @@ this feature is useful if you don't have a memory card or otherwise, do not have
 
 the source code for it is in the "pc" folder of this repoistory.
 
-# USB OTG Backup
+## USB OTG Backup
 
 This program allows backup vita GCs with a USB device connected via an OTG cable
 
@@ -64,11 +67,11 @@ for example this one for the [Amazon Fire Stick](https://www.amazon.com/ANDTOBO-
 
 ![otg setup](https://git.silica.codes/OEstriot/GcToolKit/raw/branch/main/images/psvita_otg_example.jpg)
 
-# YAMT Notice:
+## YAMT Notice:
 - This tool now supports working even with YAMT installed,
 you can hot-swap a SD2VITA for a game cartridge- however doing so will require a reboot to get the sd2vita to work again.
 
-# Credits
+## Credits
 -  <sup>The Crystal System</sup> Li- Programming, VCI Format, Graphics, Reverse engineering, GC CMD56 Research
 - olebeck - CMD56 helps
 - Robots System - Selecting music, choosing port numbers, ~~emotional support~~
@@ -76,7 +79,7 @@ you can hot-swap a SD2VITA for a game cartridge- however doing so will require a
 - dots_tb - original research into USB OTG, and Accessory Port
 - EA Games 1997 - BGM Music from Dungeon Keeper 1 https://www.youtube.com/watch?v=RXfUV_z7i0c
 
-# Difference between .vci and .psv formats (why a new format?)
+## Difference between .vci and .psv formats (why a new format?)
 
 The main difference is how the keys stored. 
 in psvgamesd, the result of gc_auth_mgr_sm function 0x20 is stored,
