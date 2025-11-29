@@ -1,5 +1,8 @@
 # GcToolKit
 
+![screenshot](https://git.silica.codes/Estradrive/GcToolKit/raw/branch/main/images/screenshot1.jpg)
+
+
 Tool to create 1:1 backups of PSV Game Cartridges
 including CMD56 authentication data.
 
@@ -41,8 +44,9 @@ the source code for it is in the "pc" folder of this repoistory.
 This program allows backup vita GCs with a USB device connected via an OTG cable
 
 however this only works with OTG cables with an external power source; or "Y-Cable"
-
 for example this one for the [Amazon Fire Stick](https://www.amazon.com/ANDTOBO-Micro-Adapter-Power-Devices/dp/B083M1S6QT).
+
+![otg setup](https://git.silica.codes/Estradrive/GcToolKit/raw/branch/main/images/psvita_otg_example.jpgg)
 
 # YAMT Notice:
 - This tool now supports working even with YAMT installed,
@@ -80,7 +84,7 @@ as well as a comparison between different backup formats over the years;
 and an overview on how the vita decrypts game data in general;
 
 
-![gc authentication diagram](https://silica.codes/Estradrive/GcToolKit/raw/branch/main/diagram.png)
+![gc authentication diagram](https://git.silica.codes/Estradrive/GcToolKit/raw/branch/main/images/diagram.png)
 
 # Building
 
@@ -94,3 +98,6 @@ make
 ```
 
 you can also build it with debug logging enabled by passing ```-DCMAKE_BUILD_TYPE=DEBUG``` to the cmake command.
+or you can use ```-DCMAKE_BUILD_TYPE=RELEASE``` to build a release verison,
+
+the windows or linux version can be build with ```-DBUILD_PC=1``` 
