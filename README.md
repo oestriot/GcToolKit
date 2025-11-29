@@ -3,16 +3,32 @@
 ![screenshot](https://git.silica.codes/Estradrive/GcToolKit/raw/branch/main/images/screenshot1.jpg)
 
 Tool to create 1:1 backups of PSV Game Cartridges
-including CMD56 authentication data.
+as well as the per-cartridge keys obtained from CMD56 data.
 
-This can also be used to format, backup and restore the writable grw0 and mediaid sections of gamecarts.
+# Features
 
+## Backup entire gamecart
 This can backup game cartridges in the following formats:  
 - VCI (Vita Cartridge Image)
 - PSV (PSVGameSD Format)
 - IMG (Raw Image File)
 
-# Backup locations
+## Features
+Backup an entire gamecar the formats supported by this are:
+
+- Vita Cartridge Image (.vci)
+- Triimmed Vita Cartridge Image (.trim.vci)
+- PSVGameSD (.psv)
+- Trimmed PSVGameSD (.psv)
+- Raw (.img)
+
+it can also format, restore and backup the "grw0" & "mediaid" section of any games that use it;
+these options can sometimes be used in some cases to unbrick vita games- or just to make a more overpowered backup of your save files
+
+it is also has an option to view information about your gamecarts such as manufacturer or serial number.
+![gc info](https://git.silica.codes/OEstriot/GcToolKit/raw/branch/main/images/gcinfo.jpg)
+
+## Backup locations
 
 GCToolKit can backup GameCarts to the following locations:
 
@@ -46,14 +62,14 @@ This program allows backup vita GCs with a USB device connected via an OTG cable
 however this only works with OTG cables with an external power source; or "Y-Cable"
 for example this one for the [Amazon Fire Stick](https://www.amazon.com/ANDTOBO-Micro-Adapter-Power-Devices/dp/B083M1S6QT).
 
-![otg setup](https://git.silica.codes/Estradrive/GcToolKit/raw/branch/main/images/psvita_otg_example.jpg)
+![otg setup](https://git.silica.codes/OEstriot/GcToolKit/raw/branch/main/images/psvita_otg_example.jpg)
 
 # YAMT Notice:
 - This tool now supports working even with YAMT installed,
 you can hot-swap a SD2VITA for a game cartridge- however doing so will require a reboot to get the sd2vita to work again.
 
 # Credits
--  <sup>The Crystal System</sup> Li- Programming the thing, VCI Format, Graphics, Reverse engineering GC CMD56
+-  <sup>The Crystal System</sup> Li- Programming, VCI Format, Graphics, Reverse engineering, GC CMD56 Research
 - olebeck - CMD56 helps
 - Robots System - Selecting music, choosing port numbers, ~~emotional support~~
 - Princess of Sleeping - ExFAT Format code, CMD56 helps
@@ -74,7 +90,7 @@ the data captured in psvgamesd to the packet20 and packet18 constants.
 main advantage is that with VCI it would be thereotically possible to create a vita flash cartridge. .
 
 this also means that .VCI can be easily converted to .PSV, but .PSV cannot be converted back to VCI without keys
-for tools to convert to/from VCI format to others, see: https://silica.codes/Estradrive/VCI-TOOLS
+for tools to convert to/from VCI format to others, see: https://silica.codes/OEstriot/VCI-TOOLS
 
 -- 
 
@@ -83,7 +99,7 @@ as well as a comparison between different backup formats over the years;
 and an overview on how the vita decrypts game data in general;
 
 
-![gc authentication diagram](https://git.silica.codes/Estradrive/GcToolKit/raw/branch/main/images/diagram.png)
+![gc authentication diagram](https://git.silica.codes/OEstriot/GcToolKit/raw/branch/main/images/diagram.png)
 
 # Building
 
