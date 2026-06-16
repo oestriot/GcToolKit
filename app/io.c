@@ -54,7 +54,7 @@ int get_files_in_folder(char* folder, char* out_filenames, int* total_folders, S
 		PRINT_STR("sceIoDread res: %x\n", res);
 		if(res < 0) ERROR(res);
 		if(res == 0) break;
-		if(ent.d_name == NULL) break;
+		if(ent.d_name[0] == 0) break;
 		
 		if(filter != NULL) {
 			// ensure file is above a certain size

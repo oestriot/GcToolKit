@@ -1,6 +1,5 @@
 #ifndef GC_H
 #define GC_H 1
-
 int module_get_offset(SceUID pid, SceUID modid, int segidx, size_t offset, uintptr_t *addr);
 
 // shamelessly stolen from the henkaku wiki. 

@@ -41,10 +41,10 @@ typedef signed long long int int64_t;
 typedef unsigned long long int uint64_t;
 #endif
 
-typedef enum bool {
-    true = 1,
-    false = 0
-} bool;
+typedef enum boolean {
+    TRUE = 1,
+    FALSE = 0
+} boolean;
 
 #if defined(__GNUC__)
 typedef __SIZE_TYPE__ size_t;
@@ -67,13 +67,13 @@ typedef unsigned int     uintptr_t;
 
 
 static inline void* __impl_memcpy(void* buf, void const* src, size_t n) {
-    for (int i = 0; i < n; i++) {
+    for (size_t i = 0; i < n; i++) {
         ((uint8_t*)buf)[i] = ((uint8_t*)src)[i];
     }
     return buf;
 }
 static inline void* __impl_memset(void* buf, int c, size_t n) {
-    for (int i = 0; i < n; i++) {
+    for (size_t i = 0; i < n; i++) {
         ((uint8_t*)buf)[i] = ((uint8_t)c);
     }
     return buf;

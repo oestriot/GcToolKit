@@ -83,7 +83,7 @@ int k_run_authentication(uint16_t key_id) {
 	PRINT_STR("key_id: %x\n", key_id);
 	
 	if(ctx == NULL) { 
-		int res = ksceSdifInitializeMmcDevice(1, &ctx);
+		int res = ksceSdifInitializeMmcDevice(1, ctx);
 		if(res != 0) return res;
 	}
 	

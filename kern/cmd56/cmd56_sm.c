@@ -91,7 +91,7 @@ static uint8_t rand_state[0x10] = "TRANS RIGHTS!!!!";
 
 void rand_seed(const void* seed, size_t size) {
 	size_t seed_size = (size < sizeof(rand_state)) ? size : sizeof(rand_state);
-	for (int i = 0; i < seed_size; i++) rand_state[i % sizeof(rand_state)] ^= ((uint8_t*)seed)[i];
+	for (size_t i = 0; i < seed_size; i++) rand_state[i % sizeof(rand_state)] ^= ((uint8_t*)seed)[i];
 }
 
 
@@ -100,7 +100,7 @@ void rand_bytes(void* buf, size_t size) {
 	memset(buf, 0xAA, size);
 	return;
 #else
-	for (int i = 0; i < size; i += sizeof(rand_state)) {
+	for (size_t i = 0; i < size; i += sizeof(rand_state)) {
 		// determine copy size 
 		size_t copy_size = ((size - i) < sizeof(rand_state)) ? (size - i) : sizeof(rand_state);
 

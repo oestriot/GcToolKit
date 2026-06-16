@@ -10,7 +10,7 @@
 #include "cmd56.h"
 #include "cmd56_sm.h"
 
-typedef struct gc_cmd56_state {
+typedef PACK(struct gc_cmd56_state {
     // cart lock status, unlocked after
     // successful VITA_AUTHENTICITY_CHECK
     cmd56_lock_status lock_status;
@@ -38,7 +38,7 @@ typedef struct gc_cmd56_state {
 
     AES_ctx session_key;
     AES_ctx secondary_key;
-} gc_cmd56_state;
+}) gc_cmd56_state;
 
 // exposed functions:
 void gc_cmd56_init(gc_cmd56_state* state, const cmd56_keys* keys);

@@ -42,7 +42,7 @@ typedef enum vita_error_code {
     GC_AUTH_ERROR_REPORTED = 0x800F001
 } vita_error_code;
 
-typedef struct vita_cmd56_state {
+typedef PACK(struct vita_cmd56_state {
     // send/recv callbacks
     send_t send;
     recv_t recv;
@@ -54,7 +54,7 @@ typedef struct vita_cmd56_state {
     // set to 0x1 to allow using keyid > 0x8001
     // which is the case on prototype firmwares, 
     // on fw 1.04+ this is not allowed, 
-    bool allow_prototype_keys;
+    boolean allow_prototype_keys;
 
     // KEY_ID to use, every gc i've ever seen uses RETAIL_KEY_ID (0x1).
     // however a PROTOTYPE_KEY_ID1 0x8001 is also allowed,
@@ -79,11 +79,11 @@ typedef struct vita_cmd56_state {
 
     AES_ctx session_key;
     AES_ctx secondary_key;
-} vita_cmd56_state;
+}) vita_cmd56_state;
 
 // exposed functions:
 void vita_cmd56_init(vita_cmd56_state* state, send_t send_func, recv_t recv_func);
-void vita_cmd56_init_ex(vita_cmd56_state* state, send_t send_func, recv_t recv_func, bool allow_prototype_keys);
+void vita_cmd56_init_ex(vita_cmd56_state* state, send_t send_func, recv_t recv_func, boolean allow_prototype_keys);
 void vita_cmd56_get_keys(vita_cmd56_state* state, cmd56_keys* keys);
 void vita_cmd56_get_keys_ex(vita_cmd56_state* state, uint8_t p20_key[0x20], uint8_t p18_key[0x20]);
 int vita_cmd56_run(vita_cmd56_state* state);

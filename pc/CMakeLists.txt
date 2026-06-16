@@ -1,12 +1,11 @@
 cmake_minimum_required(VERSION 3.10)
 project(GcNetworkBackup)
 
-
-if(TARGET_WIN32)
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -static-libgcc -Wl,-Bstatic -O3")
-ELSE()
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3")
-ENDIF()
+if(WIN32)
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -static-libgcc -Wl,-Bstatic -O3")
+else()
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3")
+endif()
 
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS}")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -fno-rtti -fno-exceptions")
@@ -21,13 +20,13 @@ add_executable(${PROJECT_NAME}
 	main.c
 )
 
-if(TARGET_WIN32)
+if(WIN32)
 target_link_libraries(${PROJECT_NAME}
 	pthread
 	ws2_32
 )
-ELSE()
+else()
 target_link_libraries(${PROJECT_NAME}
 	pthread
 )
-ENDIF()
+endif()
