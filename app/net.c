@@ -119,7 +119,7 @@ int end_connection(SceUID socket) {
 
 int begin_connection(const char* ip_address, unsigned short port) {
 	int res = -1;
-	
+	int connection = -1;
 	SceUID socket = sceNetSocket("filesocket", SCE_NET_AF_INET, SCE_NET_SOCK_STREAM, 0);
 	if(socket < 0) ERROR(socket);
 	
@@ -135,7 +135,7 @@ int begin_connection(const char* ip_address, unsigned short port) {
 	
 	sin.sin_port = sceNetHtons(port);
 
-	int connection = sceNetConnect(socket, (SceNetSockaddr*)&sin, sizeof(SceNetSockaddrIn));	
+	connection = sceNetConnect(socket, (SceNetSockaddr*)&sin, sizeof(SceNetSockaddrIn));	
 	if(connection < 0) ERROR(connection);
 	
 	return socket;
