@@ -109,10 +109,8 @@ and an overview on how the vita decrypts game data in general;
 to build the plugin using VitaSDK just run:
 
 ```
-mkdir build
-cd build
-cmake ..
-make
+cmake -B build
+cmake --build build
 ```
 
 you can also build it with debug logging enabled by passing ```-DCMAKE_BUILD_TYPE=DEBUG``` to the cmake command.
