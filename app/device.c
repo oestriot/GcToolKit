@@ -33,17 +33,26 @@ static uint8_t DEVICE_DUMP_BUFFER[SECTOR_SIZE * 0x100]__attribute__((aligned(0x4
 *	Supported format header writer functions
 */
 
-static inline void setup_state(BackupState* state, const char* block_device, const char* output_path, BackupFormat format, GcCmd56Keys* keys, NetworkInfo* net_info, ProgressCallback* callback) {
-								  
+static void setup_state(BackupState* state, const char* block_device, const char* output_path, BackupFormat format, GcCmd56Keys* keys, NetworkInfo* net_info, ProgressCallback* callback) {
+	PRINT_FUNC();
+	int res = 0;
+	
 	memset(state, 0x00, sizeof(BackupState));
 	
 	state->block_device = block_device;
 	state->output_path = output_path;
 	
-	state->device_size = get_device_size(block_device);	
-	state->trim_size = get_trimmed_size(block_device);
-	state->header_size = get_header_size(format);
-	state->effective_size = get_effective_size(block_device, format);
+	res = get_device_size(block_device, &state->device_size);
+	if(res < 0) PRINT_STR("ERROR: %x\n", res);
+
+	res = get_trimmed_size(block_device, &state->trim_size);
+	if(res < 0) PRINT_STR("ERROR: %x\n", res);
+
+	res = get_header_size(format, &state->header_size);
+	if(res < 0) PRINT_STR("ERROR: %x\n", res);
+
+	res = get_effective_size(block_device, format, &state->effective_size);
+	if(res < 0) PRINT_STR("ERROR: %x\n", res);
 
 	state->format = format;
 
@@ -72,6 +81,7 @@ static inline void setup_state(BackupState* state, const char* block_device, con
 }
 
 static inline int create_psv_header(BackupState* state, DeviceAccessCallback* wr_func) {
+	PRINT_FUNC();
 	PsvHeader psv;
 	memset(&psv, 0x00, sizeof(PsvHeader));
 	memcpy(psv.magic, PSV_MAGIC, sizeof(psv.magic));
@@ -97,6 +107,7 @@ static inline int create_psv_header(BackupState* state, DeviceAccessCallback* wr
 }
 
 static inline int create_vci_header(BackupState* state, DeviceAccessCallback* wr_func) {
+	PRINT_FUNC();
 	VciHeader vci;
 	memset(&vci, 0x00, sizeof(VciHeader));
 	
@@ -119,6 +130,7 @@ static inline int create_vci_header(BackupState* state, DeviceAccessCallback* wr
 
 
 static inline int finalize_psv_header(BackupState* state) {
+	PRINT_FUNC();
 	int res = -1;
 	PRINT_STR("Finalizing PSV Header\n");
 	const uint64_t offset = offsetof(PsvHeader, all_sectors_sha256);
@@ -168,6 +180,7 @@ static inline int finalize_psv_header(BackupState* state) {
 }
 
 static inline int create_header(BackupState* state, DeviceAccessCallback* wr_func) {
+	PRINT_FUNC();
 	int res = 0;
 	switch(state->format) {
 		case BACKUP_FORMAT_VCI:
@@ -326,35 +339,36 @@ int dump_device(const char* block_device, const char* output_path, BackupFormat 
 	return res;
 }
 
-int restore_device(const char* block_device, char* output_path, ProgressCallback callback) {
+int restore_device(const char* block_device, char* input_data, ProgressCallback callback) {
 	int res = -1;
 	
 	if(!is_module_started(KMODULE_NAME)) return KERNEL_MODULE_FAILED_START;
 	DEVICE_WHITELIST_CHECK(block_device);
 
 	// start restore ..
-	PRINT_STR("Begining restore of %s to %s\n", output_path, block_device);
+	PRINT_STR("Begining restore of %s to %s\n", input_data, block_device);
 
 	BackupState state;
 	setup_state(&state,
 			block_device,
-			output_path,
+			input_data,
 			BACKUP_FORMAT_RAW,
 			NULL,
 			NULL,
 			callback);
 	memset(&state, 0x00, sizeof(BackupState));
 	
+	PRINT_STR("effective_size %llu, file_siize: %llu\n", state.effective_size, get_file_size(input_data));
 
 	// check image file size
-	if(get_file_size(output_path) > state.effective_size) ERROR(SIZE_NO_SPACE);
+	if(state.effective_size < get_file_size(input_data)) ERROR(SIZE_NO_SPACE);
 	
 	// open image file
-	state.rd_fd = sceIoOpen(output_path, SCE_O_RDONLY, 0777);
+	state.rd_fd = sceIoOpen(input_data, SCE_O_RDONLY, 0777);
 	if(state.rd_fd < 0) ERROR(state.rd_fd);
 	
 	// open device
-	state.wr_fd = kOpenDevice(block_device, SCE_O_WRONLY);
+	state.wr_fd = kOpenDevice(block_device, SCE_O_WRONLY | SCE_O_WRLOCK);
 	if(state.wr_fd < 0) ERROR(state.rd_fd);
 	
 	// enter read/write loop
@@ -384,7 +398,7 @@ int wipe_device(const char* block_device, ProgressCallback callback) {
 			callback);
 	
 	// open device
-	state.wr_fd = kOpenDevice(block_device, SCE_O_WRONLY);	
+	state.wr_fd = kOpenDevice(block_device, SCE_O_WRONLY | SCE_O_WRLOCK);	
 	if(state.wr_fd < 0) ERROR(state.wr_fd);
 	
 	// enter read/write loop
@@ -399,20 +413,22 @@ error:
 uint8_t device_exist(const char* block_device) {
 	if(!is_module_started(KMODULE_NAME)) return KERNEL_MODULE_FAILED_START;
 	
-	SceUID dfd = kOpenDevice(block_device, SCE_O_RDONLY);
+	SceUID dfd = kOpenDevice(block_device, SCE_O_RDONLY | SCE_O_RDLOCK);
 	if(dfd < 0) return 0;
 	
 	kCloseDevice(dfd);
 	return 1;
 }
 
-uint64_t get_trimmed_size(const char* block_device) {
+int get_trimmed_size(const char* block_device, uint64_t* size) {
+	PRINT_FUNC();
 	if(!is_module_started(KMODULE_NAME)) return KERNEL_MODULE_FAILED_START;
-
+	if(size == NULL) return POINTER_WAS_NULL;
+	
 	uint64_t device_size = 0;
 
 	int dfd = kOpenDevice(block_device, SCE_O_RDONLY | SCE_O_RDLOCK);
-	if(dfd < 0) return 0;
+	if(dfd < 0) return dfd;
 
 	SceMbr mbr;
 	size_t sz = kReadDevice(dfd, &mbr, sizeof(SceMbr)); 
@@ -458,48 +474,76 @@ uint64_t get_trimmed_size(const char* block_device) {
 	
 	kCloseDevice(dfd);
 
-	if(device_size > 0) return device_size;
-	else return get_device_size(block_device);
+	if(device_size <= 0) *size = device_size;
+	else return get_device_size(block_device, size);
+	
+	return 0;
 }
 
-uint64_t get_device_size(const char* block_device) {
+int get_device_size(const char* block_device, uint64_t* size) {
+	int res = 0;
 	if(!is_module_started(KMODULE_NAME)) return KERNEL_MODULE_FAILED_START;
-
-	uint64_t device_size = 0;
-
-	int dfd = kOpenDevice(block_device, SCE_O_RDONLY | SCE_O_RDLOCK);
-	if(dfd < 0) return 0;
+	if(size == NULL) return POINTER_WAS_NULL;
 	
-	kGetDeviceSize(dfd, &device_size);
-	kCloseDevice(dfd);
+	PRINT_STR("Calling kernel function ...\n");
+	res = kGetDeviceSize(block_device, (int64_t*)size);
+	PRINT_STR("device_size: %llx ...\n", *size);
 	
-	return device_size;
+	return res;
 }
 
-uint64_t get_header_size(BackupFormat format) {
+int get_header_size(BackupFormat format, uint64_t* size) {
+	PRINT_FUNC();
+	if(size == NULL) return POINTER_WAS_NULL;
+	
 	switch(format) {
 		case BACKUP_FORMAT_PSV_TRIM:
 		case BACKUP_FORMAT_PSV:
-			return sizeof(PsvHeader);
+			*size = sizeof(PsvHeader);
+			return 0;
 		case BACKUP_FORMAT_VCI_TRIM:
 		case BACKUP_FORMAT_VCI:
-			return sizeof(VciHeader);
+			*size = sizeof(VciHeader);
+			return 0;
+		case BACKUP_FORMAT_RAW:
+			*size = 0;
+			return 0;
 		default:
+			*size = 0;
 			return 0;	
 	}
 }
 
-uint64_t get_effective_size(const char* block_device, BackupFormat format) {
-	uint64_t header_size = get_header_size(format);
+int get_effective_size(const char* block_device, BackupFormat format, uint64_t* size) {
+	PRINT_STR("block_device: %s format: %x\n", block_device, format);
+	uint64_t header_size = 0;
+	int res = 0;
+	res = get_header_size(format, &header_size);
+	if(res < 0) return res;
+	if(size == NULL) return POINTER_WAS_NULL;
+	
 	switch(format) {
 		case BACKUP_FORMAT_VCI:
 		case BACKUP_FORMAT_PSV:
-			return get_device_size(block_device) + header_size;
+			PRINT_STR("BACKUP_FORMAT_PSV / BACKUP_FORMAT_VCI\n");
+			res = get_device_size(block_device, size);
+			*size += header_size;
+			break;
 		case BACKUP_FORMAT_PSV_TRIM:
 		case BACKUP_FORMAT_VCI_TRIM:
-			return get_trimmed_size(block_device) + header_size;
+			PRINT_STR("BACKUP_FORMAT_PSV_TRIM / BACKUP_FORMAT_VCI_TRIM\n");
+			res = get_trimmed_size(block_device, size);
+			*size += header_size;
+			break;
+		case BACKUP_FORMAT_RAW:
+			PRINT_STR("BACKUP_FORMAT_RAW\n");
+			res = get_device_size(block_device, size);
+			break;
 		default:
-			return get_device_size(block_device) + header_size;
+			res = get_device_size(block_device, size);
+			*size += header_size;
+			break;
 	}
+	return res;
 }
 

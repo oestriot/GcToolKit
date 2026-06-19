@@ -12,6 +12,8 @@ SceSdifDeviceContext* ksceSdifGetSdContextPartValidateSd(SceSdifDeviceIndex dev_
 static GcInteruptInfo* interupt_info = NULL;
 
 void get_interupt_location() {
+	PRINT_FUNC();
+
 	tai_module_info_t sdstor_info;
 	sdstor_info.size = sizeof(tai_module_info_t);
 	int res = taiGetModuleInfoForKernel(KERNEL_PID, "SceSdstor", &sdstor_info);
@@ -27,6 +29,8 @@ void get_interupt_location() {
 }
 
 int kGetCardId(int deviceIndex, void* cardId) {
+	PRINT_FUNC();
+
 	sd_context_part_mmc* k_deviceInfo = (sd_context_part_mmc*)ksceSdifGetSdContextPartValidateMmc(deviceIndex);	
 	if(k_deviceInfo == NULL) return POINTER_WAS_NULL;
 
@@ -43,6 +47,8 @@ int kGetCardId(int deviceIndex, void* cardId) {
 }
 
 int kGetCardCsd(int deviceIndex, void* cardCsd) {
+	PRINT_FUNC();
+
 	sd_context_part_mmc* k_deviceInfo = (sd_context_part_mmc*)ksceSdifGetSdContextPartValidateMmc(deviceIndex);	
 	if(k_deviceInfo == NULL) return POINTER_WAS_NULL;
 	
@@ -60,6 +66,8 @@ int kGetCardCsd(int deviceIndex, void* cardCsd) {
 }
 
 int kGetCardExtCsd(int deviceIndex, void* cardExtCsd) {
+	PRINT_FUNC();
+
 	sd_context_part_mmc* k_deviceInfo = (sd_context_part_mmc*)ksceSdifGetSdContextPartValidateMmc(deviceIndex);	
 	if(k_deviceInfo == NULL) return POINTER_WAS_NULL;
 	
@@ -76,15 +84,21 @@ int kGetCardExtCsd(int deviceIndex, void* cardExtCsd) {
 	return 0;
 }
 
-int kIsSdInserted() { 
+int kIsSdInserted() {
+	PRINT_FUNC();
+
 	return (ksceSdifGetSdContextPartValidateSd(1) != NULL);
 }
 
 int kIsMmcInserted() { 
+	PRINT_FUNC();
+
 	return (ksceSdifGetSdContextPartValidateMmc(1) != NULL);
 }
 
 int kResetGc() {
+	PRINT_FUNC();
+
 	int res = 0;	
 	PRINT_STR("Resetting GC ...\n");
 	

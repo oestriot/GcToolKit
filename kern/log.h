@@ -11,10 +11,12 @@
 									ksceDebugPrintf("%02X ", ((unsigned char*)buffer)[i]);	\
 							 } \
 							 ksceDebugPrintf("\n")
+#define PRINT_FUNC() PRINT_STR("called\n");
 #else
 #define PRINT_STR(...) /**/
 #define PRINT_BUFFER(buffer) /**/
 #define PRINT_BUFFER_LEN(buffer, len) /**/
+#define PRINT_FUNC() /**/
 #endif
 
 #endif // LOG_H

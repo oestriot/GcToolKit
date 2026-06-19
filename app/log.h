@@ -14,9 +14,11 @@
 								 } \
 								 sceClibPrintf("\n"); \
 							} while(0);
+#define PRINT_FUNC() PRINT_STR("called\n");
 #else
 #define PRINT_STR(...) /**/
 #define PRINT_BUFFER(buffer) /**/
+#define PRINT_FUNC() /**/
 #endif
 
 #define TO_HEX(inStr, inLen, outStr) \

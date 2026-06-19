@@ -61,10 +61,11 @@ int wipe_device(const char* block_device, ProgressCallback* callback);
 int restore_device(const char* block_device, char* input_path, ProgressCallback* callback);
 
 uint8_t device_exist(const char* block_device);
-uint64_t get_device_size(const char* block_device);
-uint64_t get_trimmed_size(const char* block_device);
 
-uint64_t get_header_size(BackupFormat format);
-uint64_t get_effective_size(const char* block_device, BackupFormat format);
+int get_device_size(const char* block_device, uint64_t* size);
+int get_trimmed_size(const char* block_device, uint64_t* size);
+
+int get_header_size(BackupFormat format, uint64_t* size);
+int get_effective_size(const char* block_device, BackupFormat format, uint64_t* size);
 
 #endif //DEVICE_H

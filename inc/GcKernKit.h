@@ -38,7 +38,7 @@ SceUID kOpenDevice(const char* device, SceMode permission);
 int kReadDevice(SceUID device_handle, void* data, size_t size);
 int kWriteDevice(SceUID device_handle, void* data, size_t size);
 int kCloseDevice(SceUID device_handle);
-void kGetDeviceSize(SceUID device_handle, uint64_t* device_size);
+int kGetDeviceSize(const char* device, int64_t* device_size);
 
 // format.c
 int kFormatDevice(const char* device);

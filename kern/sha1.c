@@ -13,6 +13,8 @@
 #include <stdlib.h>
 #include <memory.h>
 #include "sha1.h"
+#include "log.h"
+
 
 /****************************** MACROS ******************************/
 #define ROTLEFT(a, b) ((a << b) | (a >> (32 - b)))
@@ -20,6 +22,8 @@
 /*********************** FUNCTION DEFINITIONS ***********************/
 void sha1_transform(SHA1_CTX *ctx, const BYTE data[])
 {
+	PRINT_FUNC();
+
 	WORD a, b, c, d, e, i, j, t, m[80];
 
 	for (i = 0, j = 0; i < 16; ++i, j += 4)
@@ -77,6 +81,8 @@ void sha1_transform(SHA1_CTX *ctx, const BYTE data[])
 
 void sha1_init(SHA1_CTX *ctx)
 {
+	PRINT_FUNC();
+
 	ctx->datalen = 0;
 	ctx->bitlen = 0;
 	ctx->state[0] = 0x67452301;
@@ -92,6 +98,8 @@ void sha1_init(SHA1_CTX *ctx)
 
 void sha1_update(SHA1_CTX *ctx, const BYTE data[], size_t len)
 {
+	PRINT_FUNC();
+
 	size_t i;
 
 	for (i = 0; i < len; ++i) {
@@ -107,6 +115,7 @@ void sha1_update(SHA1_CTX *ctx, const BYTE data[], size_t len)
 
 void sha1_final(SHA1_CTX *ctx, BYTE hash[])
 {
+	PRINT_FUNC();
 	WORD i;
 
 	i = ctx->datalen;

@@ -16,6 +16,8 @@
 #include <stdlib.h>
 #include <memory.h>
 #include "sha256.h"
+#include "log.h"
+
 
 /****************************** MACROS ******************************/
 #define ROTLEFT(a,b) (((a) << (b)) | ((a) >> (32-(b))))
@@ -43,6 +45,8 @@ static const WORD k[64] = {
 /*********************** FUNCTION DEFINITIONS ***********************/
 void sha256_transform(SHA256_CTX *ctx, const BYTE data[])
 {
+	PRINT_FUNC();
+
 	WORD a, b, c, d, e, f, g, h, i, j, t1, t2, m[64];
 
 	for (i = 0, j = 0; i < 16; ++i, j += 4)
@@ -84,6 +88,8 @@ void sha256_transform(SHA256_CTX *ctx, const BYTE data[])
 
 void sha256_init(SHA256_CTX *ctx)
 {
+	PRINT_FUNC();
+
 	ctx->datalen = 0;
 	ctx->bitlen = 0;
 	ctx->state[0] = 0x6a09e667;
@@ -98,6 +104,7 @@ void sha256_init(SHA256_CTX *ctx)
 
 void sha256_update(SHA256_CTX *ctx, const BYTE data[], size_t len)
 {
+	PRINT_FUNC();
 	WORD i;
 
 	for (i = 0; i < len; ++i) {
@@ -113,6 +120,7 @@ void sha256_update(SHA256_CTX *ctx, const BYTE data[], size_t len)
 
 void sha256_final(SHA256_CTX *ctx, BYTE hash[])
 {
+	PRINT_FUNC();
 	WORD i;
 
 	i = ctx->datalen;

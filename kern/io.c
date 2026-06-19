@@ -4,28 +4,39 @@
 #include <vitasdkkern.h>
 #include <GcToolKit.h>
 #include "io.h"
+#include "log.h"
 
 SceUID k_open_device(const char* device, int permission) {
 	// check if device is being opened for writing ...
 	if(permission & (SCE_O_WRONLY | SCE_O_WRONLY | SCE_O_APPEND | SCE_O_TRUNC | SCE_O_CREAT) != 0) DEVICE_WHITELIST_CHECK(device);
 	
 	int prev = ksceKernelSetPermission(0x80);
-	int fd = ksceIoOpen(device, permission, 0777);
+	SceUID fd = ksceIoOpen(device, permission, 0777);
 	ksceKernelSetPermission(prev);
+
+	if(fd < 0) PRINT_STR("failed : %x\n", fd);
 	return fd;
 }
 
 int k_read_device(SceUID device_handle, void* data, int size) {
+	PRINT_FUNC();
+
 	int prev = ksceKernelSetPermission(0x80);
 	int res = ksceIoRead(device_handle, data, size);
 	ksceKernelSetPermission(prev);
+
+	if(res < 0) PRINT_STR("failed : %x\n", res);
 	return res;
 }
 
 int k_write_device(SceUID device_handle, void* data, int size) {
+	PRINT_FUNC();
+
 	int prev = ksceKernelSetPermission(0x80);
 	int res = ksceIoWrite(device_handle, data, size);
 	ksceKernelSetPermission(prev);
+
+	if(res < 0) PRINT_STR("failed : %x\n", res);
 	return res;
 }
 
@@ -36,13 +47,20 @@ int k_close_device(SceUID device_handle){
 	return 0;
 }
 
-uint64_t k_get_device_size(SceUID device_handle) {
-	int prev = ksceKernelSetPermission(0x80);	
-	uint64_t device_size = ksceIoLseek(device_handle, 0, SCE_SEEK_END);
-	ksceIoLseek(device_handle, 0, SCE_SEEK_SET);
-	ksceKernelSetPermission(prev);
+int k_get_device_size(char* device, int64_t* size) {
+	if(size == NULL) return -1;
 	
-	return device_size;
+	int prev = ksceKernelSetPermission(0x80);	
+	SceUID fd = ksceIoOpen(device, SCE_O_RDONLY | SCE_O_RDLOCK, 0777);
+	if(fd < 0) { PRINT_STR("failed: %x\n", fd);  return fd; }
+	
+	*size = ksceIoLseek(fd, 0, SCE_SEEK_END);
+	ksceIoClose(fd);
+	ksceKernelSetPermission(prev);
+
+	PRINT_STR("%s: %llx\n", device, size);
+
+	return 0;
 }
 
 // io syscalls
@@ -57,6 +75,8 @@ SceUID kOpenDevice(const char* device, int permission) {
 
 
 int kWriteDevice(SceUID device_handle, void* data, size_t size) {
+	PRINT_FUNC();
+
 	void* k_data = NULL;
 	size_t k_size = 0;
 	uint32_t k_offset = 0;
@@ -72,6 +92,8 @@ int kWriteDevice(SceUID device_handle, void* data, size_t size) {
 
 
 int kReadDevice(SceUID device_handle, void* data, size_t size) {
+	PRINT_FUNC();
+
 	void* k_data = NULL;
 	size_t k_size = 0;
 	uint32_t k_offset = 0;
@@ -89,8 +111,17 @@ int kCloseDevice(SceUID device_handle) {
 	return k_close_device(device_handle);
 }
 
-void kGetDeviceSize(int device_handle, uint64_t* device_size) {
-	uint64_t k_device_size = k_get_device_size(device_handle);
-	ksceKernelMemcpyKernelToUser(device_size, (const void*)&k_device_size, sizeof(uint64_t));
+int kGetDeviceSize(const char* device, int64_t* device_size) {
+	PRINT_FUNC();
+	
+	static char k_device[MAX_PATH];
+	static int64_t k_size = 0;
+	
+	ksceKernelStrncpyUserToKernel(k_device, (const void*)device, sizeof(k_device));
+	
+	int res = k_get_device_size(k_device, &k_size);
+	if(res < 0) return res;
+	
+	ksceKernelMemcpyKernelToUser(device_size, (const void*)&k_size, sizeof(int64_t));
 }
 

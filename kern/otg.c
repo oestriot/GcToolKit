@@ -16,6 +16,8 @@ static int return_1() {
 
 // shamelessly stolen from dots_tb
 static SceUID ksceSysconGetMicroUsbInfo_patched(uint32_t *pwr_val) {
+	PRINT_FUNC();
+
 	SceUID res, state;
 	ENTER_SYSCALL(state);
 	
@@ -32,6 +34,8 @@ static SceUID ksceSysconGetMicroUsbInfo_patched(uint32_t *pwr_val) {
 
 // force load usb mass storage plugin on all devices
 int load_umass() {
+	PRINT_FUNC();
+
 	if(ksceKernelSearchModuleByName("SceUsbMass") < 0) {
 		tai_hook_ref_t tmpHookRef;
 
@@ -76,7 +80,8 @@ int load_umass() {
 }
 
 int otg_patch() {
-		
+	PRINT_FUNC();
+
 	// enable mounting usb drives
 	ksceSysrootIsSafeModeHook = taiHookFunctionImportForKernel(KERNEL_PID, 
 		&ksceSysrootIsSafeModeRef, "SceUsbServ",
@@ -105,6 +110,8 @@ int otg_patch() {
 }
 
 int otg_unpatch() {
+	PRINT_FUNC();
+
 	if(ksceSysconGetMicroUsbInfoHook >= 0) 
 		taiHookReleaseForKernel(ksceSysconGetMicroUsbInfoHook, ksceSysconGetMicroUsbInfoRef);
 	

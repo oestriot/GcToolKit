@@ -9,6 +9,8 @@
 #include "io.h"
 #include "module.h"
 #include "format.h"
+#include "log.h"
+
 	
 int module_get_offset(SceUID pid, SceUID modid, int segidx, size_t offset, uintptr_t *addr);
 
@@ -16,6 +18,7 @@ SceUInt32 (* sceAppMgrMakeFatTime)(const SceDateTime *time);
 int (* sceAppMgrExecFsFatFormat)(SceFatFormatParam *pParam);
 
 int FatfsExecFormatInternal(const char *s, void *pWorkingBuffer, SceSize workingBufferSize, SceSize bytePerCluster, SceUInt32 sce_fs_type){
+	PRINT_FUNC();
 
 	int res, old;
 	SceDateTime time;
@@ -69,6 +72,7 @@ error:
 }
 
 int FatfsExecFormat(const char *s, SceSize bytePerCluster, SceUInt32 sce_fs_type) {
+	PRINT_FUNC();
 
 	int res;
 	SceUID memid;
@@ -92,6 +96,8 @@ int FatfsExecFormat(const char *s, SceSize bytePerCluster, SceUInt32 sce_fs_type
 
 
 int kFormatDevice(const char* device) {
+	PRINT_FUNC();
+
 	int state = 0;
 	ENTER_SYSCALL(state);
 	static char k_device[MAX_PATH];
@@ -107,6 +113,7 @@ int kFormatDevice(const char* device) {
 
 
 void get_format_functions() {
+	PRINT_FUNC();
 	SceUID module_id;
 
 	module_id = ksceKernelSearchModuleByName("SceAppMgr");
