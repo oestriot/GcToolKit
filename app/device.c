@@ -33,9 +33,9 @@ static uint8_t DEVICE_DUMP_BUFFER[SECTOR_SIZE * 0x100]__attribute__((aligned(0x4
 *	Supported format header writer functions
 */
 
-static void setup_state(BackupState* state, const char* block_device, const char* output_path, BackupFormat format, GcCmd56Keys* keys, NetworkInfo* net_info, ProgressCallback* callback) {
+static int setup_state(BackupState* state, const char* block_device, const char* output_path, BackupFormat format, GcCmd56Keys* keys, NetworkInfo* net_info, ProgressCallback* callback) {
+	int res = -1;
 	PRINT_FUNC();
-	int res = 0;
 	
 	memset(state, 0x00, sizeof(BackupState));
 	
@@ -43,16 +43,16 @@ static void setup_state(BackupState* state, const char* block_device, const char
 	state->output_path = output_path;
 	
 	res = get_device_size(block_device, &state->device_size);
-	if(res < 0) PRINT_STR("ERROR: %x\n", res);
+	if(res < 0) return res;
 
 	res = get_trimmed_size(block_device, &state->trim_size);
-	if(res < 0) PRINT_STR("ERROR: %x\n", res);
+	if(res < 0) return res;
 
 	res = get_header_size(format, &state->header_size);
-	if(res < 0) PRINT_STR("ERROR: %x\n", res);
+	if(res < 0) return res;;
 
 	res = get_effective_size(block_device, format, &state->effective_size);
-	if(res < 0) PRINT_STR("ERROR: %x\n", res);
+	if(res < 0) return res;
 
 	state->format = format;
 
@@ -69,7 +69,7 @@ static void setup_state(BackupState* state, const char* block_device, const char
 	PRINT_STR("state->device_size = 0x%llX\n", state->device_size);
 	PRINT_STR("state->trim_size = 0x%llX\n", state->trim_size);
 	PRINT_STR("state->header_size = 0x%llX\n", state->header_size);
-	PRINT_STR("state->effective_size = 0x%llX\n", state->header_size);
+	PRINT_STR("state->effective_size = 0x%llX\n", state->effective_size);
 
 	PRINT_STR("state->format = 0x%02X\n", state->format);
 	PRINT_STR("state->have_sha = 0x%02X\n", state->have_sha);
@@ -78,6 +78,7 @@ static void setup_state(BackupState* state, const char* block_device, const char
 	PRINT_STR("state->callback = %p\n", state->callback);
 	PRINT_STR("state->net_info = %p\n", state->net_info);
 	
+	return res;
 }
 
 static inline int create_psv_header(BackupState* state, DeviceAccessCallback* wr_func) {
@@ -320,13 +321,14 @@ int dump_device(const char* block_device, const char* output_path, BackupFormat 
 	if(!is_module_started(KMODULE_NAME)) return KERNEL_MODULE_FAILED_START;
 	
 	BackupState state;
-	setup_state(&state,
-				block_device,
-				output_path,
-				format,
-				keys,
-				net_info,
-				callback);
+	res = setup_state(&state,
+			block_device,
+			output_path,
+			format,
+			keys,
+			net_info,
+			callback);
+	if(res < 0) return res;
 	
 	if(state.net_info == NULL) {
 		res = dump_device_phys(&state);
@@ -335,7 +337,6 @@ int dump_device(const char* block_device, const char* output_path, BackupFormat 
 		res = dump_device_network(&state);
 	}
 	
-
 	return res;
 }
 
@@ -348,17 +349,17 @@ int restore_device(const char* block_device, char* input_data, ProgressCallback 
 	// start restore ..
 	PRINT_STR("Begining restore of %s to %s\n", input_data, block_device);
 
-	BackupState state;
-	setup_state(&state,
-			block_device,
+	BackupState state;	
+	res = setup_state(&state,
+		block_device,
 			input_data,
 			BACKUP_FORMAT_RAW,
 			NULL,
 			NULL,
 			callback);
-	memset(&state, 0x00, sizeof(BackupState));
-	
-	PRINT_STR("effective_size %llu, file_siize: %llu\n", state.effective_size, get_file_size(input_data));
+	if(res < 0) goto error;
+
+	PRINT_STR("effective_size: %llx, file_size: %llx\n", state.effective_size, get_file_size(input_data));
 
 	// check image file size
 	if(state.effective_size < get_file_size(input_data)) ERROR(SIZE_NO_SPACE);
@@ -389,13 +390,14 @@ int wipe_device(const char* block_device, ProgressCallback callback) {
 	PRINT_STR("Begining wipe of %s\n", block_device);
 
 	BackupState state;
-	setup_state(&state,
+	res = setup_state(&state,
 			block_device,
 			"the void",
 			BACKUP_FORMAT_RAW,
 			NULL,
 			NULL,
 			callback);
+	if(res < 0) goto error;
 	
 	// open device
 	state.wr_fd = kOpenDevice(block_device, SCE_O_WRONLY | SCE_O_WRLOCK);	
@@ -540,10 +542,12 @@ int get_effective_size(const char* block_device, BackupFormat format, uint64_t* 
 			res = get_device_size(block_device, size);
 			break;
 		default:
+			PRINT_STR("DEFAULT\n");
 			res = get_device_size(block_device, size);
 			*size += header_size;
 			break;
 	}
+	PRINT_STR("size: %llx\n", *size);
 	return res;
 }
 

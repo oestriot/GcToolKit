@@ -30,10 +30,10 @@ add_executable(${PROJECT_NAME}
 	otg.c
 	format.c
 	gc.c
-	sha1.c
+#	sha1.c
 	auth_emu.c
 	module.c
-	sha256.c	
+#	sha256.c	
 	sd2vita.c
 	
 	cmd56/cmd56.c
@@ -60,6 +60,7 @@ target_link_libraries(${PROJECT_NAME}
 	SceSysconForDriver_stub
 	SceSblGcAuthMgrGcAuthForDriver_stub
 	SceSblGcAuthMgrDrmBBForDriver_stub
+	SceKernelUtilsForDriver_stub
 )
 
 vita_create_self(${PROJECT_NAME}.skprx ${PROJECT_NAME}

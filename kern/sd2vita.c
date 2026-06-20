@@ -11,6 +11,8 @@ static SceIoMountPoint *(* sceIoFindMountPoint)(int id) = NULL;
 static int undone_sd2vita_patch = 0;
 
 int fix_up_mountpoint(int id, const char* new_dev, const char* new_blkdev) {
+	PRINT_FUNC();
+
 	SceIoMountPoint* part = sceIoFindMountPoint(id);
 	
 	PRINT_STR("fixup_mountpoint(0x%x, %s)\n", id, new_blkdev);
@@ -46,10 +48,15 @@ int fix_up_mountpoint(int id, const char* new_dev, const char* new_blkdev) {
 
 
 int kUndoneSd2VitaPatches() {
+	PRINT_FUNC();
+
 	return undone_sd2vita_patch;
 }
 
 void kUndoSd2Vita() {
+	PRINT_FUNC();
+	
+	
 	if(undone_sd2vita_patch) return;
 	undone_sd2vita_patch = 1;
 	

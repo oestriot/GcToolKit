@@ -101,11 +101,7 @@ int kResetGc() {
 
 	int res = 0;	
 	PRINT_STR("Resetting GC ...\n");
-	
-	// power down gc slot
-	res = ksceSysconCtrlSdPower(0);
-	PRINT_STR("ksceSysconCtrlSdPower(0) 0x%04X\n", res);
-	if(res < 0) return res;
+
 	
 	// trigger gc remove interupt	
 	res = ksceKernelSetEventFlag(interupt_info[1].request_id, 0x100);
@@ -113,11 +109,16 @@ int kResetGc() {
 	if(res < 0) return res;
 	
 	// wait for event to finish.
-	res = ksceKernelWaitEventFlag(interupt_info[1].op_sync_id, 0x100,5,0,0);
-	PRINT_STR("ksceKernelWaitEventFlag(0x%02X, 0x100,5,0,0) 0x%04X\n", interupt_info[1].op_sync_id, res);
+	res = ksceKernelWaitEventFlag(interupt_info[1].op_sync_id, 0x100, SCE_EVENT_WAITCLEAR_PAT | SCE_EVENT_WAITOR, 0, 0);
+	PRINT_STR("ksceKernelWaitEventFlag(0x%02X, 0x100, 0x%02X,0,0) 0x%04X\n", interupt_info[1].op_sync_id, SCE_EVENT_WAITCLEAR_PAT | SCE_EVENT_WAITOR, res);
 	if(res < 0) return res;
 	
-	ksceKernelDelayThread(1000 * 5); // 5ms
+	// power down gc slot
+	res = ksceSysconCtrlSdPower(0);
+	PRINT_STR("ksceSysconCtrlSdPower(0) 0x%04X\n", res);
+	if(res < 0) return res;
+	
+	ksceKernelDelayThread(1000 * 10); // 10ms
 	
 	// power up gc slot
 	res = ksceSysconCtrlSdPower(1);
@@ -130,7 +131,7 @@ int kResetGc() {
 	if(res < 0) return res;
 	
 	// wait for event to finish
-	res = ksceKernelWaitEventFlag(interupt_info[1].op_sync_id,0x1000,5,0,0);
-	PRINT_STR("ksceKernelWaitEventFlag(0x%02X, 0x1000,5,0,0) 0x%04X\n", interupt_info[1].op_sync_id, res);
+	res = ksceKernelWaitEventFlag(interupt_info[1].op_sync_id,0x1000, SCE_EVENT_WAITCLEAR_PAT | SCE_EVENT_WAITOR, 0,0);
+	PRINT_STR("ksceKernelWaitEventFlag(0x%02X, 0x%02X,5,0,0) 0x%04X\n", interupt_info[1].op_sync_id, SCE_EVENT_WAITCLEAR_PAT | SCE_EVENT_WAITOR, res);
 	return res;
 }

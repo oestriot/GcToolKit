@@ -3,6 +3,8 @@
 #include "log.h"
 
 int check_module_version(const char* module) {
+	PRINT_FUNC();
+
 	int version = 0x000;
 	
 	SceUID fd = ksceIoOpen(module, SCE_O_RDONLY, 0777);

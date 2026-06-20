@@ -5,8 +5,6 @@
 
 #include <GcToolKit.h>
 
-#include "sha1.h"
-#include "sha256.h"
 #include "cmd56/vita.h"
 #include "log.h"
 
@@ -17,40 +15,25 @@ static int is_authenticated = 0;
 static int authHook = -1;
 static tai_hook_ref_t authHookRef;
 
-static int getCartSecretHook = -1;
-static tai_hook_ref_t getCartSecretHookRef;
-
-static int clearCartSecretHook = -1;
-static tai_hook_ref_t clearCartSecretHookRef;
-
-static int checkCartHashHook = -1;
-static tai_hook_ref_t checkCartHashHookRef;
-
 int k_get_hash(uint8_t* hash) {
 	PRINT_FUNC();
-	SHA1_CTX ctx;
-	sha1_init(&ctx);
-	sha1_update(&ctx, vita_state.per_cart_keys.packet20_key, sizeof(vita_state.per_cart_keys.packet20_key));
-	sha1_final(&ctx, hash);
-	
+	ksceSha1Digest(vita_state.per_cart_keys.packet20_key, sizeof(vita_state.per_cart_keys.packet20_key), hash);
+
 	return 0;
 }
 
 int k_get_secret(uint8_t* secret) {
 	PRINT_FUNC();
 	
-	SHA256_CTX ctx;
-	sha256_init(&ctx);
-	sha256_update(&ctx, (uint8_t*)&vita_state.per_cart_keys, sizeof(cmd56_keys));
-	sha256_final(&ctx, secret);
-	
+	ksceSha256Digest(&vita_state.per_cart_keys, sizeof(cmd56_keys), secret);
+
 	return 0;
 }
 
 int k_check_hash(const uint8_t* secret) {
 	PRINT_FUNC();
 	
-	uint8_t k_cart_hash[0x14];
+	uint8_t k_cart_hash[SCE_SHA1_DIGEST_SIZE];
 	k_get_hash(k_cart_hash);
 	
 	return memcmp(secret, k_cart_hash, sizeof(k_cart_hash));	
@@ -81,13 +64,16 @@ void k_gc_cmd56_read(uint8_t* buf, uint32_t size) {
 
 int k_run_authentication(uint16_t key_id) {
 	PRINT_FUNC();
+	
 	k_clear_secret();
 	
 	ctx = ksceSdifGetSdContextPartValidateMmc(1);
+
 	PRINT_STR("key_id: %x\n", key_id);
 	
 	if(ctx == NULL) { 
 		int res = ksceSdifInitializeMmcDevice(1, ctx);
+
 		if(res != 0) return res;
 	}
 	
@@ -99,17 +85,21 @@ int k_run_authentication(uint16_t key_id) {
 	if(ret == GC_AUTH_OK) {
 		PRINT_STR("vita_state.per_cart_keys.packet18_key\n");
 		PRINT_BUFFER(vita_state.per_cart_keys.packet18_key);
-
+		
 		PRINT_STR("vita_state.per_cart_keys.packet20_key\n");
-		PRINT_BUFFER(vita_state.per_cart_keys.packet20_key);		
-
+		PRINT_BUFFER(vita_state.per_cart_keys.packet20_key);	
+		
 		is_authenticated = 1;
+		
+		PRINT_STR("disabling GcEmuMgr\n");
 		kDisableGcEmuMgr();
-		return ret;
+		
+		return 0x00; 
 	}
 	else{
 		PRINT_STR("ret = 0x%x\n", ret);
 		k_clear_secret();
+		return -1;
 	}
 }
 
@@ -138,7 +128,7 @@ int kClearCartSecret() {
 
 int kGetCartSecret(uint8_t* keys) {
 	PRINT_FUNC();
-	uint8_t k_secret[0x20];
+	uint8_t k_secret[SCE_SHA256_DIGEST_SIZE];
 	memset(k_secret, 0x00, sizeof(k_secret));
 	
 	int res = k_get_secret(k_secret);
@@ -149,17 +139,18 @@ int kGetCartSecret(uint8_t* keys) {
 
 int kGetCartHash(uint8_t* hash) {
 	PRINT_FUNC();
-	uint8_t k_hash[0x14];
+	uint8_t k_hash[SCE_SHA1_DIGEST_SIZE];
 	memset(k_hash, 0x00, sizeof(k_hash));
 	
-	k_get_hash(hash);
+	k_get_hash(k_hash);
 	if(hash != NULL) ksceKernelMemcpyKernelToUser(hash, (const void*)k_hash, sizeof(k_hash));
 	
+	return 0;
 }
 
 int kCheckCartHash(const uint8_t* hash) {
 	PRINT_FUNC();
-	uint8_t k_hash[0x14];
+	uint8_t k_hash[SCE_SHA1_DIGEST_SIZE];
 	memset(k_hash, 0x00, sizeof(k_hash));
 
 	if(hash != NULL) ksceKernelMemcpyUserToKernel(k_hash, (const void*)hash, sizeof(k_hash));
@@ -195,12 +186,13 @@ int kDisableGcEmuMgr() {
 	PRINT_FUNC();
 
 	if (authHook >= 0) { 
+		PRINT_STR("authHook: %x authHookRef: %x\n", authHook, authHookRef);
 		int res = taiHookReleaseForKernel(authHook, authHookRef); 
 		if(res >= 0) {
 			authHook = -1;
 		}
 		
-		PRINT_STR("taiHookReleaseForKernel %x\n", res);
+		PRINT_STR("res %x\n", res);
 		return res;
 	}
 	return -1;

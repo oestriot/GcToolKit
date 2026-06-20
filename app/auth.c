@@ -15,6 +15,7 @@
 
 
 int key_dump_network(char* ip_address, unsigned short port, char* output_file) {
+	PRINT_FUNC();
 	GcCmd56Keys keys;
 	int netwr = -1;
 	
@@ -40,7 +41,9 @@ error:
 }
 
 int key_dump(char* output_file) {
+	PRINT_FUNC();
 	GcCmd56Keys keys;
+	
 	make_directories_excluding_last(output_file);
 
 	kGetPerCartKeys(&keys);
@@ -56,7 +59,9 @@ int key_dump(char* output_file) {
 
 
 void wait_for_gc_auth() {
-	// handle case if an sdcard is inserted ...
+	PRINT_STR("waiting for authentication...\n");
+		
+	// handle case if an card is inserted ...
 	while(kIsSdInserted()) { 
 		sceKernelDelayThread(1000 * 30); // 10ms
 	}
@@ -64,15 +69,20 @@ void wait_for_gc_auth() {
 	// after that undo sd2vita patches if appliciable ./
 	if(!kUndoneSd2VitaPatches() && check_loaded_blacklisted_module() != NULL) {
 		//umount_ux0();
+		PRINT_STR("undoing sd2vita patches\n");
 		kUndoSd2Vita();
+		
+		PRINT_STR("resetting gamecart slot ...\n");
 		kResetGc();
 	}
 	
 	// enable emulated gamecart authentication
+	PRINT_STR("enabling GcEmuMgr ...\n");
 	kEnableGcEmuMgr();
 	
 	// reset the current gamecart if there is one already ...
 	if( !kIsAuthenticated() && kIsMmcInserted() ) {
+		PRINT_STR("resetting gamecart slot ...\n");
 		kResetGc();
 	}
 	
@@ -80,7 +90,12 @@ void wait_for_gc_auth() {
 		sceKernelDelayThread(1000 * 30); // 10ms
 	};
 
+	//PRINT_STR("auth complete ... waiting 10ms\n");
+	//sceKernelDelayThread(1000 * 30); // 10ms
+	
 	// disable custom gc handling ..
+	PRINT_STR("disabling GcEmuMgr ...\n");
 	kDisableGcEmuMgr();
 	
+	PRINT_STR("done ...\n");
 }

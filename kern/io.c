@@ -19,8 +19,6 @@ SceUID k_open_device(const char* device, int permission) {
 }
 
 int k_read_device(SceUID device_handle, void* data, int size) {
-	PRINT_FUNC();
-
 	int prev = ksceKernelSetPermission(0x80);
 	int res = ksceIoRead(device_handle, data, size);
 	ksceKernelSetPermission(prev);
@@ -30,8 +28,6 @@ int k_read_device(SceUID device_handle, void* data, int size) {
 }
 
 int k_write_device(SceUID device_handle, void* data, int size) {
-	PRINT_FUNC();
-
 	int prev = ksceKernelSetPermission(0x80);
 	int res = ksceIoWrite(device_handle, data, size);
 	ksceKernelSetPermission(prev);
@@ -48,6 +44,7 @@ int k_close_device(SceUID device_handle){
 }
 
 int k_get_device_size(char* device, int64_t* size) {
+	PRINT_FUNC();
 	if(size == NULL) return -1;
 	
 	int prev = ksceKernelSetPermission(0x80);	
@@ -58,7 +55,7 @@ int k_get_device_size(char* device, int64_t* size) {
 	ksceIoClose(fd);
 	ksceKernelSetPermission(prev);
 
-	PRINT_STR("%s: %llx\n", device, size);
+	PRINT_STR("%s: %llx\n", device, *size);
 
 	return 0;
 }
@@ -75,15 +72,13 @@ SceUID kOpenDevice(const char* device, int permission) {
 
 
 int kWriteDevice(SceUID device_handle, void* data, size_t size) {
-	PRINT_FUNC();
-
 	void* k_data = NULL;
 	size_t k_size = 0;
 	uint32_t k_offset = 0;
 	
 	int uid = ksceKernelUserMap("GcKernKit_WRITE", 3, data, size, &k_data, &k_size, &k_offset);
-	if(uid < 0)
-		return uid;
+	if(uid < 0) return uid;
+	
 	int res = k_write_device(device_handle, (k_data + k_offset) , size);
 	ksceKernelMemBlockRelease(uid);
 	
@@ -92,15 +87,13 @@ int kWriteDevice(SceUID device_handle, void* data, size_t size) {
 
 
 int kReadDevice(SceUID device_handle, void* data, size_t size) {
-	PRINT_FUNC();
-
 	void* k_data = NULL;
 	size_t k_size = 0;
 	uint32_t k_offset = 0;
 	
 	int uid = ksceKernelUserMap("GcKernKit_READ", 3, data, size, &k_data, &k_size, &k_offset);
-	if(uid < 0)
-		return uid;
+	if(uid < 0) return uid;
+	
 	int res = k_read_device(device_handle, (k_data + k_offset) , size);
 	ksceKernelMemBlockRelease(uid);
 	

@@ -8,11 +8,14 @@
 #include "otg.h"
 #include "gc.h"
 #include "sd2vita.h"
+#include "log.h"
 
 
 void _start() __attribute__((weak, alias("module_start")));
 int module_start(SceSize argc, const void *args)
 {
+	PRINT_FUNC();
+	
 	otg_patch(); // enable otg
 	get_format_functions(); // get format stuff
 	get_interupt_location(); // get location of interupt in sdif
@@ -22,6 +25,8 @@ int module_start(SceSize argc, const void *args)
 
 int module_stop(SceSize argc, const void *args)
 {
+	PRINT_FUNC();
+
 	otg_unpatch(); // stop using otg.
 	return SCE_KERNEL_STOP_SUCCESS;
 }

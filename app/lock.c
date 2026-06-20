@@ -62,7 +62,7 @@ void unlock_gc() {
 }
 
 int lock_gc() {
-#ifdef ENABLE_GC_LOCK
+/* #ifdef ENABLE_GC_LOCK
 	int res = 0;
 	SceUID thread_id = sceKernelCreateThread("GcLockThread", gc_lock_thread, 0x10000100, 0x1000, 0, 0, NULL);
 	if(thread_id < 0) ERROR(thread_id);
@@ -73,9 +73,9 @@ error:
 	if(thread_id < 0)
 		sceKernelDeleteThread(thread_id);
 	return res;
-#else
+#else */
 	return 0;
-#endif
+//#endif
 }
 
 /* Default locks */
