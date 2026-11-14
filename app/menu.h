@@ -26,6 +26,7 @@ int do_select_backup_format();
 
 void do_kmodule_failed_message(const char* module_name);
 void do_blacklisted_module_message(const char* module_name);
+void do_select_device(char* output, size_t len);
 
 void init_menus();
 void term_menus();

@@ -103,6 +103,11 @@ int kFormatDevice(const char* device) {
 	static char k_device[MAX_PATH];
 	ksceKernelStrncpyUserToKernel(k_device, (const void*)device, sizeof(k_device));
 	
+	// WARN:
+	// only allow formatting of gamecart(gcd) device and not any others;
+	// this is a sanity check to avoid completely bricking the device
+	// in theroy- the menu does not allow you to select any other device to begin with
+	// but you can never be too sure..
 	DEVICE_WHITELIST_CHECK(k_device);
 	
 	int res = FatfsExecFormat(k_device, 0x8000, SCE_FAT_FORMAT_TYPE_EXFAT);

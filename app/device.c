@@ -344,6 +344,12 @@ int restore_device(const char* block_device, char* input_data, ProgressCallback 
 	int res = -1;
 	
 	if(!is_module_started(KMODULE_NAME)) return KERNEL_MODULE_FAILED_START;
+	
+	// WARN:
+	// only allow writing/restoring of gamecart(gcd) device and not any others;
+	// this is a sanity check to avoid completely bricking the device
+	// in theroy- the menu does not allow you to select any other device to begin with
+	// but you can never be too sure..
 	DEVICE_WHITELIST_CHECK(block_device);
 
 	// start restore ..
@@ -386,6 +392,13 @@ int wipe_device(const char* block_device, ProgressCallback callback) {
 	int res = -1;
 	
 	if(!is_module_started(KMODULE_NAME)) return KERNEL_MODULE_FAILED_START;
+
+	// WARN:
+	// only allow wiping of gamecart(gcd) device and not any others;
+	// this is a sanity check to avoid completely bricking the device
+	// in theroy- the menu does not allow you to select any other device to begin with
+	// but you can never be too sure..
+	
 	DEVICE_WHITELIST_CHECK(block_device);
 	PRINT_STR("Begining wipe of %s\n", block_device);
 

@@ -110,7 +110,7 @@ int handle_menu_set_network_options(int what, BackupFormat format, char* block_d
 
 
 	
-void handle_menu_set_output(char* ext, BackupFormat format, int what) {
+void handle_menu_set_output(char* ext, BackupFormat format, int what, char* block_device) {
 		// determine block device		
 		PRINT_STR("handle_menu_set_output\n");
 		
@@ -119,25 +119,27 @@ void handle_menu_set_output(char* ext, BackupFormat format, int what) {
 		char output_folder[MAX_PATH];
 		char output_filename[MAX_PATH];
 
-		char* block_device = NULL;
 		char* output_device = NULL;
 		
-		switch(what) {
-			case DUMP_WHOLE_GC:
-				block_device = BLOCK_DEVICE_GC;
-				break;
-			case DUMP_MEDIAID:
-				block_device = BLOCK_DEVICE_MEDIAID;
-				break;
-			case DUMP_GRW0:
-				block_device = BLOCK_DEVICE_GRW0;
-				break;
-			case DUMP_KEYS_ONLY:
-				break;
+		// skip if block device already set ..
+		if(block_device == NULL) {
+			switch(what) {
+				case DUMP_WHOLE_GC:
+					block_device = BLOCK_DEVICE_GC;
+					break;
+				case DUMP_MEDIAID:
+					block_device = BLOCK_DEVICE_MEDIAID;
+					break;
+				case DUMP_GRW0:
+					block_device = BLOCK_DEVICE_GRW0;
+					break;
+				case DUMP_KEYS_ONLY:
+					break;
 
+			}
+			PRINT_STR("block_device: %s\n", block_device);			
 		}
 
-		PRINT_STR("block_device: %s\n", block_device);
 		
 		// get filename
 		get_output_filename(output_filename, ext, 0, sizeof(output_filename));		
@@ -382,7 +384,7 @@ void handle_menu_select_backup_format(int what) {
 				break;
 		};
 		
-		handle_menu_set_output(ext, format, what);
+		handle_menu_set_output(ext, format, what, NULL);
 		
 	}
 	
@@ -427,7 +429,7 @@ void handle_menu_select_option() {
 	if(selected == DUMP_WHOLE_GC) 
 		handle_menu_select_backup_format(selected);
 	if(selected == DUMP_KEYS_ONLY || selected == DUMP_MEDIAID || selected == DUMP_GRW0)
-		handle_menu_set_output(ext, BACKUP_FORMAT_RAW, selected);
+		handle_menu_set_output(ext, BACKUP_FORMAT_RAW, selected, NULL);
 	if(selected == RESET_MEDIAID || selected == RESET_GRW0)
 		handle_wipe_option(selected);
 	if(selected == WRITE_MEDIAID || selected == WRITE_GRW0)
@@ -438,6 +440,12 @@ void handle_menu_select_option() {
 		do_gc_insert_prompt();
 	
 	return;
+}
+
+int handle_select_device() {
+	char dump_from[0x100];
+	do_select_device(dump_from, sizeof(dump_from)-1);
+	handle_menu_set_output("img", BACKUP_FORMAT_RAW, DUMP_WHOLE_GC, dump_from);
 }
 
 int main(int argc, char** argv) {
@@ -463,6 +471,13 @@ int main(int argc, char** argv) {
 		do_kmodule_failed_message(KMODULE_NAME);
 		return 0;
 	}
+	
+	// check buttons pressed;
+	if(get_key() == SCE_CTRL_START) {
+		handle_select_device();
+	}
+	
+	
 
 	do_gc_insert_prompt();
 	while(1) {

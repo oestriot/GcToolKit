@@ -7,8 +7,6 @@
 #include "gc.h"
 #include "log.h"
 
-SceSdifDeviceContext* ksceSdifGetSdContextPartValidateSd(SceSdifDeviceIndex dev_index);
-
 static GcInteruptInfo* interupt_info = NULL;
 
 void get_interupt_location() {
@@ -99,9 +97,13 @@ int kIsMmcInserted() {
 int kResetGc() {
 	PRINT_FUNC();
 
+	/*
+	*	RESET THE GAMECART SLOT !!!
+	*	this will cause whatever gamecart is inserted, to re-authenticate!
+	*/
+	
 	int res = 0;	
 	PRINT_STR("Resetting GC ...\n");
-
 	
 	// trigger gc remove interupt	
 	res = ksceKernelSetEventFlag(interupt_info[1].request_id, 0x100);
@@ -109,8 +111,8 @@ int kResetGc() {
 	if(res < 0) return res;
 	
 	// wait for event to finish.
-	res = ksceKernelWaitEventFlag(interupt_info[1].op_sync_id, 0x100, SCE_EVENT_WAITCLEAR_PAT | SCE_EVENT_WAITOR, 0, 0);
-	PRINT_STR("ksceKernelWaitEventFlag(0x%02X, 0x100, 0x%02X,0,0) 0x%04X\n", interupt_info[1].op_sync_id, SCE_EVENT_WAITCLEAR_PAT | SCE_EVENT_WAITOR, res);
+	res = ksceKernelWaitEventFlagCB(interupt_info[1].op_sync_id, 0x100, SCE_EVENT_WAITCLEAR_PAT | SCE_EVENT_WAITOR, 0, NULL);
+	PRINT_STR("ksceKernelWaitEventFlagCB(0x%02X, 0x100, 0x%02X,0,0) 0x%04X\n", interupt_info[1].op_sync_id, SCE_EVENT_WAITCLEAR_PAT | SCE_EVENT_WAITOR, res);
 	if(res < 0) return res;
 	
 	// power down gc slot
@@ -130,8 +132,8 @@ int kResetGc() {
 	PRINT_STR("ksceKernelSetEventFlag(0x%02X, 0x1000) 0x%04X\n", interupt_info[1].request_id, res);
 	if(res < 0) return res;
 	
-	// wait for event to finish
-	res = ksceKernelWaitEventFlag(interupt_info[1].op_sync_id,0x1000, SCE_EVENT_WAITCLEAR_PAT | SCE_EVENT_WAITOR, 0,0);
-	PRINT_STR("ksceKernelWaitEventFlag(0x%02X, 0x%02X,5,0,0) 0x%04X\n", interupt_info[1].op_sync_id, SCE_EVENT_WAITCLEAR_PAT | SCE_EVENT_WAITOR, res);
+	// wait for insert event to finish
+	res = ksceKernelWaitEventFlagCB(interupt_info[1].op_sync_id,0x1000, SCE_EVENT_WAITCLEAR_PAT | SCE_EVENT_WAITOR, 0, NULL);
+	PRINT_STR("ksceKernelWaitEventFlagCB(0x%02X, 0x%02X,5,0,0) 0x%04X\n", interupt_info[1].op_sync_id, SCE_EVENT_WAITCLEAR_PAT | SCE_EVENT_WAITOR, res);
 	return res;
 }

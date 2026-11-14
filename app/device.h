@@ -6,6 +6,49 @@
 #include "auth.h"
 #include "sha256.h"
 
+
+static char BLOCK_DEVICES[][] = { 
+	{"GCD entire", "sdstor0:gcd-lp-ign-entire"}, 
+	{"GCD active mediaid", "sdstor0:gcd-lp-act-mediaid"}, 
+	{"GCD inactive mediaid", "sdstor0:gcd-lp-ina-mediaid"}, // ???
+	{"GCD readonly:", "sdstor0:gcd-lp-ign-gamero"}, 
+	{"GCD readwrite:", "sdstor0:gcd-lp-ign-gamerw"}, 
+
+	{"MCD entire", "sdstor0:mcd-lp-act-entire"}, 
+	{"MCD active mediaid", "sdstor0:mcd-lp-act-mediaid"}, 
+	{"MCD inactive mediaid", "sdstor0:mcd-lp-ina-mediaid"},  // ???
+	{"MCD readonly", "sdstor0:mcd-lp-ign-userext"}, 
+
+
+	{"External(?) NAND", "sdstor0:ext-lp-act-entire"}, 
+	{"Internal NAND", "sdstor0:int-lp-act-entire"}, 
+
+
+	{"Active os0:", "sdstor0:int-lp-act-os"}, 
+	{"InActive os0:", "sdstor0:int-lp-ina-os"}, 
+
+
+	{"Active SLB2", "int-lp-act-sloader"}, 
+	{"InActive SLB2", "int-lp-ina-sloader"}, 
+
+
+	{"vs0:", "sdstor0:int-lp-ign-vsh"}, 
+	{"vd0:", "sdstor0:int-lp-ign-vshdata"}, 
+	{"tm0:", "sdstor0:int-lp-ign-vtrm"}, 
+	{"ur0:", "sdstor0:int-lp-ign-user"}, 
+	{"imc0:" , "sdstor0:int-lp-ign-userext"}, 
+	{"ud0:", "sdstor0:int-lp-ign-updater"}, 
+	{"sa0:", "sdstor0:int-lp-ign-sysdata"}, 
+	{"pd0:", "sdstor0:int-lp-ign-pidata"}, 
+
+
+	{"USB storage entire", "sdstor0:uma-lp-act-entire"}, 
+	{"USD active entire", "sdstor0:usd-lp-act-entire"},  // // ???
+	{"USD inactive entire", "sdstor0:usd-lp-ina-entire"} // ???
+	
+	{NULL, NULL}
+};
+
 #define BLOCK_DEVICE_GC "sdstor0:gcd-lp-ign-entire"
 #define BLOCK_DEVICE_MEDIAID "sdstor0:gcd-lp-act-mediaid"
 #define BLOCK_DEVICE_GRW0 "sdstor0:gcd-lp-ign-gamerw"
@@ -54,6 +97,7 @@ typedef struct BackupState {
 	NetworkInfo* net_info;
 	
 } BackupState;
+
 
 
 int dump_device(const char* block_device, const char* output_path, BackupFormat format, GcCmd56Keys* keys, NetworkInfo* net_info, ProgressCallback* callback);

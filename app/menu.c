@@ -148,6 +148,30 @@ uint32_t next_y() {
 						if(ctrl == SCE_CTRL_CONFIRM || ctrl == SCE_CTRL_CANCEL) break;\
 					} while(1)\
 
+
+
+int draw_select_device(int* selected, int* window) {
+	start_draw();
+
+	draw_background();
+	
+	draw_title("Backup entire device ...");
+	
+	DEFOPT(next_y());
+	
+	for(int i = 0; i < BLOCK_DEVICES[i] != NULL; i++) {
+		PRINT_STR("%s: %s\n", BLOCK_DEVICES[i][0], BLOCK_DEVICES[i][1]);
+		int exist = device_exist(BLOCK_DEVICES[i][1]);
+		ADDOPT(exist, BLOCK_DEVICES[i][0]);
+	}
+	
+	end_draw();
+	
+	RETURNOPT();
+}
+
+
+
 void init_menus() {
 	insertgc_tex = load_texture("app0:/res/insertgc.png");
 }
@@ -259,25 +283,16 @@ int draw_select_input_location(int* selected, int* window, uint8_t have_ux0, uin
 }
 
 int draw_select_output_location(int* selected, int* window, char* output_file, uint8_t have_ux0, uint8_t have_xmc, uint8_t have_usb, uint8_t have_host0, uint8_t save_network) {
-	PRINT_STR("start_draw()\n");
-	
 	start_draw();
 
-	PRINT_STR("draw_background()\n");
 	draw_background();
-
-	PRINT_STR("draw_controls()\n");
 	draw_controls(1);
-	
-	PRINT_STR("draw_title()\n");
 	draw_title("Select output device ...");
 
 	char output_txt[MAX_PATH];
 	snprintf(output_txt, sizeof(output_txt), "%s", output_file);
 	draw_text_center(start_y(ystart), output_txt);
-	
-	PRINT_STR("output_txt: %s\n", output_txt);
-	
+		
 	next_y();
 	
 	DEFOPT(next_y());
@@ -607,7 +622,6 @@ int do_device_wipe_and_format(const char* block_device, uint8_t full, uint8_t fo
 	umount_grw0();
 	mount_devices();
 	
-	
 	int res = 0;
 	
 	if(full) res = wipe_device(block_device, draw_wipe_progress);
@@ -708,6 +722,13 @@ int do_error(int error) {
 	snprintf(msg, sizeof(msg), "Error: %s (0x%02X)", get_error_msg(error), error);
 	do_confirm_message("An error occured.", msg);
 	return 0;
+}
+
+void do_select_device(char* output, size_t len) {
+	umount_devices();
+	
+	PROCESS_MENU(draw_select_device, NULL);
+	strncpy(output, BLOCK_DEVICES[selected][1], len);
 }
 
 int do_select_output_location(char* output, uint64_t dev_size) {

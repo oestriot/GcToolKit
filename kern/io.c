@@ -8,7 +8,14 @@
 
 SceUID k_open_device(const char* device, int permission) {
 	// check if device is being opened for writing ...
-	if(permission & (SCE_O_WRONLY | SCE_O_WRONLY | SCE_O_APPEND | SCE_O_TRUNC | SCE_O_CREAT) != 0) DEVICE_WHITELIST_CHECK(device);
+	if(permission & (SCE_O_WRONLY | SCE_O_WRONLY | SCE_O_APPEND | SCE_O_TRUNC | SCE_O_CREAT) != 0) { 
+		// WARN:
+		// only allow wiping of gamecart(gcd) device and not any others;
+		// this is a sanity check to avoid completely bricking the device
+		// in theroy- the menu does not allow you to select any other device to begin with
+		// but you can never be too sure..
+		DEVICE_WHITELIST_CHECK(device);	
+	}
 	
 	int prev = ksceKernelSetPermission(0x80);
 	SceUID fd = ksceIoOpen(device, permission, 0777);
