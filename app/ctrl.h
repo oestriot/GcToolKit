@@ -6,6 +6,6 @@ extern unsigned int SCE_CTRL_CANCEL;
 
 int init_ctrl();
 int get_key();
-int get_key_noblock();
+unsigned int get_key_noblock();
 
 #endif //CTRL_H

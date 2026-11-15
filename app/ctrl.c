@@ -36,7 +36,7 @@ void init_ctrl() {
 	}
 }
 
-int get_key_noblock() {
+unsigned int get_key_noblock() {
 	SceCtrlData pad;
 	sceCtrlPeekBufferPositive(0, &pad, 1);
 	

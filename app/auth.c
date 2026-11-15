@@ -14,8 +14,6 @@
 #include "err.h"
 #include "log.h"
 
-static uint8_t using_sd2vita = 0;
-
 int key_dump_network(char* ip_address, unsigned short port, char* output_file) {
 	PRINT_FUNC();
 	GcCmd56Keys keys;

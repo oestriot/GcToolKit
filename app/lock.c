@@ -5,14 +5,14 @@
 #include "err.h"
 #include "kernel.h"
 
-static uint8_t disable_power = 0;
-static uint8_t disable_home = 0;
+static uint8_t DISABLE_POWER = 0;
+static uint8_t DISABLE_HOME = 0;
 
 /* power lock thread */
 
 int power_tick_thread(size_t args, void* argp) {
-	disable_power = 1;
-	while(disable_power){
+	DISABLE_POWER = 1;
+	while(DISABLE_POWER){
 		// constantly tick power so that console doesn't fall asleep
 		sceKernelPowerTick(SCE_KERNEL_POWER_TICK_DEFAULT);
 		sceKernelDeleteThread(1000 * 1000 * 1); // 1s		
@@ -21,7 +21,7 @@ int power_tick_thread(size_t args, void* argp) {
 }
 
 void unlock_power() {
-	disable_power = 0;
+	DISABLE_POWER = 0;
 }
 
 int lock_power() {
@@ -41,12 +41,12 @@ error:
 
 /* Default locks */
 void lock_home() {
-	disable_home = 1;
+	DISABLE_HOME = 1;
 	sceShellUtilLock(SCE_SHELL_UTIL_LOCK_TYPE_PS_BTN);
 }
 
 void unlock_home() {
-	disable_home = 0;
+	DISABLE_HOME = 0;
 	sceShellUtilUnlock(SCE_SHELL_UTIL_LOCK_TYPE_PS_BTN);
 }
 
@@ -64,7 +64,7 @@ void unlock_shell() {
 							     SCE_SHELL_UTIL_LOCK_TYPE_USB_CONNECTION |
 							     SCE_SHELL_UTIL_LOCK_TYPE_MUSIC_PLAYER;
 								 
-	if(!disable_home) locks |= SCE_SHELL_UTIL_LOCK_TYPE_PS_BTN;
+	if(!DISABLE_HOME) locks |= SCE_SHELL_UTIL_LOCK_TYPE_PS_BTN;
 	
 	sceShellUtilUnlock(locks);
 }

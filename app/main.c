@@ -4,6 +4,7 @@
 #include <taihen.h>
 #include <vitasdk.h>
 #include <vita2d.h>
+#include <GcToolKit.h>
 
 #include "lock.h"
 #include "ctrl.h"
@@ -20,7 +21,6 @@
 #include "sd2vita.h"
 #include "config.h"
 
-#include <GcToolKit.h>
 
 
 void get_output_filename(char* output, char* extension, size_t number, size_t size_output) {
@@ -493,10 +493,11 @@ int main(int argc, char** argv) {
 	}
 	
 	// check for secret menu
-	if(get_key_noblock() & (SCE_CTRL_START|SCE_CTRL_SELECT|SCE_CTRL_CROSS)) {
+	if(get_key_noblock() & (SCE_CTRL_LTRIGGER | SCE_CTRL_L1)) {
 		handle_select_arbitary_device();
 	}
 	
+	// check for sd2vita
 	if(check_using_sd2vita()) {
 		do_eject_sd_prompt();
 	}

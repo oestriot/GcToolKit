@@ -26,6 +26,7 @@ int validate_sfo(SfoHandle* sfo) {
 
 int open_sfo_or_spsfo(const char* sfo_file, SfoHandle* sfo, int sp_sfo) {
 	int res = -1;
+	SceUID sfo_fd = 0;
 	
 	// clear sfo struct
 	memset(sfo, 0x00, sizeof(SfoHandle));
@@ -51,7 +52,7 @@ int open_sfo_or_spsfo(const char* sfo_file, SfoHandle* sfo, int sp_sfo) {
 	memset(sfo->buffer, 0x00, sfo->size);
 	
 	// open sfo file
-	SceUID sfo_fd = sceIoOpen(sfo_file, SCE_O_RDONLY, 0777);	
+	sfo_fd = sceIoOpen(sfo_file, SCE_O_RDONLY, 0777);	
 	PRINT_STR("sfo fd: %x\n", sfo_fd);
 	if(sfo_fd < 0) ERROR(sfo_fd);
 	
@@ -74,9 +75,9 @@ int open_sfo_or_spsfo(const char* sfo_file, SfoHandle* sfo, int sp_sfo) {
 	if(res != OK) ERROR(res);
 	return OK;
 	
-	error:
-	close_sfo(sfo);
+error:
 	if(sfo_fd > 0) sceIoClose(sfo_fd);
+	close_sfo(sfo);
 	return res;
 }
 
@@ -118,7 +119,6 @@ int read_sfo_key(SfoHandle* sfo, const char* sfo_key, char* out_key, size_t out_
 
 	PRINT_STR("header: %p\n", header);
 	PRINT_STR("skey: %p\n", skey);
-	
 	
 	// read keys
 	for(int i = 0; i < header->count; i++)
