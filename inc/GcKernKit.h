@@ -56,10 +56,7 @@ int kIsSdInserted();
 int kIsMmcInserted();
 
 // sd2vita.c
-
 void kUndoSd2Vita();
-int kIsUsingSd2Vita();
-int kIsNonstandardConfig();
 
 // power.c
 int kPowerSetCallbackState(uint32_t enable);
