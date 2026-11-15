@@ -2,6 +2,8 @@
 #include <stdint.h>
 #include "log.h"
 
+#define TEST_MODULE "os0:/kd/bootimage.skprx"
+
 int check_module_version(const char* module) {
 	PRINT_FUNC();
 

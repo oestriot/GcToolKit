@@ -5,7 +5,7 @@
 #include "device.h"
 #define OP_CANCELED (-9530)
 
-
+void do_eject_sd_prompt();
 void do_gc_insert_prompt();
 int do_gc_options();
 int do_select_output_location(char* output, uint64_t device_size);
@@ -26,7 +26,9 @@ int do_select_backup_format();
 
 void do_kmodule_failed_message(const char* module_name);
 void do_blacklisted_module_message(const char* module_name);
-void do_select_device(char* output, size_t len);
+void do_firmware_too_old(int version);
+int do_select_arbitary_device(char* output, size_t len);
+
 
 void init_menus();
 void term_menus();

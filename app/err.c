@@ -11,6 +11,10 @@ const char* get_error_msg(int error) {
 			return "Size does not match expected size";
 		case SIZE_NO_SPACE:
 			return "No space left";
+		case SEEK_FAILED:
+			return "Seek failed.";
+		case FILE_NOT_FOUND:
+			return "File not found.";
 		case POINTER_WAS_NULL:
 			return "A pointer specified was NULL";
 		case INVALID_MAGIC:

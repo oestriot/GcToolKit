@@ -2,8 +2,11 @@ cmake_minimum_required(VERSION 3.11)
 option(BUILD_PC "Builds PC Utility, GcNetworkBackup" OFF)
 option(CROSS "Cross-Compile GcNetworkBackup to either 'WINDOWS' or 'LINUX'" OFF)
 
+set(GCTK_VERSION "2.0")
+
 if(BUILD_PC OR CROSS)
 # build pc program
+
 
 if(CROSS STREQUAL "LINUX")
     set(CMAKE_TOOLCHAIN_FILE "pc/cross/linux.cmake" CACHE PATH "toolchain file")

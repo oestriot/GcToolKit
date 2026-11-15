@@ -24,6 +24,7 @@ const char* keyid_to_keygroup(uint16_t key_id) {
 	return keyType;
 }
 
+// origin: WiiUIdent which i think(?) got it from LSBLK..
 const char* mmc_vendor_id_to_manufacturer(uint8_t vendor_id) {
 	const char* vendor = "Unknown";
 	switch(vendor_id) {

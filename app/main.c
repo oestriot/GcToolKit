@@ -17,6 +17,7 @@
 #include "net.h"
 #include "bgm.h"
 #include "log.h"
+#include "sd2vita.h"
 #include "config.h"
 
 #include <GcToolKit.h>
@@ -91,7 +92,12 @@ int handle_menu_set_network_options(int what, BackupFormat format, char* block_d
 				continue;
 				break;
 			case CHANGE_PORT:
-				open_ime_short("Enter PORT", &CONFIG.port);
+				// get port
+				uint16_t port = CONFIG.port;
+				open_ime_short("Enter PORT", &port);
+				CONFIG.port = port;
+				
+				save_config();
 				continue;
 				break;
 			case START_DUMP:
@@ -442,15 +448,21 @@ void handle_menu_select_option() {
 	return;
 }
 
-int handle_select_device() {
+int handle_select_arbitary_device() {
 	char dump_from[0x100];
-	do_select_device(dump_from, sizeof(dump_from)-1);
+	int ret = do_select_arbitary_device(dump_from, sizeof(dump_from)-1);
+	if(ret == OP_CANCELED) return 0;
+	
 	handle_menu_set_output("img", BACKUP_FORMAT_RAW, DUMP_WHOLE_GC, dump_from);
+	return 0;
 }
+
+
 
 int main(int argc, char** argv) {
 	int has_restarted = (argc >= 2 && argv != NULL && strcmp(argv[1], "-restarted") == 0);
-	
+	PRINT_STR("has_restarted: 0x%x\n", has_restarted);
+
 	init_config();
 	init_ctrl();
 	init_vita2d();
@@ -459,26 +471,37 @@ int main(int argc, char** argv) {
 	init_sound();
 	init_shell();
 	
-	
-	PRINT_STR("has_restarted: 0x%x\n", has_restarted);
-	
-	if(!has_restarted){
-		load_kernel_modules();
+	// check if firmware is too old (< 3.60)
+	int firmware = get_real_fw_version();
+	PRINT_STR("Running firmware version: %x\n", firmware);	
+	if(firmware < MIN_FW_VERSION) {
+		do_firmware_too_old(firmware);
+		return 0;
 	}
 	
+	// check if program has been restarted for kernel modules;
+	if(!has_restarted){
+		if(load_kernel_modules()) { // load kernel modules, and restart.
+			restart_application();
+		}
+	}
+	
+	// check if kernel module was loaded ..
 	if(!is_module_started(KMODULE_NAME)) {
-		PRINT_STR("Showing kmodule failed to load screen\n");
 		do_kmodule_failed_message(KMODULE_NAME);
 		return 0;
 	}
 	
-	// check buttons pressed;
-	if(get_key() == SCE_CTRL_START) {
-		handle_select_device();
+	// check for secret menu
+	if(get_key_noblock() & (SCE_CTRL_START|SCE_CTRL_SELECT|SCE_CTRL_CROSS)) {
+		handle_select_arbitary_device();
 	}
 	
+	if(check_using_sd2vita()) {
+		do_eject_sd_prompt();
+	}
 	
-
+	// main loop:
 	do_gc_insert_prompt();
 	while(1) {
 		handle_menu_select_option();

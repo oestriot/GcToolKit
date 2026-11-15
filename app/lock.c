@@ -6,7 +6,7 @@
 #include "kernel.h"
 
 static uint8_t disable_power = 0;
-static uint8_t flag_lock_gc = 0;
+static uint8_t disable_home = 0;
 
 /* power lock thread */
 
@@ -38,47 +38,17 @@ error:
 }
 
 
-/* gc lock thread */
-
-int gc_lock_thread(size_t args, void* argp) {
-	
-	flag_lock_gc = 1;
-	while(flag_lock_gc){
-		// check if the gc is still inserted
-		if(!device_exist(BLOCK_DEVICE_GC)) {
-			// if it isn't; then restart the application ???
-			// to be honest im not sure this is much better than just spamming the cancel button.
-			sceAppMgrLoadExec(EBOOT_PATH, NULL, NULL);
-			flag_lock_gc = 0;
-		}
-		sceKernelDeleteThread(1000 * 300); // 300ms
-	}
-	return 0;
-}
-
-
-void unlock_gc() {
-	flag_lock_gc = 0;
-}
-
-int lock_gc() {
-/* #ifdef ENABLE_GC_LOCK
-	int res = 0;
-	SceUID thread_id = sceKernelCreateThread("GcLockThread", gc_lock_thread, 0x10000100, 0x1000, 0, 0, NULL);
-	if(thread_id < 0) ERROR(thread_id);
-
-	res = sceKernelStartThread(thread_id, 0, NULL);
-	
-error:
-	if(thread_id < 0)
-		sceKernelDeleteThread(thread_id);
-	return res;
-#else */
-	return 0;
-//#endif
-}
 
 /* Default locks */
+void lock_home() {
+	disable_home = 1;
+	sceShellUtilLock(SCE_SHELL_UTIL_LOCK_TYPE_PS_BTN);
+}
+
+void unlock_home() {
+	disable_home = 0;
+	sceShellUtilUnlock(SCE_SHELL_UTIL_LOCK_TYPE_PS_BTN);
+}
 
 void lock_shell() {
 	sceShellUtilLock(SCE_SHELL_UTIL_LOCK_TYPE_QUICK_MENU |
@@ -89,12 +59,14 @@ void lock_shell() {
 }
 
 void unlock_shell() {
-	sceShellUtilUnlock(SCE_SHELL_UTIL_LOCK_TYPE_QUICK_MENU |
-					   SCE_SHELL_UTIL_LOCK_TYPE_POWEROFF_MENU |
-					   SCE_SHELL_UTIL_LOCK_TYPE_USB_CONNECTION |
-					   SCE_SHELL_UTIL_LOCK_TYPE_MUSIC_PLAYER |
-					   SCE_SHELL_UTIL_LOCK_TYPE_PS_BTN);
+	SceShellUtilLockType locks = SCE_SHELL_UTIL_LOCK_TYPE_QUICK_MENU |
+							     SCE_SHELL_UTIL_LOCK_TYPE_POWEROFF_MENU |
+							     SCE_SHELL_UTIL_LOCK_TYPE_USB_CONNECTION |
+							     SCE_SHELL_UTIL_LOCK_TYPE_MUSIC_PLAYER;
+								 
+	if(!disable_home) locks |= SCE_SHELL_UTIL_LOCK_TYPE_PS_BTN;
 	
+	sceShellUtilUnlock(locks);
 }
 
 // disable memory card remove/insert prompt everywhere;

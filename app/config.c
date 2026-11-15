@@ -1,6 +1,7 @@
 #include <string.h>
 #include <vitasdk.h>
 
+#include "log.h"
 #include "config.h"
 #include "io.h"
 
@@ -45,9 +46,10 @@ int is_circle_confirm() {
 
 
 void reset_config() {
+	PRINT_STR("Resetting configuration\n");
 	memset(&CONFIG, 0x00, sizeof(GcConfig));
-	CONFIG.major_version = GCTK_MAJOR_VERISON;
-	CONFIG.minor_version = GCTK_MINOR_VERSION;
+	CONFIG.major_version = CFG_MAJOR_VERSION;
+	CONFIG.minor_version = CFG_MINOR_VERSION;
 	
 	strncpy(CONFIG.ip_address, DEFAULT_IP, sizeof(CONFIG.ip_address));
 	strncpy(CONFIG.backup_folder, DEFAULT_FOLDER_NAME, sizeof(CONFIG.backup_folder));
@@ -60,12 +62,15 @@ void reset_config() {
 
 void init_config() {
 	if(!file_exist(CONFIG_SAVE_LOCATION)) reset_config();
+
+	PRINT_STR("Reading config from: %s\n", CONFIG_SAVE_LOCATION);
 	size_t wr = read_file(CONFIG_SAVE_LOCATION, &CONFIG, sizeof(GcConfig));
-	if(wr != sizeof(GcConfig) || CONFIG.major_version < GCTK_MAJOR_VERISON) { 
+	if(wr != sizeof(GcConfig) || CONFIG.major_version < CFG_MAJOR_VERSION) { 
 		reset_config();
 	}
 }
 
 int save_config() {
+	PRINT_STR("Writing config to: %s\n", CONFIG_SAVE_LOCATION);
 	return write_file(CONFIG_SAVE_LOCATION, &CONFIG, sizeof(GcConfig));	
 }

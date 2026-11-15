@@ -4,6 +4,7 @@
 #include <vitasdk.h>
 
 #include "io.h"
+#include "lock.h"
 #include "device.h"
 
 #include <GcToolKit.h>
@@ -13,6 +14,7 @@
 #include "err.h"
 #include "log.h"
 
+static uint8_t using_sd2vita = 0;
 
 int key_dump_network(char* ip_address, unsigned short port, char* output_file) {
 	PRINT_FUNC();
@@ -58,23 +60,9 @@ int key_dump(char* output_file) {
 }
 
 
+
 void wait_for_gc_auth() {
 	PRINT_STR("waiting for authentication...\n");
-		
-	// handle case if an card is inserted ...
-	while(kIsSdInserted()) { 
-		sceKernelDelayThread(1000 * 30); // 10ms
-	}
-	
-	// after that undo sd2vita patches if appliciable ./
-	if(!kUndoneSd2VitaPatches() && check_loaded_blacklisted_module() != NULL) {
-		//umount_ux0();
-		PRINT_STR("undoing sd2vita patches\n");
-		kUndoSd2Vita();
-		
-		PRINT_STR("resetting gamecart slot ...\n");
-		kResetGc();
-	}
 	
 	// enable emulated gamecart authentication
 	PRINT_STR("enabling GcEmuMgr ...\n");
@@ -86,14 +74,12 @@ void wait_for_gc_auth() {
 		kResetGc();
 	}
 	
+	// wait for gamecart authentication ..
 	while(!kIsAuthenticated()) {
 		sceKernelDelayThread(1000 * 30); // 10ms
 	};
 
-	//PRINT_STR("auth complete ... waiting 10ms\n");
-	//sceKernelDelayThread(1000 * 30); // 10ms
-	
-	// disable custom gc handling ..
+	// revert to regular gc authentication ..
 	PRINT_STR("disabling GcEmuMgr ...\n");
 	kDisableGcEmuMgr();
 	

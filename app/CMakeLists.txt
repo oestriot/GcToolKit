@@ -13,10 +13,10 @@ include("$ENV{VITASDK}/share/vita.cmake" REQUIRED)
 
 set(VITA_APP_NAME "GCToolKit")
 set(VITA_TITLEID  "GCTK10000")
-set(VITA_VERSION  "01.09")
+set(VITA_VERSION  "0${GCTK_VERSION}0")
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wno-format-truncation -std=gnu17")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wno-format-truncation -std=gnu17 -DGCTK_VERSION=${GCTK_VERSION}")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -DGCTK_VERSION=${GCTK_VERSION}")
 
 set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -O3 -g0")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -g0")
@@ -52,6 +52,7 @@ add_executable(${PROJECT_NAME}
 	ime.c
 	net.c
 	gc_ident.c
+	sd2vita.c
 	bgm.cpp
 )
 
@@ -74,9 +75,7 @@ target_link_libraries(${PROJECT_NAME}
 	m
 	z
 
-
 # vita system libraries
-
 	SceSysmodule_stub
 	SceNet_stub
 	SceNetCtl_stub_weak
@@ -115,6 +114,8 @@ vita_create_vpk(${PROJECT_NAME}.vpk ${VITA_TITLEID} eboot.bin
   
   FILE res/background.png res/background.png
   FILE res/insertgc.png res/insertgc.png
+  FILE res/ejectsd.png res/ejectsd.png
+  FILE res/versionbox.png res/versionbox.png
   FILE res/menuoverlay.png res/menuoverlay.png
   FILE res/bgm.ogg res/bgm.ogg  
 )

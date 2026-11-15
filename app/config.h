@@ -3,12 +3,12 @@
 
 #define CONFIG_SAVE_LOCATION "savedata0:/config.bin"
 
-#define DEFAULT_IP "192.168.1.0"
+#define DEFAULT_IP "192.168.1.2"
 #define DEFAULT_PORT 46327
 #define DEFAULT_FOLDER_NAME "bak"
 
-#define GCTK_MAJOR_VERISON 1
-#define GCTK_MINOR_VERSION 0
+#define CFG_MAJOR_VERSION 1
+#define CFG_MINOR_VERSION 0
 
 #include "io.h"
 
@@ -33,7 +33,7 @@ typedef struct GcConfig {
 	char backup_folder[MAX_PATH];
 	GcMusicSetting music_setting;
 	GcConfirmButtonSetting confirm_setting;
-} GcConfig;
+} __attribute__((packed)) GcConfig;
 
 extern GcConfig CONFIG;
 

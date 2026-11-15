@@ -36,6 +36,13 @@ void init_ctrl() {
 	}
 }
 
+int get_key_noblock() {
+	SceCtrlData pad;
+	sceCtrlPeekBufferPositive(0, &pad, 1);
+	
+	return pad.buttons;
+}
+
 int get_key() {	
 	unsigned int prev = 0;
 	SceCtrlData pad;

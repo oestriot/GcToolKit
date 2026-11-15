@@ -92,18 +92,48 @@ const char* check_loaded_blacklisted_module() {
 	return NULL;
 }
 
-void load_kernel_modules() {
+int load_kernel_modules() {
 	PRINT_STR("Checking kernel module ...\n");
 	if(!is_module_started(KMODULE_NAME)) {
-		PRINT_STR("Attempting to load ...\n")
+		PRINT_STR("Attempting to load kernel module ...\n")
+		
 		// try load GcKernKit from all load locations.
 		for(int i = 0; load_locations[i] != NULL; i++) {
-			if(try_load(load_locations[i])) break;
+			if(try_load(load_locations[i])) return 1;
 		}
 		
-		// restart this application		
-		char* argv[2] = {"-restarted", NULL};
-		sceAppMgrLoadExec(EBOOT_PATH, argv, NULL);
 	}
-	PRINT_STR("Already loaded!\n");
+	else {
+		return 1;
+	}
+	
+	return 0;
+}
+
+void restart_application() {
+	PRINT_STR("Restarting application ...\n");
+	char* argv[2] = {"-restarted", NULL};
+	sceAppMgrLoadExec(EBOOT_PATH, argv, NULL);	
+}
+
+int check_module_version(const char* module) {
+	PRINT_STR("Checking version of module: %s\n", module);
+	
+	int version = 0x000;
+	
+	SceUID fd = sceIoOpen(module, SCE_O_RDONLY, 0777);
+	if(fd > 0) {
+		sceIoLseek(fd, 0x94, SCE_SEEK_SET);
+		sceIoRead(fd, &version, sizeof(version));
+		sceIoClose(fd);
+		
+		PRINT_STR("%s version: %x\n", module, version);
+		return version;
+	}
+	PRINT_STR("Failed to read fw version; falling back on default\n");
+	return MIN_FW_VERSION;
+}
+
+int get_real_fw_version() {
+	return check_module_version("os0:/kd/bootimage.skprx");
 }

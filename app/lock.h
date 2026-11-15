@@ -4,8 +4,8 @@
 void unlock_power();
 int lock_power();
 
-int lock_gc();
-void unlock_gc();
+void lock_home();
+void unlock_home();
 
 void lock_shell();
 void unlock_shell();

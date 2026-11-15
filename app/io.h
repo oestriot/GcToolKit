@@ -33,13 +33,13 @@ int mount_grw0();
 void umount_gro0();
 void umount_grw0();
 
-void mount_devices();
+void mount_external_devices();
 void mount_gamecart();
 void umount_uma();
 void umount_xmc();
 void umount_imc();
 void umount_ux0();
-void umount_devices();
+void umount_external_devices();
 
 uint64_t get_file_size(const char* filepath);
 uint64_t get_free_space(const char* device);

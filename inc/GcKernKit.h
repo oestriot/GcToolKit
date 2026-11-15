@@ -58,6 +58,7 @@ int kIsMmcInserted();
 // sd2vita.c
 
 void kUndoSd2Vita();
-int kUndoneSd2VitaPatches();
+int kIsUsingSd2Vita();
+int kIsNonstandardConfig();
 
 #endif // GC_KERN_KIT_H

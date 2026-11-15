@@ -94,7 +94,7 @@ int k_run_authentication(uint16_t key_id) {
 		PRINT_STR("disabling GcEmuMgr\n");
 		kDisableGcEmuMgr();
 		
-		return 0x00; 
+		return SCE_OK;
 	}
 	else{
 		PRINT_STR("ret = 0x%x\n", ret);

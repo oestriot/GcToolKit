@@ -3,6 +3,7 @@
 #include <vitasdk.h>
 #include <string.h>
 
+#include "device.h"
 #include "io.h"
 #include "log.h"
 #include "err.h"
@@ -12,7 +13,7 @@
 int check_partition(const char* partition) {
 	if(file_exist(partition)) {
 		PRINT_STR("Partition: %s exists\n", partition);
-		if(read_first_filename(partition, NULL, 1) >= 0) {
+		if(read_first_filename(partition, NULL, 1) >= SCE_OK) {
 			PRINT_STR("Read first filename passed: %s\n", partition);
 			return 1;
 		}
@@ -23,7 +24,8 @@ int check_partition(const char* partition) {
 int file_exist(const char* path) {
 	SceIoStat stat;
 	int res = sceIoGetstat(path, &stat);
-	if(res >= 0) return 1;
+	PRINT_STR("file_exist(%s) = %x\n", path, res);
+	if(res >= SCE_OK) return 1;
 	else return 0;
 }
 
@@ -168,7 +170,7 @@ int mount_gro0() {
 }
 
 int mount_grw0() {
-	return mount_partition(0xA00, NULL, 2); // mount grw0
+	return mount_partition(0xA00, NULL, 1); // mount grw0
 }
 
 void umount_gro0() {
@@ -198,26 +200,26 @@ void umount_imc() {
 
 
 
-void umount_devices() {
+void umount_external_devices() {
 	umount_uma();
 	umount_xmc();		
 }
 
 void mount_gamecart() {
-	if(!file_exist("gro0:")) {
+	if(device_exist(BLOCK_DEVICE_GRO0) && !file_exist("gro0:")) {
 		PRINT_STR("Mounting: gro0\n");
 		int res = mount_gro0();
 		if(res >= 0) wait_for_partition("gro0:");		
 	}
 
-	if(!file_exist("grw0:")) {
+	if(device_exist(BLOCK_DEVICE_GRW0) && !file_exist("grw0:")) {
 		PRINT_STR("Mounting: grw0\n");
 		int res = mount_grw0();
 		if(res >= 0) wait_for_partition("grw0:");
 	}
 }
 
-void mount_devices() {
+void mount_external_devices() {
 	int res = mount_uma();
 	if(res >= 0) wait_for_partition("uma0:");
 	

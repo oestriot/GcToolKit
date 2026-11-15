@@ -1,6 +1,8 @@
 #include "draw.h"
 #include "ctrl.h"
 #include "io.h"
+#include "log.h"
+
 #include <vita2d.h>
 #include <vitasdk.h>
 #include <string.h>
@@ -18,6 +20,12 @@
 #define MENUOVERLAY_POS_X ((SCREEN_WIDTH - MENUOVERLAY_WIDTH) - MENUOVERLAY_PAD)
 #define MENUOVERLAY_POS_Y (MENUOVERLAY_PAD)
 
+#define VERSIONBOX_POS_X (3)
+#define VERSIONBOX_POS_Y (3)
+
+#define VERSIONBOX_WIDTH (150)
+#define VERSIONBOX_HEIGHT (32)
+
 #define BUTTONOVERLAY_Y MENUOVERLAY_PAD + (MENUOVERLAY_HEIGHT - 10)
 #define TITLE_Y (MENUOVERLAY_POS_Y + 35)
 
@@ -29,9 +37,36 @@
 static vita2d_pgf* pgf;
 static vita2d_pvf* pvf;
 
-static vita2d_texture* background;
-static vita2d_texture* menuoverlay;
+static vita2d_texture* background = NULL;
+static vita2d_texture* menuoverlay = NULL;
+static vita2d_texture* versionbox = NULL;
 
+void draw_versionbox() {
+	int text_width = 0;
+	int text_height = 0;
+
+	// get size of versionbox
+	char version_text[512];
+	snprintf(version_text, sizeof(version_text), "GcToolKit v%.02f", GCTK_VERSION);
+	vita2d_pvf_text_dimensions(pvf, TEXT_SIZE, version_text, &text_width, &text_height);
+	
+	PRINT_STR("text_width: %x\n", text_width);
+	PRINT_STR("text_height: %x\n", text_height);
+	
+	// draw versionbox
+	draw_texture(versionbox, VERSIONBOX_POS_X, VERSIONBOX_POS_Y);
+	
+	// Calculate the x position as center based on the menu overlay;
+	int text_x = VERSIONBOX_POS_X + ((VERSIONBOX_WIDTH/2) - (text_width/2));
+	int text_y = VERSIONBOX_POS_Y + ((VERSIONBOX_HEIGHT/2) + (text_height/2));
+	
+	PRINT_STR("text_x: %x\n", text_x);
+	PRINT_STR("text_y: %x\n", text_y);
+	
+	// draw the text on screen.
+	draw_text_color(text_x, text_y, RGBA8(0xFF, 0xFF, 0x00, 0xFF), version_text);
+
+}
 
 void init_vita2d() {
 	vita2d_init();
@@ -42,6 +77,7 @@ void init_vita2d() {
 
 	background = load_texture("app0:/res/background.png");
 	menuoverlay = load_texture("app0:/res/menuoverlay.png");
+	versionbox = load_texture("app0:/res/versionbox.png");
 }
 
 void term_vita2d() {
@@ -52,6 +88,7 @@ void term_vita2d() {
 
 	vita2d_free_texture(background);
 	vita2d_free_texture(menuoverlay);
+	vita2d_free_texture(versionbox);
 }
 
 void draw_text_color(int x, int y, int color, const char* msg) {	
@@ -90,7 +127,7 @@ void draw_text_center_color(int y, int color, const char* msg) {
 	
 	
 	// Calculate the x position as center based on the menu overlay;
-	int text_x = MENUOVERLAY_POS_X + (((MENUOVERLAY_WIDTH)/2) - (text_width/2));
+	int text_x = MENUOVERLAY_POS_X + ((MENUOVERLAY_WIDTH/2) - (text_width/2));
 	
 	// draw this new message to the screen
 	draw_text_color(text_x, y, color, processed_msg);
@@ -139,7 +176,8 @@ void draw_controls(uint8_t cancel) {
 
 void draw_background() {
 	draw_texture(background, 0, 0);
-	draw_texture(menuoverlay, MENUOVERLAY_POS_X, MENUOVERLAY_POS_Y);	
+	draw_texture(menuoverlay, MENUOVERLAY_POS_X, MENUOVERLAY_POS_Y);
+	draw_versionbox();
 }
 
 void start_draw() {

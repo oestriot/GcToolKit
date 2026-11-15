@@ -2,6 +2,7 @@
 
 #include <vitasdkkern.h>
 #include <taihen.h>
+#include <stdio.h>
 
 #include "module.h"
 #include "sd2vita.h"
@@ -10,60 +11,14 @@ int module_get_offset(SceUID pid, SceUID modid, int segidx, size_t offset, uintp
 static SceIoMountPoint *(* sceIoFindMountPoint)(int id) = NULL;
 static int undone_sd2vita_patch = 0;
 
-int fix_up_mountpoint(int id, const char* new_dev, const char* new_blkdev) {
-	PRINT_FUNC();
-
-	SceIoMountPoint* part = sceIoFindMountPoint(id);
+void find_mountpoint_function() {
+	if(sceIoFindMountPoint != NULL) return;
 	
-	PRINT_STR("fixup_mountpoint(0x%x, %s)\n", id, new_blkdev);
-	if(part != NULL) {
-		// fix part->dev
-		if(part->dev != NULL) {
-			if(part->dev->blkdev == NULL || strcmp(part->dev->blkdev, new_blkdev) != 0) {
-				PRINT_STR("%s -> part->dev->blkdev %s\n", part->dev->blkdev, new_blkdev);
-				DACR_OFF(part->dev->blkdev = new_blkdev);
-			}
-			if(part->dev->dev == NULL || strcmp(part->dev->dev, new_dev) != 0) {
-				PRINT_STR("%s -> part->dev->dev %s\n", part->dev->dev, new_dev);
-				DACR_OFF(part->dev->dev = new_dev);
-			}
-		}
-		
-		// fix part->dev2
-		if(part->dev2 != NULL) {
-			if(part->dev2->blkdev == NULL || strcmp(part->dev2->blkdev, new_blkdev) != 0) {
-				PRINT_STR("%s -> part->dev2->blkdev %s\n", part->dev2->blkdev, new_blkdev);
-				DACR_OFF(part->dev2->blkdev = new_blkdev);
-			}
-			if(part->dev2->dev == NULL || strcmp(part->dev2->dev, new_dev) != 0) {
-				PRINT_STR("%s -> part->dev->dev %s\n", part->dev2->dev, new_dev);
-				DACR_OFF(part->dev2->dev = new_dev);
-			}
-		}
-	}
-	
-	
-	return 0;
-}
-
-
-int kUndoneSd2VitaPatches() {
-	PRINT_FUNC();
-
-	return undone_sd2vita_patch;
-}
-
-void kUndoSd2Vita() {
-	PRINT_FUNC();
-	
-	
-	if(undone_sd2vita_patch) return;
-	undone_sd2vita_patch = 1;
+	PRINT_STR("Finding sceIoFindMountPoint.\n");
 	
 	// get functions from sceIoFileMgr.
 	SceUID module_id = ksceKernelSearchModuleByName("SceIofilemgr");
 	int iofilemgr_version = check_module_version("os0:/kd/iofilemgr.skprx");
-	
 	
 	if(module_id > 0){
 		if(iofilemgr_version >= 0x363) {
@@ -74,14 +29,66 @@ void kUndoSd2Vita() {
 		}
 	}
 	
+}
+
+void fix_up_mountpoint(int id, const char* new_dev, const char* new_blkdev) {
+
+	SceIoMountPoint* part = sceIoFindMountPoint(id);
+	PRINT_STR("fixup_mountpoint(0x%x, %s)\n", id, new_blkdev);
+	DACR_OFF(
+		if(part != NULL) {
+			// fix part->dev
+			if(part->dev != NULL) {
+				if(part->dev->blkdev == NULL || strcmp(part->dev->blkdev, new_blkdev) != 0) {
+					PRINT_STR("%s -> part->dev->blkdev %s\n", part->dev->blkdev, new_blkdev);
+					part->dev->blkdev = new_blkdev;
+				}
+				if(part->dev->dev == NULL || strcmp(part->dev->dev, new_dev) != 0) {
+					PRINT_STR("%s -> part->dev->dev %s\n", part->dev->dev, new_dev);
+					part->dev->dev = new_dev;
+				}
+			}
+			
+			// fix part->dev2
+			if(part->dev2 != NULL) {
+				if(part->dev2->blkdev == NULL || strcmp(part->dev2->blkdev, new_blkdev) != 0) {
+					PRINT_STR("%s -> part->dev2->blkdev %s\n", part->dev2->blkdev, new_blkdev);
+					part->dev2->blkdev = new_blkdev;
+				}
+				if(part->dev2->dev == NULL || strcmp(part->dev2->dev, new_dev) != 0) {
+					PRINT_STR("%s -> part->dev->dev %s\n", part->dev2->dev, new_dev);
+					part->dev2->dev = new_dev;
+				};
+			};
+		}
+	);
+	
+	return;
+}
+
+void kUndoSd2Vita() {
+	PRINT_FUNC();
+	
+	if(undone_sd2vita_patch) return;
+	undone_sd2vita_patch = 1;
+	
+	find_mountpoint_function();
+	
 	// revert YAMT sd patches
-	module_id = ksceKernelSearchModuleByName("SceSysmem");
+	SceUID module_id = ksceKernelSearchModuleByName("SceSysmem");
 	int sysmem_verison = check_module_version("os0:/kd/iofilemgr.skprx");
 	
 	if(module_id > 0) {
 		if(sysmem_verison >= 0x360) {
 			uint8_t original_data[2] = { 0x00, 0x20 };
-			SceUID inject = taiInjectDataForKernel(KERNEL_PID, module_id, 0, 0x21610, original_data, sizeof(original_data));
+			SceUID inject = taiInjectDataForKernel(KERNEL_PID, 
+				module_id, 
+				0, 
+				0x21610, 
+				original_data, 
+				sizeof(original_data)
+			);
+			
 			PRINT_STR("inject: %x\n", inject);
 		}
 	}

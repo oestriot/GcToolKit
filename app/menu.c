@@ -10,6 +10,8 @@
 #include "net.h"
 #include "lock.h"
 #include "log.h"
+#include "kernel.h"
+#include "sd2vita.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -19,6 +21,8 @@
 #include <GcKernKit.h>
 
 static vita2d_texture* insertgc_tex = NULL;
+static vita2d_texture* ejectsd_tex = NULL;
+
 static uint8_t options[BUFFER_SIZE];
 
 static uint32_t oy = 0;
@@ -148,37 +152,25 @@ uint32_t next_y() {
 						if(ctrl == SCE_CTRL_CONFIRM || ctrl == SCE_CTRL_CANCEL) break;\
 					} while(1)\
 
+#define WAIT_FATAL() \
+					do { \
+						sceKernelDelayThread(1000 * 5); \
+					} while(1);
 
 
-int draw_select_device(int* selected, int* window) {
-	start_draw();
-
-	draw_background();
-	
-	draw_title("Backup entire device ...");
-	
-	DEFOPT(next_y());
-	
-	for(int i = 0; i < BLOCK_DEVICES[i] != NULL; i++) {
-		PRINT_STR("%s: %s\n", BLOCK_DEVICES[i][0], BLOCK_DEVICES[i][1]);
-		int exist = device_exist(BLOCK_DEVICES[i][1]);
-		ADDOPT(exist, BLOCK_DEVICES[i][0]);
-	}
-	
-	end_draw();
-	
-	RETURNOPT();
-}
 
 
 
 void init_menus() {
-	insertgc_tex = load_texture("app0:/res/insertgc.png");
+	insertgc_tex = load_texture("app0:res/insertgc.png");
+	ejectsd_tex = load_texture("app0:res/ejectsd.png");
 }
 
 void term_menus() {
 	free_texture(insertgc_tex);	
+	free_texture(ejectsd_tex);	
 }
+
 
 void draw_wipe_progress(const char* device, const char* unused, uint64_t progress, uint64_t total) {
 	RESTORE_MENU("Formatting", "Writing", device, device);
@@ -206,6 +198,27 @@ int draw_select_backup_format(int* selected, int* window, const char* unused) {
 	ADDOPT(1, "Backup PSVGameSD (.psv)");
 	ADDOPT(1, "Backup Trimmed PSVGameSD (.trim.psv)");
 	ADDOPT(1, "Backup Raw (.img)");
+	
+	end_draw();
+	
+	RETURNOPT();
+}
+
+int draw_select_arbitary_device(int* selected, int* window, const char* unused) {
+	start_draw();
+	draw_background();
+	
+	draw_title("Backup entire device ...");
+	
+	DEFOPT(ystart);
+	
+	for(int i = 0; BLOCK_DEVICES[i][0] != NULL; i++) {
+		const char* label = BLOCK_DEVICES[i][0];
+		const char* device = BLOCK_DEVICES[i][1];
+		
+		PRINT_STR("%s: %s\n", label, device);
+		ADDOPT(device_exist(device), label);
+	}
 	
 	end_draw();
 	
@@ -241,6 +254,21 @@ int draw_gc_options(int* selected, int* window, char* title, uint8_t has_grw0, u
 	RETURNOPT();
 }
 
+void draw_eject_sd_menu() {
+	start_draw();
+	draw_background();
+	
+	start_y(ytop);
+
+	draw_title("Eject your SD2VITA ...");
+	draw_texture_center(next_y(), ejectsd_tex);
+	
+	skip_y(200);
+	
+	draw_text_center(next_y(), "Hotswap to a PlayStation Vita Game Cartridge.");	
+	end_draw();
+}
+
 void draw_insert_gc_menu() {
 	start_draw();
 	draw_background();
@@ -256,8 +284,14 @@ void draw_insert_gc_menu() {
 	end_draw();
 }
 
+void do_eject_sd_prompt() {
+	draw_eject_sd_menu();
+	wait_for_sd2vita_eject();
+	undo_sd2vita_patches();
+}
+
+
 void do_gc_insert_prompt() {
-	unlock_gc();
 	draw_insert_gc_menu();
 	wait_for_gc_auth();	
 }
@@ -412,7 +446,7 @@ int draw_format_confirm_menu(int* selected, int* window, const char* device) {
 void draw_blacklisted_module_message(const char* module_name) {
 	start_draw();
 	draw_background();
-	draw_controls(0);
+	//draw_controls(0);
 	
 	char output_txt[MAX_PATH];
 	snprintf(output_txt, sizeof(output_txt), "Conflicting modules found!");
@@ -428,10 +462,29 @@ void draw_blacklisted_module_message(const char* module_name) {
 	end_draw();
 }
 
+void draw_firmware_too_old(int version) {
+	start_draw();
+	draw_background();
+	
+	char output_txt[MAX_PATH];
+	snprintf(output_txt, sizeof(output_txt), "Unsupported firmware! %x", version);
+	draw_title(output_txt);
+	
+	snprintf(output_txt, sizeof(output_txt), "You are on firmware version: %x", version);
+	draw_text_center(start_y(ystart), output_txt);
+	next_y();
+
+	snprintf(output_txt, sizeof(output_txt), "GcToolKit requires firmware %x or newer.", MIN_FW_VERSION);
+	draw_text_center(next_y(), output_txt);
+	
+	draw_text_center(next_y(), "How'd you even manage to run it on a version this old??");
+	
+}
+
 void draw_kmodule_failed_message(const char* module_name) {
 	start_draw();
 	draw_background();
-	draw_controls(0);
+	//draw_controls(0);
 	
 	char output_txt[MAX_PATH];
 	snprintf(output_txt, sizeof(output_txt), "Failed to load app0:%s.skprx", module_name);
@@ -439,8 +492,10 @@ void draw_kmodule_failed_message(const char* module_name) {
 	
 	snprintf(output_txt, sizeof(output_txt), "GcToolKit failed to load kernel module \"%s\"", module_name);
 	draw_text_center(start_y(ystart), output_txt);
-	draw_text_center(next_y(), "Please ensure \"Unsafe Homebrew\" is enabled.");
-	draw_text_center(next_y(), "This can also fail on \"Activated\" Dev & Test Kits.");
+	draw_text_center(next_y(), "Possible causes include:");
+	draw_text_center(next_y(), "- You run via ★APP_HOME or Neighbourhood, but without TaiHEN.");
+	draw_text_center(next_y(), "- You are on an activated Testing Kit or Development Kit.");
+	draw_text_center(next_y(), "- You have \"Unsafe Homebrew\" disabled in the settings menu.");
 	
 	end_draw();
 }
@@ -452,7 +507,6 @@ void draw_confirmation_message(const char* title, const char* msg) {
 	draw_controls(0);
 	
 	draw_title(title);
-
 	draw_text_center(start_y(ystart), msg);
 	
 	end_draw();
@@ -546,12 +600,8 @@ int do_network_options(char* ip_address, unsigned short port) {
 int do_gc_options() {
 	char title_id[64];
 	char title[64];
-	
-	lock_gc();
-	
-	mount_gamecart();
+		
 	read_gameinfo(title_id, title, sizeof(title));
-	
 	remove_illegal_chars(title);
 	
 	uint8_t has_grw0 = device_exist(BLOCK_DEVICE_GRW0);
@@ -588,21 +638,27 @@ void do_ime() {
 	for(int i = 0; i < 0x5; i++) draw_ime();
 }
 
+
 void do_confirm_message(const char* title, const char* msg) {
 	draw_confirmation_message(title, msg);
-
 	WAIT_FOR_CONFIRM();
 }
 
 void do_blacklisted_module_message(const char* module_name) {
 	draw_blacklisted_module_message(module_name);
-	WAIT_FOR_CONFIRM();
+	WAIT_FATAL();
 }
 
 void do_kmodule_failed_message(const char* module_name) {
 	draw_kmodule_failed_message(module_name);
-	WAIT_FOR_CONFIRM();
+	WAIT_FATAL();
 }
+
+void do_firmware_too_old(int version) {
+	draw_firmware_too_old(version);
+	WAIT_FATAL();
+}
+
 
 int do_format_confirm(const char* block_device) {
 	PROCESS_MENU(draw_format_confirm_menu, block_device);
@@ -620,7 +676,7 @@ int do_device_wipe_and_format(const char* block_device, uint8_t full, uint8_t fo
 
 	umount_gro0();
 	umount_grw0();
-	mount_devices();
+	mount_external_devices();
 	
 	int res = 0;
 	
@@ -630,7 +686,7 @@ int do_device_wipe_and_format(const char* block_device, uint8_t full, uint8_t fo
 
 	mount_gro0();
 	mount_grw0();
-	umount_devices();
+	umount_external_devices();
 	
 	unlock_shell();
 	unlock_power();
@@ -644,13 +700,13 @@ int do_device_restore(const char* block_device, char* input_file) {
 	
 	umount_gro0();
 	umount_grw0();
-	mount_devices();
+	mount_external_devices();
 	
 	int res = restore_device(block_device, input_file, draw_restore_progress);
 
 	mount_gro0();
 	mount_grw0();
-	umount_devices();
+	umount_external_devices();
 
 	unlock_shell();
 	unlock_power();
@@ -664,7 +720,7 @@ int do_device_dump(const char* block_device, char* output_file, BackupFormat for
 	
 	umount_gro0();
 	umount_grw0();
-	mount_devices();
+	mount_external_devices();
 	int res = 0;
 	
 	GcCmd56Keys keys;
@@ -687,7 +743,7 @@ int do_device_dump(const char* block_device, char* output_file, BackupFormat for
 
 	mount_gro0();
 	mount_grw0();
-	umount_devices();
+	umount_external_devices();
 	
 	unlock_shell();
 	unlock_power();
@@ -698,8 +754,8 @@ int do_device_dump(const char* block_device, char* output_file, BackupFormat for
 
 int do_select_input_location() {
 	
-	PRINT_STR("mount_devices\n");
-	mount_devices();
+	PRINT_STR("mount_external_devices\n");
+	mount_external_devices();
 	
 	uint8_t ux_exist = check_partition("ux0:");
 	uint8_t xmc_exist = check_partition("xmc0:");
@@ -724,17 +780,19 @@ int do_error(int error) {
 	return 0;
 }
 
-void do_select_device(char* output, size_t len) {
-	umount_devices();
+int do_select_arbitary_device(char* output, size_t len) {
+	umount_external_devices();
 	
-	PROCESS_MENU(draw_select_device, NULL);
+	PROCESS_MENU(draw_select_arbitary_device, NULL);
 	strncpy(output, BLOCK_DEVICES[selected][1], len);
+	
+	return selected;
 }
 
 int do_select_output_location(char* output, uint64_t dev_size) {
 	
-	PRINT_STR("mount_devices\n");
-	mount_devices();
+	PRINT_STR("mount_external_devices\n");
+	mount_external_devices();
 	
 	uint8_t save_network = is_connected();	
 	
