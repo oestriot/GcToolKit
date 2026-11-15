@@ -493,7 +493,7 @@ int main(int argc, char** argv) {
 	}
 	
 	// check for secret menu
-	if(get_key_noblock() & (SCE_CTRL_LTRIGGER | SCE_CTRL_L1)) {
+	if(get_key_noblock() & (SCE_CTRL_RTRIGGER | SCE_CTRL_R1 | SCE_CTRL_TRIANGLE)) {
 		handle_select_arbitary_device();
 	}
 	

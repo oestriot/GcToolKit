@@ -21,16 +21,18 @@ int power_tick_thread(size_t args, void* argp) {
 }
 
 void unlock_power() {
+	kPowerSetCallbackState(1);
 	DISABLE_POWER = 0;
 }
 
 int lock_power() {
 	int res = 0;
+	kPowerSetCallbackState(0);
+
 	SceUID thread_id = sceKernelCreateThread("PowerTickThread", power_tick_thread, 0x10000100, 0x1000, 0, 0, NULL);
 	if(thread_id < 0) ERROR(thread_id);
 
 	res = sceKernelStartThread(thread_id, 0, NULL);
-	
 error:
 	if(thread_id < 0)
 		sceKernelDeleteThread(thread_id);

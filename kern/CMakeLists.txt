@@ -33,6 +33,7 @@ add_executable(${PROJECT_NAME}
 	auth_emu.c
 	module.c
 	sd2vita.c
+	power.c
 	
 	cmd56/cmd56.c
 	cmd56/cmd56_sm.c

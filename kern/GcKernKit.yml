@@ -32,3 +32,4 @@ GcKernKit:
         - kIsMmcInserted
         - kIsAuthenticated
         - kUndoSd2Vita
+        - kPowerSetCallbackState

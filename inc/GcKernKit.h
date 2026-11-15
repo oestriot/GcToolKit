@@ -61,4 +61,7 @@ void kUndoSd2Vita();
 int kIsUsingSd2Vita();
 int kIsNonstandardConfig();
 
+// power.c
+int kPowerSetCallbackState(int enable);
+
 #endif // GC_KERN_KIT_H
