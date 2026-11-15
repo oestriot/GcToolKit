@@ -19,8 +19,8 @@
 
 static const char* PARAM_LOCATIONS[] = { 
 	"gro0:/patch",
-	"gro0:/app",
 	"grw0:/patch",
+	"gro0:/app",
 	"gro0:/appinst",
 	"gro0:/acinst",
 	NULL,
@@ -45,16 +45,15 @@ void parse_sp_sfo(char* title_id, char* title, size_t length) {
 
 void parse_app_sfo(char* title_id, char* title, size_t length) {
 	PRINT_STR("parsing app sfo.\n");
-
 	if(IS_SET(title_id) && IS_SET(title)) return; 	// skip if already set.
 	
-	char next_folder[MAX_PATH];
+	char next_folder[MAX_PATH] = { 0 };
 	SfoHandle sfo;
 	
 	// check each location there could be a SFO at.
 	for(int i = 0; PARAM_LOCATIONS[i] != NULL; i++) {
 		PRINT_STR("location = %s\n", PARAM_LOCATIONS[i]);
-		if(read_first_filename(PARAM_LOCATIONS[i], next_folder, sizeof(next_folder)) == SCE_OK) {
+		if(read_first_filename(PARAM_LOCATIONS[i], next_folder, sizeof(next_folder)) >= SCE_OK) {
 			PRINT_STR("next_folder = %s\n", next_folder);
 			
 			char param_sfo_path[MAX_PATH];
