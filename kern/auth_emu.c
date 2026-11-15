@@ -107,7 +107,6 @@ int k_run_authentication(uint16_t key_id) {
 /* user syscalls */
 
 int kIsAuthenticated() {
-	PRINT_FUNC();
 	return is_authenticated;
 }
 

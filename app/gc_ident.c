@@ -6,22 +6,22 @@
 #include <string.h>
 
 const char* keyid_to_keygroup(uint16_t key_id) {
-	const char* keyType = "Unknown";
+	const char* key_type = "Unknown";
 	switch(key_id) {
 		case 0x1:
-			keyType = "Retail";
+			key_type = "Retail";
 			break;
 		case 0x8001:
-			keyType = "Prototype Group 1";
+			key_type = "Prototype Group 1";
 			break;
 		case 0x8002:
-			keyType = "Prototype Group 2";
+			key_type = "Prototype Group 2";
 			break;
 		case 0x8003:
-			keyType = "Prototype Group 3";
+			key_type = "Prototype Group 3";
 			break;
 	}
-	return keyType;
+	return key_type;
 }
 
 // origin: WiiUIdent which i think(?) got it from LSBLK..

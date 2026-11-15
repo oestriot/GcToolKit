@@ -49,7 +49,6 @@ target_link_libraries(${PROJECT_NAME}
 	SceRtcForDriver_stub
 	SceModulemgrForDriver_stub
 	SceThreadmgrForDriver_stub
-	SceSblSmCommForKernel_stub
 	SceIofilemgrForDriver_stub
 	SceSysclibForDriver_stub
 	SceSysmemForDriver_stub
@@ -57,8 +56,6 @@ target_link_libraries(${PROJECT_NAME}
 	ScePowerForDriver_stub
 	SceSdifForDriver_stub
 	SceSysconForDriver_stub
-	SceSblGcAuthMgrGcAuthForDriver_stub
-	SceSblGcAuthMgrDrmBBForDriver_stub
 	SceKernelUtilsForDriver_stub
 )
 

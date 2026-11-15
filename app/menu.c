@@ -672,7 +672,6 @@ int do_select_backup_format() {
 
 int do_device_wipe_and_format(const char* block_device, uint8_t full, uint8_t format) {
 	lock_shell();
-	lock_power();
 
 	umount_gro0();
 	umount_grw0();
@@ -689,14 +688,12 @@ int do_device_wipe_and_format(const char* block_device, uint8_t full, uint8_t fo
 	umount_external_devices();
 	
 	unlock_shell();
-	unlock_power();
 	
 	return res;
 }
 
 int do_device_restore(const char* block_device, char* input_file) {
 	lock_shell();
-	lock_power();
 	
 	umount_gro0();
 	umount_grw0();
@@ -709,14 +706,12 @@ int do_device_restore(const char* block_device, char* input_file) {
 	umount_external_devices();
 
 	unlock_shell();
-	unlock_power();
 	return res;
 }
 
 int do_device_dump(const char* block_device, char* output_file, BackupFormat format, char* ip_address, unsigned short port) {
 	
 	lock_shell();
-	lock_power();
 	
 	umount_gro0();
 	umount_grw0();
@@ -746,8 +741,7 @@ int do_device_dump(const char* block_device, char* output_file, BackupFormat for
 	umount_external_devices();
 	
 	unlock_shell();
-	unlock_power();
-
+	
 	return res;
 }
 

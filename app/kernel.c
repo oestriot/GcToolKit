@@ -10,7 +10,7 @@
 
 // the kernel module "GcKernKit" will be attempted to start from the following locations:
 // (attempted in the order their listed.)
-static const char* load_locations[] = { 
+static const char* LOAD_LOCATIONS[] = { 
 	// memory card
 	"ux0:/patch",
 	"ux0:/app",
@@ -98,8 +98,8 @@ int load_kernel_modules() {
 		PRINT_STR("Attempting to load kernel module ...\n")
 		
 		// try load GcKernKit from all load locations.
-		for(int i = 0; load_locations[i] != NULL; i++) {
-			if(try_load(load_locations[i])) return 1;
+		for(int i = 0; LOAD_LOCATIONS[i] != NULL; i++) {
+			if(try_load(LOAD_LOCATIONS[i])) return 1;
 		}
 		
 	}

@@ -106,15 +106,19 @@ and an overview on how the vita decrypts game data in general;
 
 # Building
 
+install the required packages:
+```
+vdpm install taihen libvita2d libpng soloud
+```
+
 to build the plugin using VitaSDK just run:
 
 ```
-cmake -B build
+cmake -B build -DCMAKE_BUILD_TYPE=RELEASE
 cmake --build build
 ```
 
 you can also build it with debug logging enabled by passing ```-DCMAKE_BUILD_TYPE=DEBUG``` to the cmake command.
-or you can use ```-DCMAKE_BUILD_TYPE=RELEASE``` to build a release verison,
 
 the PC Network Save Utility can be built using ```-DBUILD_PC=on```;
 and can be cross-compiled for either linux or windows, with ```-DCROSS=WINDOWS``` or ```-DCROSS=LINUX```

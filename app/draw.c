@@ -50,19 +50,13 @@ void draw_versionbox() {
 	snprintf(version_text, sizeof(version_text), "GcToolKit v%.02f", GCTK_VERSION);
 	vita2d_pvf_text_dimensions(pvf, TEXT_SIZE, version_text, &text_width, &text_height);
 	
-	PRINT_STR("text_width: %x\n", text_width);
-	PRINT_STR("text_height: %x\n", text_height);
-	
 	// draw versionbox
 	draw_texture(versionbox, VERSIONBOX_POS_X, VERSIONBOX_POS_Y);
 	
 	// Calculate the x position as center based on the menu overlay;
 	int text_x = VERSIONBOX_POS_X + ((VERSIONBOX_WIDTH/2) - (text_width/2));
 	int text_y = VERSIONBOX_POS_Y + ((VERSIONBOX_HEIGHT/2) + (text_height/2));
-	
-	PRINT_STR("text_x: %x\n", text_x);
-	PRINT_STR("text_y: %x\n", text_y);
-	
+		
 	// draw the text on screen.
 	draw_text_color(text_x, text_y, RGBA8(0xFF, 0xFF, 0x00, 0xFF), version_text);
 

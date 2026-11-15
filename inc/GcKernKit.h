@@ -62,6 +62,6 @@ int kIsUsingSd2Vita();
 int kIsNonstandardConfig();
 
 // power.c
-int kPowerSetCallbackState(int enable);
+int kPowerSetCallbackState(uint32_t enable);
 
 #endif // GC_KERN_KIT_H

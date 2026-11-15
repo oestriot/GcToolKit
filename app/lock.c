@@ -21,7 +21,7 @@ int power_tick_thread(size_t args, void* argp) {
 }
 
 void unlock_power() {
-	kPowerSetCallbackState(1);
+	kPowerSetCallbackState(0xFFFFFFFF);
 	DISABLE_POWER = 0;
 }
 
@@ -58,6 +58,7 @@ void lock_shell() {
 					 SCE_SHELL_UTIL_LOCK_TYPE_USB_CONNECTION |
 					 SCE_SHELL_UTIL_LOCK_TYPE_MUSIC_PLAYER |
 					 SCE_SHELL_UTIL_LOCK_TYPE_PS_BTN);
+	lock_power();
 }
 
 void unlock_shell() {
@@ -69,6 +70,7 @@ void unlock_shell() {
 	if(!DISABLE_HOME) locks |= SCE_SHELL_UTIL_LOCK_TYPE_PS_BTN;
 	
 	sceShellUtilUnlock(locks);
+	unlock_power();
 }
 
 // disable memory card remove/insert prompt everywhere;

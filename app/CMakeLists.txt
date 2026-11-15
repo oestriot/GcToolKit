@@ -15,12 +15,12 @@ set(VITA_APP_NAME "GCToolKit")
 set(VITA_TITLEID  "GCTK10000")
 set(VITA_VERSION  "0${GCTK_VERSION}0")
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wno-format-truncation -std=gnu17 -DGCTK_VERSION=${GCTK_VERSION}")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -DGCTK_VERSION=${GCTK_VERSION}")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pthread -Wall -Wno-format-truncation -std=gnu17 -DGCTK_VERSION=${GCTK_VERSION}")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -std=c++17 -DGCTK_VERSION=${GCTK_VERSION}")
 
 # set to -O2 temporarily due to a bug in vitasdk.
-set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -O2 -g0")
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O2 -g0")
+set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -O3 -g0")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -g0")
 
 set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -O0 -DENABLE_LOGGING=1")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -DENABLE_LOGGING=1")
@@ -68,18 +68,10 @@ target_link_libraries(${PROJECT_NAME}
 # vita libraries
 	vita2d
 	soloud
-	pthread
-	stdc++
-	freetype
 	png
-	jpeg
-	m
 	z
 
 # vita system libraries
-	SceSysmodule_stub
-	SceNet_stub
-	SceNetCtl_stub_weak
 	SceDisplay_stub
 	SceGxm_stub
 	ScePgf_stub
@@ -88,13 +80,9 @@ target_link_libraries(${PROJECT_NAME}
 	SceCtrl_stub
 	SceVshBridge_stub
 	SceAppMgr_stub
-	SceAppUtil_stub
-	SceIofilemgr_stub
-	ScePower_stub
 	SceRegistryMgr_stub
 	SceShellSvc_stub
 	SceAppUtil_stub
-	SceIme_stub
 	SceAudio_stub
 	SceError_stub
 )
