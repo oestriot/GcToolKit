@@ -18,6 +18,7 @@ set(VITA_VERSION  "0${GCTK_VERSION}0")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wno-format-truncation -std=gnu17 -DGCTK_VERSION=${GCTK_VERSION}")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -DGCTK_VERSION=${GCTK_VERSION}")
 
+# set to -O2 temporarily due to a bug in vitasdk.
 set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -O2 -g0")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O2 -g0")
 
