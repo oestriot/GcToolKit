@@ -31,6 +31,26 @@ void find_mountpoint_function() {
 	
 }
 
+void unpatch_sysmem() {
+	SceUID module_id = ksceKernelSearchModuleByName("SceSysmem");
+	int sysmem_verison = check_module_version("os0:/kd/iofilemgr.skprx");
+	
+	if(module_id > 0) {
+		if(sysmem_verison >= 0x360) {
+			uint8_t original_data[2] = { 0x00, 0x20 };
+			SceUID inject = taiInjectDataForKernel(KERNEL_PID, 
+				module_id, 
+				0, 
+				0x21610, 
+				original_data, 
+				sizeof(original_data)
+			);
+			
+			PRINT_STR("inject: %x\n", inject);
+		}
+	}
+}
+
 void fix_up_mountpoint(int id, const char* new_dev, const char* new_blkdev) {
 
 	SceIoMountPoint* part = sceIoFindMountPoint(id);
@@ -75,23 +95,7 @@ void kUndoSd2Vita() {
 	find_mountpoint_function();
 	
 	// revert YAMT sd patches
-	SceUID module_id = ksceKernelSearchModuleByName("SceSysmem");
-	int sysmem_verison = check_module_version("os0:/kd/iofilemgr.skprx");
-	
-	if(module_id > 0) {
-		if(sysmem_verison >= 0x360) {
-			uint8_t original_data[2] = { 0x00, 0x20 };
-			SceUID inject = taiInjectDataForKernel(KERNEL_PID, 
-				module_id, 
-				0, 
-				0x21610, 
-				original_data, 
-				sizeof(original_data)
-			);
-			
-			PRINT_STR("inject: %x\n", inject);
-		}
-	}
+	unpatch_sysmem();
 	
 	// fix YAMT redirection
 	PRINT_STR("Fixing mountpoints\n");

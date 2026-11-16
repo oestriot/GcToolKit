@@ -107,6 +107,8 @@ int k_run_authentication(uint16_t key_id) {
 /* user syscalls */
 
 int kIsAuthenticated() {
+	PRINT_FUNC();
+
 	return is_authenticated;
 }
 
@@ -175,7 +177,7 @@ int kEnableGcEmuMgr() {
 			0xC6627F5E, // SceSblGcAuthMgrGcAuthForDriver
 			0x68781760, // ksceSblGcAuthMgrGcAuthCartAuthentication	
 			k_run_authentication);
-		PRINT_STR("%x %x\n", authHook, authHookRef);		
+		PRINT_STR("hooking: %x %x\n", authHook, authHookRef);		
 	}
 
 	return 0;
@@ -185,7 +187,7 @@ int kDisableGcEmuMgr() {
 	PRINT_FUNC();
 
 	if (authHook >= 0) { 
-		PRINT_STR("authHook: %x authHookRef: %x\n", authHook, authHookRef);
+		PRINT_STR("unhooking: authHook: %x authHookRef: %x\n", authHook, authHookRef);
 		int res = taiHookReleaseForKernel(authHook, authHookRef); 
 		if(res >= 0) {
 			authHook = -1;

@@ -71,7 +71,7 @@ int get_files_in_folder(char* folder, char* out_filenames, int* total_folders, S
 				continue;				
 			}
 			
-			// match only specific file extension logic
+			// match only specific file extension
 			if(filter->match_extension[0] != '*') { 
 				size_t dir_name_length = strlen(ent.d_name);
 				size_t extension_length = strlen(filter->match_extension);
@@ -286,6 +286,7 @@ error:
 
 uint64_t get_free_space(const char* device) {
 	uint64_t free_space = 0;
+	PRINT_STR("Checking free space on device: %s ... \n", device);
 	 
 	// host0 will always report as 0 bytes free
 	if(strcmp("host0:", device) == 0) return 0xFFFFFFFFFFFFFFFFull;
@@ -293,9 +294,11 @@ uint64_t get_free_space(const char* device) {
 	SceIoDevInfo info;
 	int res = sceIoDevctl(device, 0x3001, NULL, 0, &info, sizeof(SceIoDevInfo));
 	if (res < 0) {
+		PRINT_STR("sceIoDevctl failed %x ... \n", res);
 		free_space = 0;
 	} else {
 		free_space = info.free_size;
+		PRINT_STR("free space: %llx ... \n", free_space);
 	}
 	
 	return free_space;

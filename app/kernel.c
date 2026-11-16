@@ -122,7 +122,7 @@ int check_module_version(const char* module) {
 	int version = 0x000;
 	
 	SceUID fd = sceIoOpen(module, SCE_O_RDONLY, 0777);
-	if(fd > 0) {
+	if(fd >= 0) {
 		sceIoLseek(fd, 0x94, SCE_SEEK_SET);
 		sceIoRead(fd, &version, sizeof(version));
 		sceIoClose(fd);
@@ -130,7 +130,7 @@ int check_module_version(const char* module) {
 		PRINT_STR("%s version: %x\n", module, version);
 		return version;
 	}
-	PRINT_STR("Failed to read fw version; falling back on default\n");
+	PRINT_STR("Failed to read fw version (error = 0x%x); falling back on default\n", fd);
 	return MIN_FW_VERSION;
 }
 
