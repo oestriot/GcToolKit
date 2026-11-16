@@ -35,33 +35,33 @@ void fix_up_mountpoint(int id, const char* new_dev, const char* new_blkdev) {
 
 	SceIoMountPoint* part = sceIoFindMountPoint(id);
 	PRINT_STR("fixup_mountpoint(0x%x, %s)\n", id, new_blkdev);
-	DACR_OFF(
-		if(part != NULL) {
-			// fix part->dev
-			if(part->dev != NULL) {
-				if(part->dev->blkdev == NULL || strcmp(part->dev->blkdev, new_blkdev) != 0) {
-					PRINT_STR("%s -> part->dev->blkdev %s\n", part->dev->blkdev, new_blkdev);
-					part->dev->blkdev = new_blkdev;
-				}
-				if(part->dev->dev == NULL || strcmp(part->dev->dev, new_dev) != 0) {
-					PRINT_STR("%s -> part->dev->dev %s\n", part->dev->dev, new_dev);
-					part->dev->dev = new_dev;
-				}
+	
+	if(part != NULL) {
+		// fix part->dev
+		if(part->dev != NULL) {
+			if(part->dev->blkdev == NULL || strcmp(part->dev->blkdev, new_blkdev) != 0) {
+				PRINT_STR("%s -> part->dev->blkdev %s\n", part->dev->blkdev, new_blkdev);
+				DACR_OFF(part->dev->blkdev = new_blkdev);
 			}
-			
-			// fix part->dev2
-			if(part->dev2 != NULL) {
-				if(part->dev2->blkdev == NULL || strcmp(part->dev2->blkdev, new_blkdev) != 0) {
-					PRINT_STR("%s -> part->dev2->blkdev %s\n", part->dev2->blkdev, new_blkdev);
-					part->dev2->blkdev = new_blkdev;
-				}
-				if(part->dev2->dev == NULL || strcmp(part->dev2->dev, new_dev) != 0) {
-					PRINT_STR("%s -> part->dev->dev %s\n", part->dev2->dev, new_dev);
-					part->dev2->dev = new_dev;
-				};
-			};
+			if(part->dev->dev == NULL || strcmp(part->dev->dev, new_dev) != 0) {
+				PRINT_STR("%s -> part->dev->dev %s\n", part->dev->dev, new_dev);
+				DACR_OFF(part->dev->dev = new_dev);
+			}
 		}
-	);
+		
+		// fix part->dev2
+		if(part->dev2 != NULL) {
+			if(part->dev2->blkdev == NULL || strcmp(part->dev2->blkdev, new_blkdev) != 0) {
+				PRINT_STR("%s -> part->dev2->blkdev %s\n", part->dev2->blkdev, new_blkdev);
+				DACR_OFF(part->dev2->blkdev = new_blkdev);
+			}
+			if(part->dev2->dev == NULL || strcmp(part->dev2->dev, new_dev) != 0) {
+				PRINT_STR("%s -> part->dev->dev %s\n", part->dev2->dev, new_dev);
+				DACR_OFF(part->dev2->dev = new_dev);
+			};
+		};
+	}
+
 	
 	return;
 }
