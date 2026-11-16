@@ -285,21 +285,16 @@ error:
 }
 
 uint64_t get_free_space(const char* device) {
+	uint64_t max_size = 0;
 	uint64_t free_space = 0;
 	PRINT_STR("Checking free space on device: %s ... \n", device);
 	 
 	// host0 will always report as 0 bytes free
 	if(strcmp("host0:", device) == 0) return 0xFFFFFFFFFFFFFFFFull;
 	 
-	SceIoDevInfo info;
-	int res = sceIoDevctl(device, 0x3001, NULL, 0, &info, sizeof(SceIoDevInfo));
-	if (res < 0) {
-		PRINT_STR("sceIoDevctl failed %x ... \n", res);
-		free_space = 0;
-	} else {
-		free_space = info.free_size;
-		PRINT_STR("free space: %llx ... \n", free_space);
-	}
+	sceAppMgrGetDevInfo(device, &max_size, &free_space);
+	PRINT_STR("max_size: %llx\n", max_size);
+	PRINT_STR("free_space: %llx\n", free_space);
 	
 	return free_space;
 }

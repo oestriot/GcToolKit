@@ -71,6 +71,9 @@ target_link_libraries(${PROJECT_NAME}
 	z
 
 # vita system libraries
+	SceSysmodule_stub
+	SceNet_stub
+	SceNetCtl_stub_weak
 	SceDisplay_stub
 	SceGxm_stub
 	ScePgf_stub
@@ -79,11 +82,16 @@ target_link_libraries(${PROJECT_NAME}
 	SceCtrl_stub
 	SceVshBridge_stub
 	SceAppMgr_stub
+	SceAppUtil_stub
+	SceIofilemgr_stub
+	ScePower_stub
 	SceRegistryMgr_stub
 	SceShellSvc_stub
 	SceAppUtil_stub
+	SceIme_stub
 	SceAudio_stub
 	SceError_stub
+
 )
 
 

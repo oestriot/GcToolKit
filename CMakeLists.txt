@@ -21,6 +21,12 @@ add_subdirectory(pc)
 else()
 
 # build for psvita ... 
+
+if(NOT CMAKE_BUILD_TYPE) 
+	set(CMAKE_BUILD_TYPE "DEBUG")
+	message(STATUS "CMAKE_BUILD_TYPE not set, defaulting to DEBUG")
+endif()
+
 if(NOT DEFINED CMAKE_TOOLCHAIN_FILE)
   if(DEFINED ENV{VITASDK})
     set(CMAKE_TOOLCHAIN_FILE "$ENV{VITASDK}/share/vita.toolchain.cmake" CACHE PATH "toolchain file")
