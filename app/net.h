@@ -7,7 +7,7 @@
 #include "io.h"
 
 int begin_file_send(SceUID socket, const char* filename, uint64_t file_size);
-int file_send_data(SceUID socket, void* data, size_t data_sz);
+int file_send_data(SceUID connection, void* data, size_t data_sz);
 int send_file_patch(SceUID socket, const char* filename, uint32_t offset, const void* data, uint32_t size);
 
 int init_network();

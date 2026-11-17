@@ -53,6 +53,7 @@ add_executable(${PROJECT_NAME}
 	net.c
 	gc_ident.c
 	sd2vita.c
+	fs.c
 	bgm.cpp
 )
 

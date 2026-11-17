@@ -87,7 +87,6 @@ void read_gameinfo(char* title_id, char* title, size_t length) {
 	memset(title_id, 0x00, length);
 	memset(title, 0x00, length);
 
-	//PRINT_STR("mounting gamecart ...\n");
 	mount_gamecart();
 	
 	// get title or titleid from cartridge 

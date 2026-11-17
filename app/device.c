@@ -20,7 +20,6 @@
 
 #include "sha256.h"
 
-
 const char* BLOCK_DEVICES[][2] = { 
 	{"GCD entire", "sdstor0:gcd-lp-ign-entire"}, 
 	{"GCD active mediaid", "sdstor0:gcd-lp-act-mediaid"}, 
@@ -132,11 +131,9 @@ static inline int create_psv_header(BackupState* state, DeviceAccessCallback* wr
 	psv.version = PSV_VER;
 	psv.flags = PSV_FLAGS;
 	
-	kGetCartSecret(psv.cart_secret);
-	kGetCartHash(psv.packet20_sha1);
-		
+	kGetNpdrmKeys(&psv.keys);
 	memset(psv.all_sectors_sha256, 0xFF, sizeof(psv.all_sectors_sha256));
-		
+	
 	psv.image_size = state->device_size;
 	psv.image_offset = sizeof(PsvHeader) / 0x200;
 	
@@ -240,7 +237,6 @@ static inline int create_header(BackupState* state, DeviceAccessCallback* wr_fun
 	}
 	return res;
 }
-
 
 
 static inline int device_access_loop(BackupState* state, DeviceAccessCallback* rd_func, DeviceAccessCallback wr_func) {

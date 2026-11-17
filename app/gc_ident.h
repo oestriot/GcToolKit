@@ -5,6 +5,8 @@
 #include <stdio.h>
 #include <assert.h>
 #include <GcToolKit.h>
+#include "psv.h"
+#include "vci.h"
 
 #define CARD_ID_SIZE 0x10
 
@@ -34,6 +36,7 @@ typedef struct GcInfo {
 	
 	uint16_t key_id;
 	GcCmd56Keys key_set;
+	GcNpdrmKeys npdrm_keys;
 } GcInfo;
 
 void mmc_datetime_from_byte(uint8_t rev, uint8_t mdt, uint16_t* year, uint16_t* month);
@@ -42,5 +45,8 @@ const char* keyid_to_keygroup(uint16_t key_id);
 const char* mmc_device_type_to_string(uint8_t device_type);
 
 void get_gc_info(GcInfo* info);
+
+int dump_report(const char* output_file);
+int dump_report_network(const char* ip_address, short port, const char* output_file);
 
 #endif // GC_IDENT_H

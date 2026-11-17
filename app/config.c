@@ -56,6 +56,7 @@ void reset_config() {
 	CONFIG.port = DEFAULT_PORT;
 	CONFIG.music_setting = MUSIC_USE_SYSTEM_SETTING;
 	CONFIG.confirm_setting = CONFIRM_USE_SYSTEM_SETTING;
+	CONFIG.create_log = CREATE_FULL_LOG;
 
 	save_config();
 }

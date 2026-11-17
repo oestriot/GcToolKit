@@ -14,10 +14,8 @@ GcKernKit:
         - kGetCardId
         - kGetCardExtCsd
         - kResetGc
-        - kClearCartSecret
-        - kGetCartSecret
         - kCheckCartHash
-        - kGetCartHash
+        - kGetNpdrmKeys
         - kOpenDevice
         - kReadDevice
         - kWriteDevice

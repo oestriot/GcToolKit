@@ -26,10 +26,20 @@ typedef struct GcCmd56Keys{
 } __attribute__((packed)) GcCmd56Keys;
 static_assert(sizeof(GcCmd56Keys) == 0x40);
 
+
+typedef struct GcNpdrmKeys {
+	uint8_t cart_secret[0x20];
+	uint8_t packet20_sha1[0x14];
+} __attribute__((packed)) GcNpdrmKeys;
+static_assert(sizeof(GcNpdrmKeys) == 0x34);
+
+
 // auth_emu.c
 int kIsAuthenticated();
 uint16_t kGetKeyId();
 void kGetPerCartKeys(GcCmd56Keys* output);
+void kGetNpdrmKeys(GcNpdrmKeys* output);
+int kCheckCartHash(const uint8_t* hash);
 int kEnableGcEmuMgr();
 int kDisableGcEmuMgr();
 
@@ -47,10 +57,6 @@ int kFormatDevice(const char* device);
 int kGetCardId(int deviceIndex, void* cardId);
 int kGetCardCsd(int deviceIndex, void* cardCsd);
 int kGetCardExtCsd(int deviceIndex, void* cardExtCsd);
-int kCheckCartHash(const uint8_t* hash);
-int kGetCartHash(uint8_t* hash);
-int kGetCartSecret(uint8_t* keys);
-int kClearCartSecret();
 int kResetGc();
 int kIsSdInserted();
 int kIsMmcInserted();

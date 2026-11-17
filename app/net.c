@@ -104,7 +104,7 @@ uint8_t check_ip_address_valid(char* ip_address) {
 	else return 1;
 }
 
-int file_send_data(SceUID connection, void* data, size_t data_sz) {
+inline int file_send_data(SceUID connection, void* data, size_t data_sz) {
 	return sceNetSend(connection, data, data_sz, 0);
 }
 

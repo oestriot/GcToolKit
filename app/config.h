@@ -24,6 +24,11 @@ typedef enum GcConfirmButtonSetting {
 	CONFIRM_CROSS
 } GcConfirmButtonSetting;
 
+typedef enum GcLogSetting {
+	CREATE_FULL_LOG,
+	CREATE_NO_LOG,
+} GcLogSetting;
+
 typedef struct GcConfig {
 	uint16_t major_version;
 	uint16_t minor_version;
@@ -33,6 +38,7 @@ typedef struct GcConfig {
 	char backup_folder[MAX_PATH];
 	GcMusicSetting music_setting;
 	GcConfirmButtonSetting confirm_setting;
+	GcLogSetting create_log;
 } __attribute__((packed)) GcConfig;
 
 extern GcConfig CONFIG;

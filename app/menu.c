@@ -287,7 +287,6 @@ void draw_insert_gc_menu() {
 void do_eject_sd_prompt() {
 	draw_eject_sd_menu();
 	wait_for_sd2vita_eject();
-	undo_sd2vita_patches();
 }
 
 

@@ -31,6 +31,10 @@ const char* get_error_msg(int error) {
 			return "Kernel module failed to start";
 		case TOTAL_FILES_LESS_THAN_EQ_0:
 			return "Directory contained no files.";
+		case OUT_OF_MEMORY:
+			return "Out of Memory";
+		case UNSUPPORTED_OPERATION:
+			return "The operation is unsupported.";
 		case DEVICE_WHITELIST_FAILED:
 			return "Destination device is not a gamecard, aborting to prevent a brick.";
 		case OK:

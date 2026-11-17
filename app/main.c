@@ -20,7 +20,7 @@
 #include "log.h"
 #include "sd2vita.h"
 #include "config.h"
-
+#include "gc_ident.h"
 
 
 void get_output_filename(char* output, char* extension, size_t number, size_t size_output) {
@@ -42,6 +42,8 @@ void get_output_filename(char* output, char* extension, size_t number, size_t si
 
 int handle_dump_device(int what, BackupFormat format, char* block_device, char* out_file, char* ip_address, unsigned short port) {
 	int res = -1;
+	char extra_file[MAX_PATH] = { 0 };
+	strncpy(extra_file, out_file, sizeof(extra_file)-1);
 	
 	if(what != DUMP_KEYS_ONLY) {
 		res = do_device_dump(block_device, out_file, format, ip_address, port);				
@@ -52,16 +54,26 @@ int handle_dump_device(int what, BackupFormat format, char* block_device, char* 
 	else {
 		res = key_dump_network(ip_address, port, out_file);		
 	}
-
-	// dump keys if format is not VCI ..
-	if(what == DUMP_WHOLE_GC && !FMT_IS_VCI(format)) {
-		change_extension(out_file, MAX_PATH, ".keys.bin");
-		if(ip_address == NULL) { // is this a network dump?
-			res = key_dump(out_file);
+	
+	if(what == DUMP_WHOLE_GC ) { 
+		if(!FMT_IS_VCI(format)) { // dump keys.bin if its not VCI.
+			change_extension(extra_file, MAX_PATH, ".keys.bin"); // get keys file ..
+			if(ip_address == NULL) { // write keys,
+				res = key_dump(extra_file);
+			}
+			else { // if network dump, write keys over the network.
+				res = key_dump_network(ip_address, port, extra_file);		
+			}
 		}
-		else {
-			res = key_dump_network(ip_address, port, out_file);		
-		}		
+		
+		// create dump report.
+		change_extension(extra_file, MAX_PATH, ".report.txt");
+		if(ip_address == NULL) { // write keys,
+			res = dump_report(extra_file);
+		}
+		else { // if network dump, write keys over the network.
+			res = dump_report_network(ip_address, port, extra_file);		
+		}
 	}
 	
 	if(res < 0) {
@@ -501,8 +513,9 @@ int main(int argc, char** argv) {
 	if(check_using_sd2vita()) {
 		do_eject_sd_prompt();
 	}
-	
+
 	// main loop:
+	undo_sd2vita_patches();	
 	do_gc_insert_prompt();
 	while(1) {
 		handle_menu_select_option();

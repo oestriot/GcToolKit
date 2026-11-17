@@ -4,7 +4,6 @@
 #include <taihen.h>
 
 #include <GcToolKit.h>
-
 #include "cmd56/vita.h"
 #include "log.h"
 
@@ -103,6 +102,28 @@ int k_run_authentication(uint16_t key_id) {
 	}
 }
 
+int k_get_cart_secret(uint8_t* keys) {
+	PRINT_FUNC();
+	uint8_t k_secret[SCE_SHA256_DIGEST_SIZE];
+	memset(k_secret, 0x00, sizeof(k_secret));
+	
+	int res = k_get_secret(k_secret);
+	if(keys != NULL) ksceKernelMemcpyKernelToUser(keys, (const void*)k_secret, sizeof(k_secret));
+		
+	return res;
+}
+
+int k_get_cart_hash(uint8_t* hash) {
+	PRINT_FUNC();
+	uint8_t k_hash[SCE_SHA1_DIGEST_SIZE];
+	memset(k_hash, 0x00, sizeof(k_hash));
+	
+	k_get_hash(k_hash);
+	if(hash != NULL) ksceKernelMemcpyKernelToUser(hash, (const void*)k_hash, sizeof(k_hash));
+	
+	return 0;
+}
+
 
 /* user syscalls */
 
@@ -122,32 +143,12 @@ void kGetPerCartKeys(GcCmd56Keys* output) {
 	ksceKernelMemcpyKernelToUser(output, (const void*)&vita_state.per_cart_keys, sizeof(vita_state.per_cart_keys));
 }
 
-int kClearCartSecret() {
+void kGetNpdrmKeys(GcNpdrmKeys* output) {
 	PRINT_FUNC();
-	return k_clear_secret();
+	k_get_cart_secret(output->cart_secret);
+	k_get_cart_hash(output->packet20_sha1);
 }
 
-int kGetCartSecret(uint8_t* keys) {
-	PRINT_FUNC();
-	uint8_t k_secret[SCE_SHA256_DIGEST_SIZE];
-	memset(k_secret, 0x00, sizeof(k_secret));
-	
-	int res = k_get_secret(k_secret);
-	if(keys != NULL) ksceKernelMemcpyKernelToUser(keys, (const void*)k_secret, sizeof(k_secret));
-		
-	return res;
-}
-
-int kGetCartHash(uint8_t* hash) {
-	PRINT_FUNC();
-	uint8_t k_hash[SCE_SHA1_DIGEST_SIZE];
-	memset(k_hash, 0x00, sizeof(k_hash));
-	
-	k_get_hash(k_hash);
-	if(hash != NULL) ksceKernelMemcpyKernelToUser(hash, (const void*)k_hash, sizeof(k_hash));
-	
-	return 0;
-}
 
 int kCheckCartHash(const uint8_t* hash) {
 	PRINT_FUNC();
