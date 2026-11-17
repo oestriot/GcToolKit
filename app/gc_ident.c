@@ -14,6 +14,7 @@
 						 } \
 						 WTXT("\n"); \
 					 } while(0);
+#define SBOOL(val) val ? "Yes" : "No", val
 
 const char* keyid_to_keygroup(uint16_t key_id) {
 	const char* key_type = "Unknown";
@@ -115,7 +116,7 @@ void get_gc_info(GcInfo* info) {
 	memset(info, 0, sizeof(GcInfo));
 	
 	kGetCardId(1, &info->card_id);
-	kGetCardCsd(1, info->card_descriptor);
+	kGetCardCsd(1, &info->card_descriptor);
 	kGetCardExtCsd(1, info->extra_card_descriptor);
 	kGetNpdrmKeys(&info->npdrm_keys);
 	
@@ -150,38 +151,76 @@ size_t create_report(char* rtxt, size_t rtxt_len) {
 	WTXT("GcToolKit v%.02f\n", GCTK_VERSION);
 	WTXT("%s [%s] - Report created %02hu/%02hu/%04hu %02hu:%02hu:%02hu.%iµs\n", title, title_id,
 																			datetime.day, datetime.month, datetime.year, 
-																	        datetime.hour, datetime.minute, datetime.second, datetime.microsecond);
+																			datetime.hour, datetime.minute, datetime.second, datetime.microsecond);
 	WTXT("\n");
 
 	WTXT("== eMMC Registers ==\n");
 	
 	TO_HEX(&info.card_id, sizeof(info.card_id), hex);
-	WTXT("CID: %s\n", hex);
+	WTXT("Card ID: %s\n", hex);
 
 	TO_HEX(&info.card_descriptor, sizeof(info.card_descriptor), hex);
-	WTXT("CSD: %s\n", hex);
+	WTXT("Card Descriptor: %s\n", hex);
 
 	TO_HEX(&info.extra_card_descriptor, sizeof(info.extra_card_descriptor), hex);
-	WTXT("EXT_CSD: %s\n", hex);
+	WTXT("Extended Card Descriptor: %s\n", hex);
 	
-	WTXT("== Decoded Card ID ==\n");
+	WTXT("== General Command (CMD56) ==\n");
+	
+	TO_HEX(info.key_set.packet18_key, sizeof(info.key_set.packet18_key), hex);
+	WTXT("Key18: %s\n", hex);
+	
+	TO_HEX(info.key_set.packet20_key, sizeof(info.key_set.packet20_key), hex);
+	WTXT("Key20: %s\n", hex);
+	
+	WTXT("Key ID: %s (0x%02X)\n", keyid_to_keygroup(info.key_id), info.key_id);
+
+	WTXT("== eMMC Card ID ==\n");
 	WTXT("Crc7: 0x%02X\n", info.card_id.crc7);
 	WTXT("Manufactured Date: %u/%u (0x%02X)\n", info.month, info.year, info.card_id.manufacture_date);
 	WTXT("Serial Number: 0x%02X\n", info.card_id.serial_number);
-	WTXT("Revision: 0x%02X (extended rev: 0x%02X)\n", info.card_id.revision, info.extra_card_descriptor_revision);
+	WTXT("Revision: 0x%02X\n", info.card_id.revision);
+	WTXT("Extended Revision: 0x%02X\n", info.extra_card_descriptor_revision);
 	WTXT("Product Name: %.6s\n", info.card_id.product_name);
 	WTXT("Oem ID: 0x%02X\n", info.card_id.oem_id);
 	WTXT("Device Type: %s (0x%02X)\n", mmc_device_type_to_string(info.card_id.device_type), info.card_id.device_type);
 	WTXT("Vendor: %s (0x%02X)\n", mmc_vendor_id_to_manufacturer(info.card_id.vendor), info.card_id.vendor);
 
-	WTXT("== CMD56 ==\n");
-	
-	TO_HEX(info.key_set.packet18_key, sizeof(info.key_set.packet18_key), hex);
-	WTXT("CMD56 Key18: %s\n", hex);
-	
-	TO_HEX(info.key_set.packet20_key, sizeof(info.key_set.packet20_key), hex);
-	WTXT("CMD56 Key20: %s\n", hex);
-	WTXT("CMD56 KeyID: %s (0x%02X)\n", keyid_to_keygroup(info.key_id), info.key_id);
+	WTXT("== eMMC Card Descriptor ==\n");
+	WTXT("Crc7: 0x%02X\n", info.card_descriptor.crc7);
+	WTXT("Error Correction Code: 0x%02X\n", info.card_descriptor.ecc_code);
+	WTXT("File Format: 0x%02X\n", info.card_descriptor.file_format);
+	WTXT("Temporary Write Protection: %s (0x%02X)\n", SBOOL(info.card_descriptor.tmp_write_prot));
+	WTXT("Permanant Write Protection: %s (0x%02X)\n", SBOOL(info.card_descriptor.perm_write_prot));
+	WTXT("Is Copy: %s (0x%02X)\n", SBOOL(info.card_descriptor.copy));
+	WTXT("File Format Group: 0x%02X\n", info.card_descriptor.file_format_group);
+	WTXT("Content Protection Application: 0x%02X\n", info.card_descriptor.content_protection_application);
+	WTXT("Partial Write Block Allowed: %s (0x%02X)\n", SBOOL(info.card_descriptor.partial_write_block_allowed));
+	WTXT("Max Write Data Block Length: 0x%02X\n", info.card_descriptor.max_write_data_blk_length);
+	WTXT("Write Speed Factor: 0x%02X\n", info.card_descriptor.write_speed_factor);
+	WTXT("Manufacturer Default Ecc: 0x%02X\n", info.card_descriptor.manufacturer_default_ecc);
+	WTXT("Write Protection Group Enable: 0x%02X\n", info.card_descriptor.write_prot_group_enable);
+	WTXT("Write Protection Group Size: 0x%02X\n", info.card_descriptor.write_prot_group_size);
+	WTXT("Erase Group Size Multipler: 0x%02X\n", info.card_descriptor.erase_group_size_mult);
+	WTXT("Erase Group Size: 0x%02X\n", info.card_descriptor.erase_group_size);
+	WTXT("Device Size Multiplier: 0x%02X\n", info.card_descriptor.device_size_mult);
+	WTXT("Vdd Write Current Max: 0x%02X\n", info.card_descriptor.vdd_w_cur_max);
+	WTXT("Vdd Write Current Min: 0x%02X\n", info.card_descriptor.vdd_w_cur_min);
+	WTXT("Vdd Read Current Max: 0x%02X\n", info.card_descriptor.vdd_r_cur_max);
+	WTXT("Vdd Read Current Min: 0x%02X\n", info.card_descriptor.vdd_r_cur_min);
+	WTXT("Device Size: 0x%02X\n", info.card_descriptor.device_size);
+	WTXT("Dsr Implemented: %s (0x%02X)\n", SBOOL(info.card_descriptor.dsr_implemented));
+	WTXT("Read Block Misalignment: 0x%02X\n", info.card_descriptor.read_blk_misalignment);
+	WTXT("Write Block Misalignment: 0x%02X\n", info.card_descriptor.write_blk_misalignment);
+	WTXT("Partial Block For Read Allowed: %s (0x%02X)\n", SBOOL(info.card_descriptor.partial_block_for_read_allowed));
+	WTXT("Max Read Data Block Length: 0x%02X\n", info.card_descriptor.max_read_data_block_length);
+	WTXT("Device Command Classes: 0x%02X\n", info.card_descriptor.device_command_classes);
+	WTXT("Max Bus Clock Frequency: 0x%02X\n", info.card_descriptor.max_bus_clk_frequency);
+	WTXT("Data Read Access Time In 2 Clock Cycles: 0x%02X\n", info.card_descriptor.data_read_access_time_in_2_clk_cycles);
+	WTXT("Data Read Access Time 1: 0x%02X\n", info.card_descriptor.data_read_access_time_1);
+	WTXT("System Specification Version: 0x%02X\n", info.card_descriptor.system_specification_version);
+	WTXT("Csd Structure: 0x%02X\n", info.card_descriptor.csd_structure);
+
 	
 	return rptr - rtxt;
 }

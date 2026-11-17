@@ -528,7 +528,7 @@ void draw_device_info(GcInfo* info) {
 	snprintf(msg, sizeof(msg)-1, "MMC CID: %s", hex);
 	draw_text_center(start_y(ytop), msg);
 	
-	TO_HEX(info->card_descriptor, sizeof(info->card_descriptor), hex);
+	TO_HEX(&info->card_descriptor, sizeof(info->card_descriptor), hex);
 	snprintf(msg, sizeof(msg)-1, "MMC CSD: %s", hex);
 	draw_text_center(next_y(), msg);
 
