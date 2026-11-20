@@ -9,17 +9,18 @@
 #include "cmd56_sm.h"
 #include "log.h"
 
+
 #define check_success(code) do { int ret = code; if(ret != GC_AUTH_OK) return ret; } while(0);
 #define send_packet(sobj, req, resp) do { PRINT_STR("send_packet: %s\n", __FUNCTION__); \
-										  sobj->send( ((const uint8_t*)req), sizeof(cmd56_request)); \
-										  sobj->recv( ((uint8_t*)resp),      sizeof(cmd56_response)); } while(0);
+										  sobj->send( ((const void*)req), sizeof(cmd56_request)); \
+										  sobj->recv( ((void*)resp),      sizeof(cmd56_response)); } while(0);
 
 
 
 #define GC_AUTH_RETURN_STATUS (response->error_code != 0x0) ? GC_AUTH_ERROR_REPORTED : GC_AUTH_OK;
 
 
-vita_error_code start_request(vita_cmd56_state* state, cmd56_request* request, cmd56_response* response) {
+vita_error_code start_request(cmd56_state* state, cmd56_request* request, cmd56_response* response) {
 	cmd56_request_start(request, CMD_START, 0x3, calc_size(start_response), 0x31);
 	send_packet(state, request, response);
 	get_response(start_response);
@@ -38,7 +39,7 @@ vita_error_code start_request(vita_cmd56_state* state, cmd56_request* request, c
 	return GC_AUTH_ERROR_START_FAIL;
 }
 
-vita_error_code get_status(vita_cmd56_state* state, cmd56_request* request, cmd56_response* response) {
+vita_error_code get_status(cmd56_state* state, cmd56_request* request, cmd56_response* response) {
 	cmd56_request_start(request, CMD_GET_STATUS, 0x3, calc_size(get_status_response), 0x23);
 	send_packet(state, request, response);
 	get_response(get_status_response);
@@ -49,12 +50,12 @@ vita_error_code get_status(vita_cmd56_state* state, cmd56_request* request, cmd5
 	return GC_AUTH_RETURN_STATUS;
 }
 
-vita_error_code get_session_key(vita_cmd56_state* state, cmd56_request* request, cmd56_response* response) {
+vita_error_code get_session_key(cmd56_state* state, cmd56_request* request, cmd56_response* response) {
 	cmd56_request_start(request, CMD_GENERATE_SESSION_KEY, 0x3, calc_size(generate_session_key_response), 0x2);
 	send_packet(state, request, response);
 	get_response(generate_session_key_response);
 
-	state->key_id = endian_swap(resp->key_id);
+	state->key_id = endian_big16(resp->key_id);
 	memcpy(state->cart_random, resp->cart_random, sizeof(state->cart_random));
 
 	PRINT_STR("(VITA) Key ID: %x\n", state->key_id);
@@ -77,17 +78,17 @@ vita_error_code get_session_key(vita_cmd56_state* state, cmd56_request* request,
 	return GC_AUTH_RETURN_STATUS;
 }
 
-vita_error_code exchange_shared_random(vita_cmd56_state* state, cmd56_request* request, cmd56_response* response) {
+vita_error_code exchange_shared_random(cmd56_state* state, cmd56_request* request, cmd56_response* response) {
 	cmd56_request_start(request, CMD_EXCHANGE_SHARED_RANDOM, calc_size(exchange_shared_random_request), calc_size(exchange_shared_random_response), 0x3);
 	get_request(exchange_shared_random_request);
 
 	// copy key id into request
 	PRINT_STR("(VITA) cart key id: %x\n", state->key_id);
-	req->key_id = endian_swap(state->key_id);
+	req->key_id = endian_big16(state->key_id);
 	
 	// randomize vita portion of shared random
 	rand_bytes(req->shared_rand_vita, sizeof(req->shared_rand_vita));
-	memcpy(state->shared_random.vita_part, req->shared_rand_vita, sizeof(state->shared_random.vita_part));
+	memcpy(state->shared_rng.vita_part, req->shared_rand_vita, sizeof(state->shared_rng.vita_part));
 
 	PRINT_STR("(VITA) vita portion of the shared random: ");
 	PRINT_BUFFER_LEN(req->shared_rand_vita, sizeof(req->shared_rand_vita));
@@ -104,17 +105,17 @@ vita_error_code exchange_shared_random(vita_cmd56_state* state, cmd56_request* r
 		PRINT_STR("(VITA) verify_shared_random (response) plaintext: ");
 		PRINT_BUFFER_LEN(resp, sizeof(exchange_shared_random_response));
 
-		if (memcmp(resp->shared_rand_vita + 0x1, state->shared_random.vita_part + 0x1, sizeof(state->shared_random.vita_part)-0x1) == 0) {
+		if (memcmp(resp->shared_rand_vita + 0x1, state->shared_rng.vita_part + 0x1, sizeof(state->shared_rng.vita_part)-0x1) == 0) {
 			PRINT_STR("(VITA) cart and vita have the same shared_random.vita_part ...\n");
 			
 			// copy cart part into global state shared_random
-			memcpy(state->shared_random.cart_part, resp->shared_rand_cart, sizeof(resp->shared_rand_cart));
+			memcpy(state->shared_rng.cart_part, resp->shared_rand_cart, sizeof(resp->shared_rand_cart));
 
 			PRINT_STR("(VITA) shared random, cart part: ");
-			PRINT_BUFFER_LEN(state->shared_random.cart_part, sizeof(state->shared_random.cart_part));
+			PRINT_BUFFER_LEN(state->shared_rng.cart_part, sizeof(state->shared_rng.cart_part));
 
 			PRINT_STR("(VITA) shared random: ");
-			PRINT_BUFFER_LEN(&state->shared_random, sizeof(shared_random));
+			PRINT_BUFFER_LEN(&state->shared_rng, sizeof(shared_random));
 
 			return GC_AUTH_OK;
 		}
@@ -133,7 +134,7 @@ vita_error_code exchange_shared_random(vita_cmd56_state* state, cmd56_request* r
 	return GC_AUTH_ERROR_REPORTED;
 }
 
-vita_error_code generate_secondary_key_and_verify_session(vita_cmd56_state* state, cmd56_request* request, cmd56_response* response) {
+vita_error_code generate_secondary_key_and_verify_session(cmd56_state* state, cmd56_request* request, cmd56_response* response) {
 	cmd56_request_start(request, CMD_EXCHANGE_SECONDARY_KEY_AND_VERIFY_SESSION, calc_size(exchange_secondary_key_and_verify_session_request), 0x3, 0x5);
 	get_request(exchange_secondary_key_and_verify_session_request);
 	
@@ -143,8 +144,8 @@ vita_error_code generate_secondary_key_and_verify_session(vita_cmd56_state* stat
 	PRINT_BUFFER_LEN(req->secondary_key, sizeof(req->secondary_key));
 	
 	// copy shared_random to challenge
-	or_w_80(&state->shared_random, sizeof(state->shared_random));
-	memcpy(&req->challenge_bytes, &state->shared_random, sizeof(state->shared_random));
+	or_w_80(&state->shared_rng, sizeof(state->shared_rng));
+	memcpy(&req->challenge_bytes, &state->shared_rng, sizeof(state->shared_rng));
 	PRINT_STR("(VITA) challenge bytes: ");
 	PRINT_BUFFER_LEN(&req->challenge_bytes, sizeof(req->challenge_bytes));
 
@@ -168,7 +169,7 @@ vita_error_code generate_secondary_key_and_verify_session(vita_cmd56_state* stat
 	}
 }
 
-vita_error_code verify_secondary_key(vita_cmd56_state* state, cmd56_request* request, cmd56_response* response) {
+vita_error_code verify_secondary_key(cmd56_state* state, cmd56_request* request, cmd56_response* response) {
 	cmd56_request_start(request, CMD_VERIFY_SECONDARY_KEY, calc_size(verify_secondary_key_request), calc_size(verify_secondary_key_response), 0x7);
 	get_request(verify_secondary_key_request);
 
@@ -214,7 +215,7 @@ vita_error_code verify_secondary_key(vita_cmd56_state* state, cmd56_request* req
 	return GC_AUTH_ERROR_VERIFY_CART_RANDOM_FAIL;
 }
 
-vita_error_code get_packet18_key(vita_cmd56_state* state, cmd56_request* request, cmd56_response* response, uint8_t type) {
+vita_error_code get_packet18_key(cmd56_state* state, cmd56_request* request, cmd56_response* response, uint8_t type) {
 	cmd56_request_start(request, CMD_GET_P18_KEY_AND_CMAC_SIGNATURE, calc_size(get_p18_key_and_cmac_signature_request), calc_size(get_p18_key_and_cmac_signature_response), 0x11);
 	get_request(get_p18_key_and_cmac_signature_request);
 
@@ -238,7 +239,9 @@ vita_error_code get_packet18_key(vita_cmd56_state* state, cmd56_request* request
 	// create a cmac of all the p18 data, place it at the end of the request.
 	do_cmd56_cmac_hash(&state->secondary_key, 
 						req, 
-						make_int24(request->command, 0x00, request->additional_data_size), 
+						make_int24(request->command, 
+							get_byte(request->additional_data_size, 0), 
+							get_byte(request->additional_data_size, 1)),
 						req->cmac_signature,
 						offsetof(get_p18_key_and_cmac_signature_request, cmac_signature));
 
@@ -301,7 +304,7 @@ vita_error_code get_packet18_key(vita_cmd56_state* state, cmd56_request* request
 	return GC_AUTH_ERROR_REPORTED;
 }
 
-vita_error_code get_packet20_key(vita_cmd56_state* state, cmd56_request* request, cmd56_response* response) {
+vita_error_code get_packet20_key(cmd56_state* state, cmd56_request* request, cmd56_response* response) {
 	cmd56_request_start(request, CMD_GET_P20_KEY_AND_CMAC_SIGNATURE, calc_size(get_p20_key_and_cmac_signature_request), calc_size(get_p20_key_and_cmac_signature_response), 0x19);
 	get_request(get_p20_key_and_cmac_signature_request);
 	rand_bytes_or_w_80(req->challenge_bytes, sizeof(req->challenge_bytes));
@@ -364,41 +367,47 @@ vita_error_code get_packet20_key(vita_cmd56_state* state, cmd56_request* request
 
 // exposed functions
 
-void vita_cmd56_init(vita_cmd56_state* state, send_t send_func, recv_t recv_func) {
+void vita_cmd56_init(cmd56_state* state, cmd56_send_t send_func, cmd56_recv_t recv_func) {
 	if (state == NULL) return;
 
-	memset(state, 0x00, sizeof(vita_cmd56_state));
+	memset(state, 0x00, sizeof(cmd56_state));
 	state->send = send_func;
 	state->recv = recv_func;
 										 // false, replicates the functionality of 1.04+ firmware, prototype carts not allowed.
 	state->allow_prototype_keys = FALSE; // true, it acts more like a prototype <1.04 console, allowing prototype carts.
 }
 
-void vita_cmd56_init_ex(vita_cmd56_state* state, send_t send_func, recv_t recv_func, boolean allow_prototype_keys) {
+void vita_cmd56_init_ex(cmd56_state* state, cmd56_send_t send_func, cmd56_recv_t recv_func, boolean allow_prototype_keys) {
 	if (state == NULL) return;
 
 	vita_cmd56_init(state, send_func, recv_func);
 	state->allow_prototype_keys = TRUE;
 }
 
-void vita_cmd56_get_keyid(vita_cmd56_state* state, cmd56_sm_keyid* key_id) {
+void vita_cmd56_get_keyid(cmd56_state* state, cmd56_sm_keyid* key_id) {
 	if (state == NULL) return;
 	if (key_id != NULL) memcpy(key_id, &state->key_id, sizeof(state->key_id));
 }
 
-void vita_cmd56_get_keys(vita_cmd56_state* state, cmd56_keys* per_cart_keys) {
+void vita_cmd56_get_keys(cmd56_state* state, cmd56_keys* per_cart_keys) {
 	if (state == NULL) return;
 
 	if (per_cart_keys != NULL) memcpy(per_cart_keys, &state->per_cart_keys, sizeof(cmd56_keys));
 }
-void vita_cmd56_get_keys_ex(vita_cmd56_state* state, uint8_t p20_key[0x20], uint8_t p18_key[0x20]) {
+void vita_cmd56_get_keys_ex(cmd56_state* state, uint8_t p20_key[0x20], uint8_t p18_key[0x20]) {
 	if (state == NULL) return;
 
 	if (p20_key != NULL) memcpy(p20_key, state->per_cart_keys.packet20_key, sizeof(state->per_cart_keys.packet20_key));
 	if (p18_key != NULL) memcpy(p18_key, state->per_cart_keys.packet18_key, sizeof(state->per_cart_keys.packet18_key));
 }
 
-int vita_cmd56_run(vita_cmd56_state* state) {
+cmd56_sm_keyid vita_cmd56_get_key_id(cmd56_state* state)
+{
+	if (state == NULL) return RETAIL_KEY_ID;
+	return state->key_id;
+}
+
+int vita_cmd56_run(cmd56_state* state) {
 	if (state == NULL) return GC_INVALID_ARGUMENT;
 
 	cmd56_request request;

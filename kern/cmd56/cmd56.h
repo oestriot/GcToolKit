@@ -7,10 +7,14 @@
 #define CMD56_H 1
 #include "compiler_defs.h"
 #include "cmd56.h"
+#include "cmd56_sm.h"
+#include "crypto/aes.h"
 
 #define make_short(b1, b2) ((b2 << 8) | (b1 << 0))
 #define make_int24(b1, b2, b3) ((b3 << 16) | (b2 << 8) | (b1 << 0))
 #define make_int(b1, b2, b3, b4) ((b4 << 32) | (b3 << 16) | (b2 << 8) | (b1 << 0))
+
+#define get_byte(v, x) ((uint8_t*)&v)[x]
 
 #define calc_size(type) (sizeof(type) + 0x3)
 #define get_response(type) type* resp = ((type*)response->data)
@@ -18,14 +22,33 @@
 
 extern const uint8_t CMD56_MAGIC[0x20];
 
+typedef uint8_t cmd56_error_code;
+enum CMD56_ERRORS { 
+    ERR_SUCCESS = 0x00,
+    ERR_INVALID_MAGIC = 0x01,
+
+    ERR_INVALID_RESPONSE_CODE = 0x02, // mentioned in blackfin leaks needs verification; apparently the cart actually checks resp code;
+    ERR_NOT_INITALIZED = 0x03, // mentioned in blackfin leaks needs verification; apparently if not initalized or something?
+    ERR_TOO_MANY_REQUESTS = 0x04, // mentioned in blackfin leaks, apparently the cart blocks you if you fail auth too many times?
+    ERR_RESPONSE_TOO_LARGE = 0x05, 
+
+    ERR_INVALID_COMMAND = 0x11,
+    ERR_REQUEST_SIZE_TOO_BIG = 0x20,
+    ERR_REQUEST_SIZE_NO_MATCH = 0x21,
+    ERR_REQUEST_SIZE_IS_ZERO = 0x22,
+    ERR_SESSION_CHALLENGE_FAILED = 0xF1,
+    ERR_UNKNOWN_ERROR = 0xF2, // mentioned in blackfin leaks needs verification; apparently returned from some unused commands
+    ERR_CMAC_VALIDATION_FAILED = 0xF4,
+};
+
 typedef uint16_t cmd56_lock_status;
-enum cmd56_lock_status {
+enum CMD56_LOCK_STATUS_LIST {
     GC_LOCKED = 0xFF,
     GC_UNLOCKED = 0x00
 };
 
 typedef uint8_t cmd56_command;
-enum cmd56_commands {
+enum CMD56_COMMAND_LIST {
     CMD_START = 0xC4,
     CMD_GET_STATUS = 0xC2,
     CMD_GENERATE_SESSION_KEY = 0xA1,
@@ -47,8 +70,7 @@ typedef PACK(struct cmd56_request {
     uint32_t request_size;
     uint32_t expected_response_size;
     cmd56_command command;
-    uint8_t unknown_host_value;
-    uint8_t additional_data_size;
+    uint16_t additional_data_size;
     uint8_t data[0x1d1];
 }) cmd56_request;
 
@@ -56,7 +78,7 @@ typedef PACK(struct cmd56_response {
     uint32_t response_code;
     uint32_t additional_data_size;
     uint16_t response_size;
-    uint8_t error_code;
+    cmd56_error_code error_code;
     uint8_t data[0x1f5];
 }) cmd56_response;
 
@@ -104,14 +126,14 @@ typedef PACK(struct start_response {
 }) start_response;
 
 typedef PACK(struct get_status_response {
-    uint16_t status; // FFFF || 0000
+    cmd56_lock_status status; // FF || 00; big endain
 }) get_status_response;
 
 typedef PACK(struct generate_session_key_response {
-    uint16_t unk0; //<! 0xE000
-    uint16_t key_id; //<! big endian
-    uint16_t unk1; //<! 0x200
-    uint16_t unk2; //<! 0x300
+    uint16_t unk0; //<! 0xE000; big endian
+    uint16_t key_id; //<! 0x01, 0x8001, 0x8002, 0x8003; big endian
+    uint16_t unk1; //<! 0x200; big endian
+    uint16_t unk2; //<! 0x300; big endian
     uint8_t cart_random[0x20];
 }) generate_session_key_response;
 
@@ -141,8 +163,52 @@ typedef PACK(struct get_p20_key_and_cmac_signature_response {
     uint8_t cmac_signature[0x10];
 }) get_p20_key_and_cmac_signature_response;
 
+typedef void (*cmd56_send_t)(const void* data, size_t size);
+typedef void (*cmd56_recv_t)(void* data, size_t size);
+
+typedef struct cmd56_state {
+    // send/recv callbacks
+    cmd56_send_t send;
+    cmd56_recv_t recv;
+
+    // set to 0x1 to allow using keyid > 0x8001
+    // which is the case on prototype firmwares, 
+    // on fw 1.04+ this is not allowed, 
+    boolean allow_prototype_keys;
+
+    // shared
+
+    // cart lock status, unlocked after
+    // successful VITA_AUTHENTICITY_CHECK
+    cmd56_lock_status lock_status;
+
+    // KEY_ID to use, every gc i've ever seen uses RETAIL_KEY_ID (0x1).
+    // however a PROTOTYPE_KEY_ID1 0x8001 is also allowed,
+
+    // PROTOTYPE_KEY_ID actually has worse security in place, 
+    // however sony could easily check for this in a future update
+    // and can use RETAIL_KEY_ID thanks to the racoon exploit anyway. 
+
+    // There also exists a PROTOTYPE_KEY_ID2 and 3,0x8002 and 0x8003, 
+    // however these are blacklisted as of fw 1.04.
+    cmd56_sm_keyid key_id;
+
+    // per-gc keys, used to derive the rif key,
+    // which is used to decrypt the game klicensee,
+    // and finally PFS/EBOOT.BIN
+    cmd56_keys per_cart_keys;
+
+    // CART_RANDOM is used to derive the secondary_key using bbmac 0x305
+    // and 0x308 (only on RETAIL_KEY_ID) 
+    uint8_t cart_random[0x20];
+    shared_random shared_rng;
+
+    AES_ctx session_key;
+    AES_ctx secondary_key;
+} cmd56_state;
+
 void cmd56_response_start(cmd56_request* packet_buffer, cmd56_response* response);
-void cmd56_response_error(cmd56_response* response, uint8_t error);
-void cmd56_request_start(cmd56_request* request, cmd56_command cmd, uint8_t data_size, uint32_t expected_response_size, uint32_t expected_response_code);
+void cmd56_response_error(cmd56_response* response, cmd56_error_code error);
+void cmd56_request_start(cmd56_request* request, cmd56_command cmd, uint16_t additional_data_size, uint32_t expected_response_size, uint32_t expected_response_code);
 
 #endif /* CMD56_H */

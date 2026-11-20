@@ -7,7 +7,7 @@
 #include "cmd56/vita.h"
 #include "log.h"
 
-static vita_cmd56_state vita_state = { 0 };
+static cmd56_state vita_state = { 0 };
 static SceSdifDeviceContext* ctx = NULL;
 static int is_authenticated = 0;
 
@@ -46,7 +46,7 @@ int k_clear_secret() {
 }
 
 
-void k_gc_cmd56_write(const uint8_t* buf, uint32_t size) {
+void k_gc_cmd56_write(const void* buf, uint32_t size) {
 	PRINT_FUNC();
 	PRINT_BUFFER_LEN(buf, size);
 	int ret = ksceSdifWriteCmd56(ctx, buf, size);
@@ -54,7 +54,7 @@ void k_gc_cmd56_write(const uint8_t* buf, uint32_t size) {
 	
 }
 
-void k_gc_cmd56_read(uint8_t* buf, uint32_t size) {
+void k_gc_cmd56_read(void* buf, uint32_t size) {
 	PRINT_FUNC();
 	int ret = ksceSdifReadCmd56(ctx, buf, size);
 	PRINT_STR("ret = %x\n", ret);

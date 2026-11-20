@@ -35,12 +35,14 @@ add_executable(${PROJECT_NAME}
 	sd2vita.c
 	power.c
 	
+	# libcmd56 
 	cmd56/cmd56.c
 	cmd56/cmd56_sm.c
 	cmd56/gc.c
 	cmd56/vita.c	
 	cmd56/crypto/aes.c
 	cmd56/crypto/aes_cmac.c
+	cmd56/compiler_defs.c
 )
 
 target_link_libraries(${PROJECT_NAME}

@@ -6,6 +6,7 @@
 #ifndef F00D_EMU_H
 #define F00D_EMU_H 1
 #include "compiler_defs.h"
+#include "crypto/aes.h"
 
 typedef uint16_t cmd56_sm_keyid;
 enum CMD56_SM_KEY_IDS {
@@ -17,6 +18,7 @@ enum CMD56_SM_KEY_IDS {
 
 	RETAIL_KEY_ID = 0x1
 };
+
 
 #define decrypt_cbc_zero_iv(ctx, data, len) AES_CBC_decrypt_buffer(ctx, (uint8_t*)data, len, (uint8_t*)NULL);
 #define encrypt_cbc_zero_iv(ctx, data, len) AES_CBC_encrypt_buffer(ctx, (uint8_t*)data, len, (uint8_t*)NULL);

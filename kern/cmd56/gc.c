@@ -11,9 +11,10 @@
 #include "crypto/aes.h"
 #include "crypto/aes_cmac.h"
 
-void handle_cmd_start(gc_cmd56_state* state, cmd56_request* request, cmd56_response* response){
+void handle_cmd_start(cmd56_state* state, cmd56_request* request, cmd56_response* response) {
 	cmd56_response_start(request, response);
 	get_response(start_response);
+
 	state->lock_status = GC_LOCKED;
 
 	resp->start[0xD] = 0x1;
@@ -21,22 +22,22 @@ void handle_cmd_start(gc_cmd56_state* state, cmd56_request* request, cmd56_respo
 	resp->start[0xF] = 0x4;
 }
 
-void handle_cmd_status(gc_cmd56_state* state, cmd56_request* request, cmd56_response* response) {
+void handle_cmd_status(cmd56_state* state, cmd56_request* request, cmd56_response* response) {
 	cmd56_response_start(request, response);
 	get_response(get_status_response);
 
-	resp->status = state->lock_status;
+	resp->status = endian_little16(state->lock_status);
 }
 
-void handle_generate_session_key(gc_cmd56_state* state, cmd56_request* request, cmd56_response* response) {
+void handle_generate_session_key(cmd56_state* state, cmd56_request* request, cmd56_response* response) {
 	cmd56_response_start(request, response);
 	get_response(generate_session_key_response);
 
-	resp->unk0 = endian_swap(0xE000);
+	resp->unk0 = endian_big16(0xE000);
 
 	// specify key_id
 	PRINT_STR("(GC) Key ID %x\n", state->key_id);
-	resp->key_id = endian_swap(state->key_id);
+	resp->key_id = endian_big16(state->key_id);
 
 	// unknown paramaters, copied values from "Smart As."; they seem to be the same for most*
 	// games i have, with few exceptions (noted below)
@@ -45,8 +46,8 @@ void handle_generate_session_key(gc_cmd56_state* state, cmd56_request* request, 
 	// this is just included incase they decide to do something with them in a later firmware..
 	// also seems to be a bug where only half of the CART_RANDDOM is actually random, its weird
 
-	resp->unk1 = endian_swap(0x2);
-	resp->unk2 = endian_swap(0x3);
+	resp->unk1 = endian_big16(0x2);
+	resp->unk2 = endian_big16(0x3);
 
 	rand_bytes(resp->cart_random, sizeof(resp->cart_random));
 
@@ -64,18 +65,18 @@ void handle_generate_session_key(gc_cmd56_state* state, cmd56_request* request, 
 	resp->cart_random[0x8] = 0x00;
 	resp->cart_random[0x9] = 0x00;
 	resp->cart_random[0xA] = 0x00;
-	resp->cart_random[0xB] = 0x04; // 0x1 in Final Fantasy X (JPN/CN), 
-								   // 0x1 in Dungeon Travelers 2 (JPN), 
-								   // 0x1 in Diabolik Lovers (JPN), 
-								   // 0x1 in Sen No Kieski 2 (JPN),
-								   // 0x1 in Sen No Kieski (JPN),
-								   // 0x3 in Superdimension Neptune vs Sega Hard Girls (USA), 
-								   // 0x4 in Smart As (PAL),
-								   // 0x4 in Hyperdevotion Noire (PAL)
+	resp->cart_random[0xB] = 0x04;	// 0x1 in Final Fantasy X (JPN/CN), 
+									// 0x1 in Dungeon Travelers 2 (JPN), 
+									// 0x1 in Diabolik Lovers (JPN), 
+									// 0x1 in Sen No Kieski 2 (JPN),
+									// 0x1 in Sen No Kieski (JPN),
+									// 0x3 in Superdimension Neptune vs Sega Hard Girls (USA), 
+									// 0x4 in Smart As (PAL),
+									// 0x4 in Hyperdevotion Noire (PAL)
 									
-	resp->cart_random[0xC] = 0x00; // 0x0 in all except:
-								   // Minecraft PSVita (JPN) where its 0x1.
-								   // Diabolik Lovers(JPN) where its 0x2.
+	resp->cart_random[0xC] = 0x00;	// 0x0 in all except:
+									// Minecraft PSVita (JPN) where its 0x1.
+									// Diabolik Lovers(JPN) where its 0x2.
 
 	memcpy(state->cart_random, resp->cart_random, sizeof(state->cart_random));
 
@@ -92,43 +93,43 @@ void handle_generate_session_key(gc_cmd56_state* state, cmd56_request* request, 
 	AES_init_ctx(&state->session_key, session_key);
 }
 
-void handle_exchange_shared_random(gc_cmd56_state* state, cmd56_request* request, cmd56_response* response) {
+void handle_exchange_shared_random(cmd56_state* state, cmd56_request* request, cmd56_response* response) {
 	cmd56_response_start(request, response);
 	get_response(exchange_shared_random_response);
 	get_request(exchange_shared_random_request);
 
-	if (endian_swap(req->key_id) == state->key_id) {
+	if (endian_big16(req->key_id) == state->key_id) {
 		PRINT_STR("(GC) got_key_id == state->key_id\n");
 
-		memcpy(state->shared_random.vita_part, req->shared_rand_vita, sizeof(req->shared_rand_vita));
-		or_w_80(state->shared_random.vita_part, sizeof(state->shared_random.vita_part));
+		memcpy(state->shared_rng.vita_part, req->shared_rand_vita, sizeof(req->shared_rand_vita));
+		or_w_80(state->shared_rng.vita_part, sizeof(state->shared_rng.vita_part));
 
 		PRINT_STR("(GC) read vita portion of the shared random: ");
 		PRINT_BUFFER_LEN(req->shared_rand_vita, sizeof(req->shared_rand_vita));
 
 		// gamecart decides the lower portion of shared random ...
-		rand_bytes_or_w_80(state->shared_random.cart_part, sizeof(state->shared_random.cart_part));
+		rand_bytes_or_w_80(state->shared_rng.cart_part, sizeof(state->shared_rng.cart_part));
 
 		PRINT_STR("(GC) generated gc portion of the shared random: ");
-		PRINT_BUFFER_LEN(state->shared_random.cart_part, sizeof(state->shared_random.cart_part));
+		PRINT_BUFFER_LEN(state->shared_rng.cart_part, sizeof(state->shared_rng.cart_part));
 
 		// this is sent back to the console in reverse order ...
-		memcpy(resp->shared_rand_cart, state->shared_random.cart_part, sizeof(resp->shared_rand_cart));
-		memcpy(resp->shared_rand_vita, state->shared_random.vita_part, sizeof(resp->shared_rand_vita));
+		memcpy(resp->shared_rand_cart, state->shared_rng.cart_part, sizeof(resp->shared_rand_cart));
+		memcpy(resp->shared_rand_vita, state->shared_rng.vita_part, sizeof(resp->shared_rand_vita));
 
-		PRINT_STR("(GC) handle_shared_random plaintext: ");
+		PRINT_STR("(GC) handle_shared_rng plaintext: ");
 		PRINT_BUFFER_LEN(resp, sizeof(exchange_shared_random_response));
 
 		encrypt_cbc_zero_iv(&state->session_key, resp, sizeof(exchange_shared_random_response));
 	}
 	else {
-		PRINT_STR("(GC) key_id from vita not acknowledged? (got: 0x%02X, expected: 0x%02X)\n", endian_swap(req->key_id), state->key_id);
-		cmd56_response_error(response, 0x11);
+		PRINT_STR("(GC) key_id from vita not acknowledged? (got: 0x%02X, expected: 0x%02X)\n", endian_big16(req->key_id), state->key_id);
+		cmd56_response_error(response, ERR_INVALID_COMMAND);
 	}
 
 }
 
-void handle_exchange_secondary_key_and_verify_session(gc_cmd56_state* state, cmd56_request* request, cmd56_response* response) {
+void handle_exchange_secondary_key_and_verify_session(cmd56_state* state, cmd56_request* request, cmd56_response* response) {
 	cmd56_response_start(request, response);
 	get_request(exchange_secondary_key_and_verify_session_request);
 
@@ -149,7 +150,7 @@ void handle_exchange_secondary_key_and_verify_session(gc_cmd56_state* state, cmd
 	PRINT_BUFFER_LEN(req->secondary_key, sizeof(req->secondary_key));
 	AES_init_ctx(&state->secondary_key, req->secondary_key);
 
-	if (memcmp(&req->challenge_bytes, &state->shared_random, sizeof(shared_random)) == 0) {
+	if (memcmp(&req->challenge_bytes, &state->shared_rng, sizeof(shared_random)) == 0) {
 		PRINT_STR("(GC) session key validated, unlocking cart\n");
 		state->lock_status = GC_UNLOCKED;
 	}
@@ -157,17 +158,17 @@ void handle_exchange_secondary_key_and_verify_session(gc_cmd56_state* state, cmd
 		PRINT_STR("(GC) session key not valid, cart remaining locked.\n");
 
 		PRINT_STR("(GC) expected: ");
-		PRINT_BUFFER_LEN(&state->shared_random, sizeof(shared_random));
+		PRINT_BUFFER_LEN(&state->shared_rng, sizeof(shared_random));
 
 		PRINT_STR("(GC) got: ");
 		PRINT_BUFFER_LEN(&req->challenge_bytes, sizeof(shared_random));
 
 		state->lock_status = GC_LOCKED;
-		cmd56_response_error(response, 0xF1);
+		cmd56_response_error(response, ERR_SESSION_CHALLENGE_FAILED);
 	}
 }
 
-void handle_verify_secondary_key(gc_cmd56_state* state, cmd56_request* request, cmd56_response* response) {
+void handle_verify_secondary_key(cmd56_state* state, cmd56_request* request, cmd56_response* response) {
 	cmd56_response_start(request, response);
 	get_response(verify_secondary_key_response);
 	get_request(verify_secondary_key_request);
@@ -192,17 +193,21 @@ void handle_verify_secondary_key(gc_cmd56_state* state, cmd56_request* request, 
 }
 
 
-void handle_p18key_and_cmac_signature(gc_cmd56_state* state, cmd56_request* request, cmd56_response* response) {
+void handle_p18key_and_cmac_signature(cmd56_state* state, cmd56_request* request, cmd56_response* response) {
 	cmd56_response_start(request, response);
 	get_response(get_p18_key_and_cmac_signature_response);
 	get_request(get_p18_key_and_cmac_signature_request);
 
 	// calcluate cmac and get expected cmac
 	uint8_t got_cmac[0x10];
-	
+
+
 	do_cmd56_cmac_hash(&state->secondary_key, 
 						req,
-						make_int24(request->command, 0x0, request->additional_data_size), 
+						make_int24(request->command, 
+									get_byte(request->additional_data_size, 0), // first byte from uint16_t
+									get_byte(request->additional_data_size, 1) // second byte from uint16_t
+						),
 						got_cmac, 
 						offsetof(get_p18_key_and_cmac_signature_request, cmac_signature));
 
@@ -215,7 +220,7 @@ void handle_p18key_and_cmac_signature(gc_cmd56_state* state, cmd56_request* requ
 		if ((req->type != 0x2 || req->type != 0x3) &&
 			(req->challenge_bytes[0x00] | 0x80) != req->challenge_bytes[0x00]) {
 			PRINT_STR("(GC) invalid p18 request, 0x1F is not 0x2 or 0x3, OR challenge_bytes[0] is not logical or'd with 0x80.\n");
-			cmd56_response_error(response, 0x11);
+			cmd56_response_error(response, ERR_INVALID_COMMAND);
 			return;
 		}
 	
@@ -248,12 +253,12 @@ void handle_p18key_and_cmac_signature(gc_cmd56_state* state, cmd56_request* requ
 		PRINT_BUFFER_LEN(req->cmac_signature, sizeof(req->cmac_signature));
 		PRINT_STR("(GC) got:");
 		PRINT_BUFFER_LEN(got_cmac, sizeof(got_cmac));
-		cmd56_response_error(response, 0xF4);
+		cmd56_response_error(response, ERR_CMAC_VALIDATION_FAILED);
 	}
 
 }
 
-void handle_p20key_and_cmac_signature(gc_cmd56_state* state, cmd56_request* request, cmd56_response* response) {
+void handle_p20key_and_cmac_signature(cmd56_state* state, cmd56_request* request, cmd56_response* response) {
 	cmd56_response_start(request, response);
 	get_response(get_p20_key_and_cmac_signature_response);
 	get_request(get_p20_key_and_cmac_signature_request);
@@ -287,13 +292,13 @@ void handle_p20key_and_cmac_signature(gc_cmd56_state* state, cmd56_request* requ
 }
 
 
-void handle_unknown_request(gc_cmd56_state* state, cmd56_request* request, cmd56_response* response) {
+void handle_unknown_request(cmd56_state* state, cmd56_request* request, cmd56_response* response) {
 	PRINT_STR("(GC) Unknown command: 0x%02X\n", request->command);
 	cmd56_response_start(request, response);
-	cmd56_response_error(response, 0x11);
+	cmd56_response_error(response, ERR_INVALID_COMMAND);
 }
 
-void handle_request(gc_cmd56_state* state, cmd56_request* request, cmd56_response* request_response) {
+void handle_request(cmd56_state* state, cmd56_request* request, cmd56_response* request_response) {
 	switch(request->command) {
 		case CMD_START: //packet1, packet2
 			handle_cmd_start(state, request, request_response);
@@ -335,7 +340,7 @@ void handle_request(gc_cmd56_state* state, cmd56_request* request, cmd56_respons
 
 // exposed functions :
 
-void gc_cmd56_update_keyid(gc_cmd56_state* state, uint16_t key_id) {
+void gc_cmd56_update_keyid(cmd56_state* state, uint16_t key_id) {
 	if (state == NULL) return;
 	state->key_id = key_id;
 
@@ -343,7 +348,7 @@ void gc_cmd56_update_keyid(gc_cmd56_state* state, uint16_t key_id) {
 	rand_seed(&key_id, sizeof(key_id));
 }
 
-void gc_cmd56_update_keys_ex(gc_cmd56_state* state, const uint8_t p20_key[0x20], const uint8_t p18_key[0x20]) {
+void gc_cmd56_update_keys_ex(cmd56_state* state, const uint8_t p20_key[0x20], const uint8_t p18_key[0x20]) {
 	if (state == NULL) return;
 	if (p20_key != NULL) memcpy(&state->per_cart_keys.packet20_key, p20_key, sizeof(state->per_cart_keys.packet20_key));
 	if (p18_key != NULL) memcpy(&state->per_cart_keys.packet18_key, p18_key, sizeof(state->per_cart_keys.packet18_key));
@@ -353,14 +358,33 @@ void gc_cmd56_update_keys_ex(gc_cmd56_state* state, const uint8_t p20_key[0x20],
 	if (p18_key != NULL) rand_seed(p18_key, sizeof(state->per_cart_keys.packet18_key));
 }
 
-void gc_cmd56_update_keys(gc_cmd56_state* state, const cmd56_keys* per_cart_keys) {
+void gc_cmd56_update_keys(cmd56_state* state, const cmd56_keys* per_cart_keys) {
 	if (state == NULL) return;
 	if (per_cart_keys != NULL) gc_cmd56_update_keys_ex(state, per_cart_keys->packet20_key, per_cart_keys->packet18_key);
 }
 
-void gc_cmd56_init(gc_cmd56_state* state, const cmd56_keys* per_cart_keys) {
+void gc_cmd56_get_keys(cmd56_state* state, cmd56_keys* per_cart_keys) {
 	if (state == NULL) return;
-	memset(state, 0x00, sizeof(gc_cmd56_state)); 
+	if (per_cart_keys == NULL) return;
+	memcpy(per_cart_keys, &state->per_cart_keys, sizeof(cmd56_keys));
+}
+
+void gc_cmd56_get_keys_ex(cmd56_state* state, cmd56_keys* per_cart_keys, uint8_t p20_key[0x20], uint8_t p18_key[0x20]) {
+	if (state == NULL) return;
+	if (p20_key == NULL) return;
+	if (p18_key == NULL) return;
+	memcpy(p20_key, state->per_cart_keys.packet20_key, sizeof(cmd56_keys));
+	memcpy(p18_key, state->per_cart_keys.packet18_key, sizeof(cmd56_keys));
+}
+
+cmd56_sm_keyid gc_cmd56_get_keyid(cmd56_state* state) {
+	if (state == NULL) return RETAIL_KEY_ID;
+	return state->key_id;
+}
+
+void gc_cmd56_init(cmd56_state* state, const cmd56_keys* per_cart_keys) {
+	if (state == NULL) return;
+	memset(state, 0x00, sizeof(cmd56_state)); 
 
 	// lock "cart" for reading/writing
 	state->lock_status = GC_LOCKED;
@@ -372,19 +396,34 @@ void gc_cmd56_init(gc_cmd56_state* state, const cmd56_keys* per_cart_keys) {
 	gc_cmd56_update_keys(state, per_cart_keys);
 }
 
-void gc_cmd56_run_in_place(gc_cmd56_state* state, uint8_t* buffer) {
+void gc_cmd56_run_in_place(cmd56_state* state, void* buffer) {
 	if (state == NULL) return;
 	uint8_t cmd56_request_response[0x200];
 	gc_cmd56_run(state, buffer, cmd56_request_response);
 	memcpy(buffer, cmd56_request_response, sizeof(cmd56_request_response));
 }
 
-void gc_cmd56_run(gc_cmd56_state* state, const uint8_t* buffer, uint8_t* response) {
+void gc_cmd56_run(cmd56_state* state, const void* buffer, void* response) {
 	if (state == NULL) return;
 	cmd56_request* request = (cmd56_request*)buffer;
-	if(memcmp(request->magic, CMD56_MAGIC, sizeof(request->magic)) != 0) {
+	
+	if(memcmp(request->magic, CMD56_MAGIC, sizeof(request->magic)) != 0) { // magic
+		cmd56_response_error(response, ERR_INVALID_MAGIC);
 		return;
 	}
+	if (request->request_size > 0xC5) { // request size
+		cmd56_response_error(response, ERR_REQUEST_SIZE_TOO_BIG);
+		return;
+	}
+	if (request->request_size == 0) { // request size = 0
+		cmd56_response_error(response, ERR_REQUEST_SIZE_IS_ZERO);
+		return;
+	}
+	if (request->expected_response_size > 0x5C) { // response size.
+		cmd56_response_error(response, ERR_RESPONSE_TOO_LARGE);
+		return;
+	}
+
 
 	handle_request(state, (cmd56_request*)buffer, (cmd56_response*)response);
 }

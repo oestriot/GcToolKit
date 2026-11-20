@@ -55,7 +55,7 @@ int handle_dump_device(int what, BackupFormat format, char* block_device, char* 
 		res = key_dump_network(ip_address, port, out_file);		
 	}
 	
-	if(what == DUMP_WHOLE_GC ) { 
+	if(1 || what == DUMP_WHOLE_GC ) { 
 		if(!FMT_IS_VCI(format)) { // dump keys.bin if its not VCI.
 			change_extension(extra_file, MAX_PATH, ".keys.bin"); // get keys file ..
 			if(ip_address == NULL) { // write keys,

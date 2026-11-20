@@ -76,8 +76,11 @@ void do_cmd56_cmac_hash(AES_ctx* ctx, void* data, uint32_t header, uint8_t* outp
 	uint8_t cmac_input[0x50];
 	memset(cmac_input, 0x00, sizeof(cmac_input));
 
+	// make header as little endian
+	header = endian_little32(header);
+
 	// aes-128-cmac the whole thing
-	memcpy(cmac_input, &header, 0x3);
+	memcpy(cmac_input, &header, 3);
 	memcpy(cmac_input + 0x10, data, size); // copy data to cmac_input + 0x10
 
 	AES_CMAC_buffer(ctx, cmac_input, size + 0x10, output); // caclulate the CMAC ...

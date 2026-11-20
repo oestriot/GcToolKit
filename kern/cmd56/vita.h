@@ -8,10 +8,7 @@
 #include "compiler_defs.h"
 #include "crypto/aes.h"
 #include "cmd56.h"
-#include "cmd56_sm.h"
 
-typedef void (*send_t)(const uint8_t* data, size_t size);
-typedef void (*recv_t)(uint8_t* data, size_t size);
 
 typedef enum vita_error_code {
     GC_AUTH_OK = 0x00,
@@ -42,50 +39,15 @@ typedef enum vita_error_code {
     GC_AUTH_ERROR_REPORTED = 0x800F001
 } vita_error_code;
 
-typedef PACK(struct vita_cmd56_state {
-    // send/recv callbacks
-    send_t send;
-    recv_t recv;
 
-    // cart lock status, unlocked after
-    // successful VITA_AUTHENTICITY_CHECK
-    cmd56_lock_status lock_status;
-
-    // set to 0x1 to allow using keyid > 0x8001
-    // which is the case on prototype firmwares, 
-    // on fw 1.04+ this is not allowed, 
-    boolean allow_prototype_keys;
-
-    // KEY_ID to use, every gc i've ever seen uses RETAIL_KEY_ID (0x1).
-    // however a PROTOTYPE_KEY_ID1 0x8001 is also allowed,
-
-    // PROTOTYPE_KEY_ID actually has worse security in place, 
-    // however sony could easily check for this in a future update
-    // and can use RETAIL_KEY_ID thanks to the racoon exploit anyway. 
-
-    // There also exists a PROTOTYPE_KEY_ID2 and 3,0x8002 and 0x8003, 
-    // however these are blacklisted as of fw 1.04.
-    cmd56_sm_keyid key_id;
-
-    // per-gc keys, used to derive the rif key,
-    // which is used to decrypt the game klicensee,
-    // and finally PFS/EBOOT.BIN
-    cmd56_keys per_cart_keys;
-
-    // CART_RANDOM is used to derive the secondary_key using bbmac 0x305
-    // and 0x308 (only on RETAIL_KEY_ID) 
-    uint8_t cart_random[0x20];
-    shared_random shared_random;
-
-    AES_ctx session_key;
-    AES_ctx secondary_key;
-}) vita_cmd56_state;
 
 // exposed functions:
-void vita_cmd56_init(vita_cmd56_state* state, send_t send_func, recv_t recv_func);
-void vita_cmd56_init_ex(vita_cmd56_state* state, send_t send_func, recv_t recv_func, boolean allow_prototype_keys);
-void vita_cmd56_get_keys(vita_cmd56_state* state, cmd56_keys* keys);
-void vita_cmd56_get_keys_ex(vita_cmd56_state* state, uint8_t p20_key[0x20], uint8_t p18_key[0x20]);
-int vita_cmd56_run(vita_cmd56_state* state);
+void vita_cmd56_init(cmd56_state* state, cmd56_send_t send_func, cmd56_recv_t recv_func);
+void vita_cmd56_init_ex(cmd56_state* state, cmd56_send_t send_func, cmd56_recv_t recv_func, boolean allow_prototype_keys);
+void vita_cmd56_get_keys(cmd56_state* state, cmd56_keys* keys);
+void vita_cmd56_get_keys_ex(cmd56_state* state, uint8_t p20_key[0x20], uint8_t p18_key[0x20]);
+cmd56_sm_keyid vita_cmd56_get_key_id(cmd56_state* state);
+
+int vita_cmd56_run(cmd56_state* state);
 
 #endif
