@@ -4,7 +4,7 @@
 #include <vitasdkkern.h>
 #include <stdint.h>
 
-#ifdef ENABLE_LOGGING
+#ifdef LOGGING_ENABLED
 #define PRINT_STR(...) do { ksceDebugPrintf("[GcKernKit] %s: ", __FUNCTION__); ksceDebugPrintf(__VA_ARGS__); } while(0);
 #define PRINT_BUFFER(buffer) PRINT_BUFFER_LEN(buffer, sizeof(buffer))
 #define PRINT_BUFFER_LEN(buffer, len) for(int i = 0; i < len; i++) { \

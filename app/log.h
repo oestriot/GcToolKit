@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include <stdint.h>
 
-#ifdef ENABLE_LOGGING
+#ifdef LOGGING_ENABLED
 #define PRINT_STR(...) do { sceClibPrintf("[GcToolKit] %s: ", __FUNCTION__); sceClibPrintf(__VA_ARGS__); } while(0);
 #define PRINT_BUFFER(buffer) do { \
 								 for(int i = 0; i < sizeof(buffer); i++) { \

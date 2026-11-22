@@ -74,6 +74,87 @@ typedef struct EmmcCardDescriptor {
 } __attribute__((packed)) EmmcCardDescriptor;
 static_assert(sizeof(EmmcCardDescriptor) == CARD_DESCRIPTOR_SIZE);
 
+typedef struct EmmcExtendedCardDescriptor {	
+	uint8_t reserved[15];
+	uint8_t command_queue_mode_enable;
+	uint8_t secure_removal_type;
+	uint8_t product_state_awareness_enablement;
+	uint32_t max_preloading_data_size;
+	uint32_t preloading_data_size;
+	uint8_t ffu_status;
+	uint8_t reserved2[2];
+	uint8_t mode_operation_codes;
+	uint8_t mode_config;
+	uint8_t barrier_control;
+	uint8_t flush_cache;
+	uint8_t cache_control;
+	uint8_t power_off_notification;
+	uint8_t packed_failure_index;
+	uint8_t packed_command_status;
+	uint8_t context_configuration[15];
+	uint16_t extended_partitions_attribute;
+	uint16_t exception_events_status;
+	uint16_t exception_events_control;
+	uint8_t dyncap_needed;
+	uint8_t class_6_ctrl;
+	uint8_t ini_timeout_emu;
+	uint8_t data_sector_size;
+	uint8_t use_native_sector;
+	uint8_t native_sector_size;
+	uint8_t vendor_specific_feild[64];
+	uint8_t program_cid_csd_ddr_support;
+	uint8_t periodic_wakeup;
+	uint8_t case_is_temperature_controlled;
+	uint8_t production_state_awareness;
+	uint8_t bad_block_management_mode;
+	uint8_t reverved3;
+	uint32_t enchanged_user_data_start_address;
+	uint32_t enchanged_user_data_area_size : 24;
+	uint8_t general_purpose_partition_size[12];
+	uint8_t partitioning_setting;
+	uint8_t partitions_attribute;
+	uint32_t max_enchanted_area_size : 24;
+	uint8_t partitioning_support;
+	uint8_t hpi_management;
+	uint8_t hw_reset_function;
+	uint8_t bg_operations_handshake_enabled;
+	uint8_t manual_start_bg_operations;
+	uint8_t start_sanitize_operations;
+	uint8_t write_reliability_parameter_register;
+	uint8_t write_reliability_setting_register;
+	uint8_t rpmb_size;
+	uint8_t fw_configuration;
+	uint8_t reverved4;
+	uint8_t user_area_write_protect_register;
+	uint8_t reverved5;
+	uint8_t boot_bus_conditions;
+	uint8_t boot_bus_protection;
+	uint8_t partition_configuration;
+	uint8_t erased_memory_content;
+	uint8_t reserved6;
+	uint8_t bus_width_mode;
+	uint8_t strobe_support;
+	uint8_t high_speed_interface_timing;
+	uint8_t reserved7;
+	uint8_t power_class;
+	uint8_t reserved8;
+	uint8_t command_set_revision;
+	uint8_t reserved9;
+	uint8_t command_set;
+	// modes segment
+	uint8_t extended_csd_revision;
+	uint8_t reserved10;
+	uint8_t csd_structure;
+	uint8_t reserved11;
+	uint8_t device_type;
+	uint8_t driver_strength;
+	uint8_t out_of_interupt_time;
+	uint8_t partition_switch_time;
+
+
+	
+	
+} __attribute__((packed)) EmmcExtendedCardDescriptor;
 
 typedef struct GcInfo {
 	EmmcCardId card_id; 
