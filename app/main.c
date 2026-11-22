@@ -21,6 +21,7 @@
 #include "sd2vita.h"
 #include "config.h"
 #include "gc_ident.h"
+#include "fs.h"
 
 
 void get_output_filename(char* output, char* extension, size_t number, size_t size_output) {
@@ -45,35 +46,22 @@ int handle_dump_device(int what, BackupFormat format, char* block_device, char* 
 	char extra_file[MAX_PATH] = { 0 };
 	strncpy(extra_file, out_file, sizeof(extra_file)-1);
 	
-	if(what != DUMP_KEYS_ONLY) {
-		res = do_device_dump(block_device, out_file, format, ip_address, port);				
-	}
-	else if(ip_address == NULL) {		
+	if(what == DUMP_KEYS_ONLY) {
 		res = key_dump(out_file);
 	}
 	else {
-		res = key_dump_network(ip_address, port, out_file);		
+		res = do_device_dump(block_device, out_file, format);				
 	}
 	
-	if(1 || what == DUMP_WHOLE_GC ) { 
+	if(res >= OK && what == DUMP_WHOLE_GC) { 
 		if(!FMT_IS_VCI(format)) { // dump keys.bin if its not VCI.
 			change_extension(extra_file, MAX_PATH, ".keys.bin"); // get keys file ..
-			if(ip_address == NULL) { // write keys,
-				res = key_dump(extra_file);
-			}
-			else { // if network dump, write keys over the network.
-				res = key_dump_network(ip_address, port, extra_file);		
-			}
+			res = key_dump(extra_file);
 		}
 		
 		// create dump report.
 		change_extension(extra_file, MAX_PATH, ".report.txt");
-		if(ip_address == NULL) { // write keys,
-			res = dump_report(extra_file);
-		}
-		else { // if network dump, write keys over the network.
-			res = dump_report_network(ip_address, port, extra_file);		
-		}
+		res = dump_report(extra_file);
 	}
 	
 	if(res < 0) {
@@ -122,6 +110,7 @@ int handle_menu_set_network_options(int what, BackupFormat format, char* block_d
 	};
 	
 	save_config();
+	InitalizeNetFs(CONFIG.ip_address, CONFIG.port);
 	
 	return handle_dump_device(what, format, block_device, outfile, CONFIG.ip_address, CONFIG.port);
 }
@@ -203,6 +192,8 @@ void handle_menu_set_output(char* ext, BackupFormat format, int what, char* bloc
 					return;
 					break;
 			};
+			
+		
 			PRINT_STR("output_device %s\n", output_device);
 			snprintf(output_folder, sizeof(output_folder)-1, "%s%s/%s", output_device, CONFIG.backup_folder, output_filename);
 				
@@ -215,14 +206,15 @@ void handle_menu_set_output(char* ext, BackupFormat format, int what, char* bloc
 
 			if(selected != DUMP_LOCATION_NET) {
 				PRINT_STR("DUMP PHYSICAL : what = %x, format = %x, output_folder = %s\n", what, format, output_folder);
+				InitalizeDiskFs();
 
 				res = handle_dump_device(what, format, block_device, output_folder, NULL, 0);
 				if(res == OP_CANCELED) break;
-			}			
+			}
 			else {
 				res = handle_menu_set_network_options(what, format, block_device, output_filename);
 				if(res == OP_CANCELED) continue;
-			}			
+			}		
 
 			break;
 		} while(1);
@@ -358,6 +350,8 @@ void handle_select_input_device(int what) {
 		
 		break;
 	};
+	
+	InitalizeDiskFs();
 	
 	char input_folder[MAX_PATH];
 	snprintf(input_folder, sizeof(input_folder), "%s%s", input_device, CONFIG.backup_folder);

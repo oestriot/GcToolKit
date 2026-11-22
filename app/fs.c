@@ -7,11 +7,10 @@
 
 static FsConfig cfg;
 
-int InitalizeNetFs(const char* ip_address, short port, uint64_t total_size) {
+int InitalizeNetFs(const char* ip_address, short port) {
 	memset(&cfg, 0x00, sizeof(FsConfig));
 	strncpy(cfg.ip_address, ip_address, sizeof(cfg.ip_address)-1);
 	cfg.port = port;
-	cfg.total_size = total_size;
 	cfg.type = FS_TYPE_NETWORK;
 	return 0;
 }
@@ -27,7 +26,10 @@ int InitalizeNullFs() {
 	cfg.type = FS_TYPE_NULL;
 	return 0;
 }
-
+int FsChangeSize(uint64_t sz) {
+	cfg.total_size = sz;
+	return 0;
+}
 inline FsFd FsOpen(const char* file, int flags) {
 	strncpy(cfg.name, file, sizeof(cfg.name)-1);
 	switch(cfg.type) {

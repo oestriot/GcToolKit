@@ -19,9 +19,10 @@ typedef struct FsConfig {
 	uint64_t total_size;
 } FsConfig;
 
-int InitalizeNetFs(const char* ip_address, short port, uint64_t total_size);
+int InitalizeNetFs(const char* ip_address, short port);
 int InitalizeDiskFs();
 int InitalizeNullFs();
+int FsChangeSize(uint64_t sz);
 
 FsFd FsOpen(const char* file, int flags);
 int FsWrite(FsFd fd, void* data, size_t sz);

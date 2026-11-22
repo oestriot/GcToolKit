@@ -292,7 +292,9 @@ uint64_t get_free_space(const char* device) {
 	// host0 will always report as 0 bytes free
 	if(strcmp("host0:", device) == 0) return 0xFFFFFFFFFFFFFFFFull;
 	 
-	sceAppMgrGetDevInfo(device, &max_size, &free_space);
+	int res = sceAppMgrGetDevInfo(device, &max_size, &free_space);
+	if(res < 0) PRINT_STR("sceAppMgrGetDevInfo: failed 0x%X\n", res);
+	
 	PRINT_STR("max_size: %llx\n", max_size);
 	PRINT_STR("free_space: %llx\n", free_space);
 	

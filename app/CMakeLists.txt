@@ -25,7 +25,7 @@ set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -O0 -DLOGGING_ENABLED=1")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -DLOGGING_ENABLED=1")
 
 set(VITA_MKSFOEX_FLAGS "${VITA_MKSFOEX_FLAGS}")
-set(VITA_MAKE_FSELF_FLAGS "${VITA_MAKE_FSELF_FLAGS}")
+set(VITA_MAKE_FSELF_FLAGS "${VITA_MAKE_FSELF_FLAGS} -a 0x2800000000000001") # SceShell (attempt to fix get size errors?)
 
 include_directories(${CMAKE_SOURCE_DIR}/inc)
 
@@ -54,6 +54,7 @@ add_executable(${PROJECT_NAME}
 	gc_ident.c
 	sd2vita.c
 	fs.c
+	backup.c
 	bgm.cpp
 )
 

@@ -178,6 +178,5 @@ const char* mmc_device_type_to_string(uint8_t device_type);
 void get_gc_info(GcInfo* info);
 
 int dump_report(const char* output_file);
-int dump_report_network(const char* ip_address, short port, const char* output_file);
 
 #endif // GC_IDENT_H

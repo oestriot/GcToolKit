@@ -49,6 +49,8 @@ int kReadDevice(SceUID device_handle, void* data, size_t size);
 int kWriteDevice(SceUID device_handle, void* data, size_t size);
 int kCloseDevice(SceUID device_handle);
 int kGetDeviceSize(const char* device, int64_t* device_size);
+int kWriteShared(SceUID device_handle, void* data, size_t sz);
+int kReadShared(SceUID device_handle, void* data, size_t sz);
 
 // format.c
 int kFormatDevice(const char* device);
@@ -66,5 +68,9 @@ void kUndoSd2Vita();
 
 // power.c
 int kPowerSetCallbackState(uint32_t enable);
+
+// memory.c
+void* kStartUserMap(void* data, size_t size);
+void kEndUserMap(void* data);
 
 #endif // GC_KERN_KIT_H

@@ -10,51 +10,32 @@
 #include <GcToolKit.h>
 #include "kernel.h"
 #include "auth.h"
-#include "net.h"
 #include "err.h"
 #include "log.h"
-
-int key_dump_network(char* ip_address, unsigned short port, char* output_file) {
-	PRINT_FUNC();
-	GcCmd56Keys keys;
-	int netwr = -1;
-	
-	kGetPerCartKeys(&keys);
-	
-	SceUID fd = begin_connection(ip_address, port);
-	PRINT_STR("fd = %x\n", fd);
-	if(fd < 0) return fd;
-	
-	int res = begin_file_send(fd, output_file, sizeof(GcCmd56Keys));
-	if(res < 0) goto error;
-	
-	netwr = file_send_data(fd, &keys, sizeof(GcCmd56Keys));
-	PRINT_STR("netwr = %x (sizeof = %x)\n", netwr, sizeof(GcCmd56Keys));
-
-error:
-	if(fd >= 0) end_connection(fd);
-
-	if(netwr == 0) return SIZE_IS_ZERO;
-	if(netwr != sizeof(GcCmd56Keys)) return SIZE_NOT_MATCH;
-	
-	return res;
-}
+#include "fs.h"
 
 int key_dump(char* output_file) {
+	int res = -1;
 	PRINT_FUNC();
-	GcCmd56Keys keys;
 	
 	make_directories_excluding_last(output_file);
-
+	FsChangeSize(sizeof(GcCmd56Keys));
+	
+	SceUID fd = FsOpen(output_file, SCE_O_WRONLY);
+	PRINT_STR("fd = %x\n", fd);
+	if(fd < 0) ERROR(fd);
+	
+	GcCmd56Keys keys;
 	kGetPerCartKeys(&keys);
-	
-	int wr = write_file(output_file, &keys, sizeof(GcCmd56Keys));
-	
-	if(wr == 0) return SIZE_IS_ZERO;
-	if(wr < 0) return wr;
-	if(wr != sizeof(GcCmd56Keys)) return SIZE_NOT_MATCH;
+	int wr = FsWrite(fd, &keys, sizeof(GcCmd56Keys));
+	if(wr == 0) ERROR(SIZE_IS_ZERO);
+	if(wr < 0) ERROR(wr);
+	if(wr != sizeof(GcCmd56Keys)) ERROR(SIZE_NOT_MATCH);
 
-	return 0;
+error:
+	if(fd >= 0) FsClose(fd);
+	
+	return res;
 }
 
 

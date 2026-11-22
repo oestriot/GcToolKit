@@ -708,7 +708,7 @@ int do_device_restore(const char* block_device, char* input_file) {
 	return res;
 }
 
-int do_device_dump(const char* block_device, char* output_file, BackupFormat format, char* ip_address, unsigned short port) {
+int do_device_dump(const char* block_device, char* output_file, BackupFormat format) {
 	
 	lock_shell();
 	
@@ -718,21 +718,13 @@ int do_device_dump(const char* block_device, char* output_file, BackupFormat for
 	int res = 0;
 	
 	GcCmd56Keys keys;
-	NetworkInfo net_info;
-	
 	kGetPerCartKeys(&keys);
-	
-	if(ip_address != NULL) {
-		strncpy(net_info.ip_address, ip_address, sizeof(net_info.ip_address)-1);
-		net_info.port = port;		
-	}
 	
 	res = dump_device(
 				block_device,
 				output_file,
 				format,
 				(!FMT_IS_RAW(format)) ? &keys : NULL,
-				(ip_address != NULL) ? &net_info : NULL,
 				draw_dump_progress);
 
 	mount_gro0();

@@ -67,6 +67,8 @@ int k_get_device_size(char* device, int64_t* size) {
 	return 0;
 }
 
+
+
 // io syscalls
 
 SceUID kOpenDevice(const char* device, int permission) {
@@ -79,6 +81,8 @@ SceUID kOpenDevice(const char* device, int permission) {
 
 
 int kWriteDevice(SceUID device_handle, void* data, size_t size) {
+	return k_write_device(device_handle, data , size);
+	
 	void* k_data = NULL;
 	size_t k_size = 0;
 	uint32_t k_offset = 0;
@@ -94,6 +98,7 @@ int kWriteDevice(SceUID device_handle, void* data, size_t size) {
 
 
 int kReadDevice(SceUID device_handle, void* data, size_t size) {
+
 	void* k_data = NULL;
 	size_t k_size = 0;
 	uint32_t k_offset = 0;
@@ -105,6 +110,14 @@ int kReadDevice(SceUID device_handle, void* data, size_t size) {
 	ksceKernelMemBlockRelease(uid);
 	
 	return res;
+}
+
+int kWriteShared(SceUID device_handle, void* data, size_t sz) {
+	return k_write_device(device_handle, data , sz);	
+}
+
+int kReadShared(SceUID device_handle, void* data, size_t sz) {
+	return k_read_device(device_handle, data , sz);	
 }
 
 int kCloseDevice(SceUID device_handle) {

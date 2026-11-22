@@ -1,8 +1,10 @@
 #include "gameinfo.h"
 #include "gc_ident.h"
 #include "auth.h"
+#include "err.h"
 #include "log.h"
 #include "net.h"
+#include "fs.h"
 
 #include <GcToolKit.h>
 #include <string.h>
@@ -226,42 +228,26 @@ size_t create_report(char* rtxt, size_t rtxt_len) {
 }
 
 int dump_report(const char* output_file) {
+	int res = OK;
 	PRINT_FUNC();
 	char report[0x1000];
 	
 	make_directories_excluding_last(output_file);
 	size_t report_sz = create_report(report, sizeof(report));
+	FsChangeSize(report_sz);
 	
-	int wr = write_file(output_file, report, report_sz);
-	
-	if(wr == 0) return SIZE_IS_ZERO;
-	if(wr < 0) return wr;
-	if(wr != report_sz) return SIZE_NOT_MATCH;
-
-	return 0;
-}
-
-int dump_report_network(const char* ip_address, short port, const char* output_file) {
-	PRINT_FUNC();
-	char report[0x1000];
-	int netwr = -1;
-	
-	size_t report_sz = create_report(report, sizeof(report));
-	
-	SceUID fd = begin_connection(ip_address, port);
+	SceUID fd = FsOpen(output_file, SCE_O_WRONLY);
 	PRINT_STR("fd = %x\n", fd);
-	if(fd < 0) return fd;
+	if(fd < 0) ERROR(fd);
 	
-	int res = begin_file_send(fd, output_file, report_sz);
-	if(res < 0) goto error;
-	
-	netwr = file_send_data(fd, report, report_sz);
-	PRINT_STR("netwr = %x (sizeof = %x)\n", netwr, report_sz);
+	int wr = FsWrite(fd, report, report_sz);
+	if(wr == 0) ERROR(SIZE_IS_ZERO);
+	if(wr < 0) ERROR(wr);
+	if(wr != report_sz) ERROR(SIZE_NOT_MATCH);
 
 error:
-	if(fd >= 0) end_connection(fd);
-	if(netwr == 0) return SIZE_IS_ZERO;
-	if(netwr != report_sz) return SIZE_NOT_MATCH;
+	if(fd >= 0) FsClose(fd);
 	
-	return res;	
+
+	return res;
 }

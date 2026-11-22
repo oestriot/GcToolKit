@@ -12,7 +12,7 @@ int do_select_output_location(char* output, uint64_t device_size);
 int do_select_input_location();
 int do_select_file(char* folder, char* output, char* extension, uint64_t max_size);
 
-int do_device_dump(const char* block_device, char* output_file, BackupFormat format, char* ip_address, unsigned short port);
+int do_device_dump(const char* block_device, char* output_file, BackupFormat format);
 int do_device_wipe_and_format(const char* block_device, uint8_t full, uint8_t format);
 int do_device_restore(const char* block_device, char* input_file);
 int do_format_confirm(const char* block_device);
