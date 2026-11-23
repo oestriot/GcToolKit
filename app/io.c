@@ -291,7 +291,6 @@ error:
 
 
 uint64_t get_free_space(const char* device) {
-	uint64_t max_size = 0;
 	uint64_t free_space = 0;
 	SceIoDevInfo info;
     memset(&info, 0, sizeof(SceIoDevInfo));
@@ -305,12 +304,9 @@ uint64_t get_free_space(const char* device) {
 	// TODO: figure out why this error happens. 
 	if(res == 0x80010030) return 0xFFFFFFFFFFFFFFFFull;
 
-	max_size = info.free_size;
-	free_space = info.max_size;
-
-	PRINT_STR("max_size: %llx\n", max_size);
-	PRINT_STR("free_space: %llx\n", free_space);
+	free_space = info.free_size;
 	
+	PRINT_STR("free_space: %llx\n", free_space);
 	return free_space;
 }
 

@@ -1,22 +1,25 @@
 #include <stdio.h>
 #include <stdarg.h>
+#include <string.h>
+#include <stdint.h>
 #include <vitasdkkern.h>
 #include <taihen.h>
-
 #include <GcToolKit.h>
+
+#include "cmd56/cmd56.h"
 #include "cmd56/vita.h"
 #include "log.h"
 
-static cmd56_state vita_state = { 0 };
+static cmd56_state vita_gc_state = { 0 };
 static SceSdifDeviceContext* ctx = NULL;
 static int is_authenticated = 0;
 
-static int authHook = -1;
-static tai_hook_ref_t authHookRef;
+static int auth_hooks = -1;
+static tai_hook_ref_t auth_hook_ref;
 
 int k_get_hash(uint8_t* hash) {
 	PRINT_FUNC();
-	ksceSha1Digest(vita_state.per_cart_keys.packet20_key, sizeof(vita_state.per_cart_keys.packet20_key), hash);
+	ksceSha1Digest(vita_gc_state.per_cart_keys.packet20_key, sizeof(vita_gc_state.per_cart_keys.packet20_key), hash);
 
 	return 0;
 }
@@ -24,7 +27,7 @@ int k_get_hash(uint8_t* hash) {
 int k_get_secret(uint8_t* secret) {
 	PRINT_FUNC();
 	
-	ksceSha256Digest(&vita_state.per_cart_keys, sizeof(cmd56_keys), secret);
+	ksceSha256Digest(&vita_gc_state.per_cart_keys, sizeof(cmd56_keys), secret);
 
 	return 0;
 }
@@ -40,22 +43,25 @@ int k_check_hash(const uint8_t* secret) {
 
 int k_clear_secret() {
 	PRINT_FUNC();
-	memset(&vita_state, 0x00, sizeof(vita_state));
+
+	memset(&vita_gc_state, 0x00, sizeof(cmd56_state));
 	is_authenticated = 0;
+	
 	return 0;
 }
 
 
 void k_gc_cmd56_write(const void* buf, uint32_t size) {
 	PRINT_FUNC();
+	
 	PRINT_BUFFER_LEN(buf, size);
 	int ret = ksceSdifWriteCmd56(ctx, buf, size);
 	PRINT_STR("ret = %x\n", ret);
-	
 }
 
 void k_gc_cmd56_read(void* buf, uint32_t size) {
 	PRINT_FUNC();
+	
 	int ret = ksceSdifReadCmd56(ctx, buf, size);
 	PRINT_STR("ret = %x\n", ret);
 	PRINT_BUFFER_LEN(buf, size);
@@ -65,7 +71,6 @@ int k_run_authentication(uint16_t key_id) {
 	PRINT_FUNC();
 	
 	k_clear_secret();
-	
 	ctx = ksceSdifGetSdContextPartValidateMmc(1);
 
 	PRINT_STR("key_id: %x\n", key_id);
@@ -76,17 +81,17 @@ int k_run_authentication(uint16_t key_id) {
 		if(res != 0) return res;
 	}
 	
-	vita_cmd56_init(&vita_state, k_gc_cmd56_write, k_gc_cmd56_read); // initalize VITA emu 
-	vita_state.allow_prototype_keys = 1;
+	vita_cmd56_init(&vita_gc_state, k_gc_cmd56_write, k_gc_cmd56_read); // initalize VITA emu 
+	vita_gc_state.allow_prototype_keys = TRUE;
 	
-	int ret = vita_cmd56_run(&vita_state);
+	int ret = vita_cmd56_run(&vita_gc_state);
 	
 	if(ret == GC_AUTH_OK) {
-		PRINT_STR("vita_state.per_cart_keys.packet18_key\n");
-		PRINT_BUFFER(vita_state.per_cart_keys.packet18_key);
+		PRINT_STR("vita_gc_state.per_cart_keys.packet18_key\n");
+		PRINT_BUFFER(vita_gc_state.per_cart_keys.packet18_key);
 		
-		PRINT_STR("vita_state.per_cart_keys.packet20_key\n");
-		PRINT_BUFFER(vita_state.per_cart_keys.packet20_key);	
+		PRINT_STR("vita_gc_state.per_cart_keys.packet20_key\n");
+		PRINT_BUFFER(vita_gc_state.per_cart_keys.packet20_key);	
 		
 		is_authenticated = 1;
 		
@@ -128,19 +133,17 @@ int k_get_cart_hash(uint8_t* hash) {
 /* user syscalls */
 
 int kIsAuthenticated() {
-	PRINT_FUNC();
-
 	return is_authenticated;
 }
 
 uint16_t kGetKeyId() {
 	PRINT_FUNC();
-	return vita_state.key_id;
+	return vita_gc_state.key_id;
 }
 
 void kGetPerCartKeys(GcCmd56Keys* output) {
 	PRINT_FUNC();
-	ksceKernelMemcpyKernelToUser(output, (const void*)&vita_state.per_cart_keys, sizeof(vita_state.per_cart_keys));
+	ksceKernelMemcpyKernelToUser(output, (const void*)&vita_gc_state.per_cart_keys, sizeof(vita_gc_state.per_cart_keys));
 }
 
 void kGetNpdrmKeys(GcNpdrmKeys* output) {
@@ -171,14 +174,14 @@ int kEnableGcEmuMgr() {
 	PRINT_STR("GcAuthEmuMgr -- VITA mode\n");
 	k_clear_secret();
 	
-	if(authHook <= 0) {
-		authHook = taiHookFunctionExportForKernel(KERNEL_PID,
-			&authHookRef, 
+	if(auth_hooks <= 0) {
+		auth_hooks = taiHookFunctionExportForKernel(KERNEL_PID,
+			&auth_hook_ref, 
 			"SceSblGcAuthMgr",
 			0xC6627F5E, // SceSblGcAuthMgrGcAuthForDriver
 			0x68781760, // ksceSblGcAuthMgrGcAuthCartAuthentication	
 			k_run_authentication);
-		PRINT_STR("hooking: %x %x\n", authHook, authHookRef);		
+		PRINT_STR("hooking: %x %x\n", auth_hooks, auth_hook_ref);		
 	}
 
 	return 0;
@@ -187,11 +190,11 @@ int kEnableGcEmuMgr() {
 int kDisableGcEmuMgr() {
 	PRINT_FUNC();
 
-	if (authHook >= 0) { 
-		PRINT_STR("unhooking: authHook: %x authHookRef: %x\n", authHook, authHookRef);
-		int res = taiHookReleaseForKernel(authHook, authHookRef); 
+	if (auth_hooks >= 0) { 
+		PRINT_STR("unhooking: auth_hooks: %x auth_hook_ref: %x\n", auth_hooks, auth_hook_ref);
+		int res = taiHookReleaseForKernel(auth_hooks, auth_hook_ref); 
 		if(res >= 0) {
-			authHook = -1;
+			auth_hooks = -1;
 		}
 		
 		PRINT_STR("res %x\n", res);
