@@ -229,6 +229,8 @@ size_t create_report(char* rtxt, size_t rtxt_len) {
 
 int dump_report(const char* output_file) {
 	int res = OK;
+	mount_external_devices();
+
 	PRINT_FUNC();
 	char report[0x1000];
 	
@@ -236,18 +238,19 @@ int dump_report(const char* output_file) {
 	size_t report_sz = create_report(report, sizeof(report));
 	FsChangeSize(report_sz);
 	
-	SceUID fd = FsOpen(output_file, SCE_O_WRONLY);
-	PRINT_STR("fd = %x\n", fd);
+	SceUID fd = FsOpen(output_file, SCE_O_WRONLY | SCE_O_CREAT | SCE_O_TRUNC);
+	PRINT_STR("FsOpen(%s) = %x\n", output_file, fd);
 	if(fd < 0) ERROR(fd);
 	
 	int wr = FsWrite(fd, report, report_sz);
+	PRINT_STR("FsWrite(%i, %p, %i)\n", fd, report, report_sz);
 	if(wr == 0) ERROR(SIZE_IS_ZERO);
 	if(wr < 0) ERROR(wr);
 	if(wr != report_sz) ERROR(SIZE_NOT_MATCH);
 
 error:
 	if(fd >= 0) FsClose(fd);
-	
+	umount_external_devices();
 
 	return res;
 }

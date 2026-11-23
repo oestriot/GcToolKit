@@ -3,6 +3,7 @@
 #include "log.h"
 #include "lock.h"
 #include "kernel.h"
+#include "io.h"
 
 static uint8_t SD2VITA_WAS_USED = 0;
 
@@ -32,8 +33,10 @@ void undo_sd2vita_patches() {
 		kUndoSd2Vita();
 		
 		if(SD2VITA_WAS_USED) { // lock home if sd2vita was used. (requires reboot to fix configuration.)
-			PRINT_STR("sd2vita was used ...\n");
+			PRINT_STR("locking home button...\n");
 			lock_home();
+			PRINT_STR("unmounting ux0...\n");
+			umount_ux0();
 		}
 	}
 }

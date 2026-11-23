@@ -24,7 +24,7 @@ int check_partition(const char* partition) {
 int file_exist(const char* path) {
 	SceIoStat stat;
 	int res = sceIoGetstat(path, &stat);
-	PRINT_STR("file_exist(%s) = %x\n", path, res);
+	PRINT_STR("file_exist(%s) = %x\n", path, res == SCE_OK);
 	if(res >= SCE_OK) return 1;
 	else return 0;
 }
@@ -72,7 +72,7 @@ int get_files_in_folder(char* folder, char* out_filenames, int* total_folders, S
 			}
 			
 			// match only specific file extension
-			if(filter->match_extension[0] != '*') { 
+			if(filter->match_extension[0] != '*') {
 				size_t dir_name_length = strlen(ent.d_name);
 				size_t extension_length = strlen(filter->match_extension);
 
@@ -84,7 +84,6 @@ int get_files_in_folder(char* folder, char* out_filenames, int* total_folders, S
 					continue;
 				}
 			}
-			
 		}
 		PRINT_STR("%s passed all filter checks\n", ent.d_name);
 		
@@ -102,8 +101,7 @@ int get_files_in_folder(char* folder, char* out_filenames, int* total_folders, S
 	return 0;
 	error:
 	PRINT_STR("Error case reached: %x\n", res);
-	if(dfd >= 0)
-		sceIoDclose(dfd);
+	if(dfd >= 0) sceIoDclose(dfd);
 	return res;	
 }
 
@@ -119,8 +117,7 @@ int read_first_filename(const char* path, char* output, size_t out_size) {
 	}
 	
 error:
-	if(dfd >= 0)
-		sceIoDclose(dfd);
+	if(dfd >= 0) sceIoDclose(dfd);
 	return res;	
 }
 
@@ -161,6 +158,10 @@ int mount_xmc() {
 	return mount_partition(0xE00, NULL, 2); // mount xmc
 }
 
+int mount_ux0() {
+	return mount_partition(0x800, NULL, 2); // mount grw0
+}
+
 int mount_imc() {
 	return mount_partition(0xD00, NULL, 2); // mount imc
 }
@@ -173,6 +174,12 @@ int mount_grw0() {
 	return mount_partition(0xA00, NULL, 1); // mount grw0
 }
 
+void umount_ux0() {
+	vshIoUmount(0x800, 0, 0, 0);
+	vshIoUmount(0x800, 1, 0, 0);
+}
+
+
 void umount_gro0() {
 	vshIoUmount(0x900, 0, 0, 0);
 	vshIoUmount(0x900, 1, 0, 0);
@@ -183,26 +190,25 @@ void umount_grw0() {
 	vshIoUmount(0xA00, 1, 0, 0);
 }
 
-void umount_uma() {
+void umount_uma0() {
 	vshIoUmount(0xF00, 0, 0, 0);
 	vshIoUmount(0xF00, 1, 0, 0);
 }
 
-void umount_xmc() {
+void umount_xmc0() {
 	vshIoUmount(0xE00, 0, 0, 0);
 	vshIoUmount(0xE00, 1, 0, 0);
 }
 
-void umount_imc() {
+void umount_imc0() {
 	vshIoUmount(0xD00, 0, 0, 0);
 	vshIoUmount(0xD00, 1, 0, 0);
 }
 
 
-
 void umount_external_devices() {
-	umount_uma();
-	umount_xmc();		
+	umount_uma0();
+	umount_xmc0();		
 }
 
 void mount_gamecart() {
@@ -230,8 +236,7 @@ void mount_external_devices() {
 uint64_t get_file_size(const char* filepath) {
 	SceIoStat stat;
 	int res = sceIoGetstat(filepath, &stat);
-	if(res >= 0)
-		return stat.st_size;
+	if(res >= 0) return stat.st_size;
 	return 0;
 }
 
@@ -255,7 +260,7 @@ int write_file(const char* path, const void* data, size_t size) {
 	
 	make_directories_excluding_last(path);
 
-	SceUID wfd = sceIoOpen(path, SCE_O_WRONLY | SCE_O_CREAT, 0777);
+	SceUID wfd = sceIoOpen(path, SCE_O_WRONLY | SCE_O_CREAT | SCE_O_TRUNC, 0777);
 	if(wfd < 0) ERROR(wfd);
 	
 	if(wfd > 0) {
@@ -284,17 +289,25 @@ error:
 	return res;
 }
 
+
 uint64_t get_free_space(const char* device) {
 	uint64_t max_size = 0;
 	uint64_t free_space = 0;
-	PRINT_STR("Checking free space on device: %s ... \n", device);
+	SceIoDevInfo info;
+    memset(&info, 0, sizeof(SceIoDevInfo));
 	 
 	// host0 will always report as 0 bytes free
 	if(strcmp("host0:", device) == 0) return 0xFFFFFFFFFFFFFFFFull;
-	 
-	int res = sceAppMgrGetDevInfo(device, &max_size, &free_space);
-	if(res < 0) PRINT_STR("sceAppMgrGetDevInfo: failed 0x%X\n", res);
 	
+	int res = sceIoDevctl(device, 0x3001, NULL, 0, &info, sizeof(SceIoDevInfo));
+	PRINT_STR("sceIoDevctl(%s) = 0x%x\n", device, res);
+	
+	// TODO: figure out why this error happens. 
+	if(res == 0x80010030) return 0xFFFFFFFFFFFFFFFFull;
+
+	max_size = info.free_size;
+	free_space = info.max_size;
+
 	PRINT_STR("max_size: %llx\n", max_size);
 	PRINT_STR("free_space: %llx\n", free_space);
 	

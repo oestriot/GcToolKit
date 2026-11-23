@@ -674,7 +674,6 @@ int do_device_wipe_and_format(const char* block_device, uint8_t full, uint8_t fo
 
 	umount_gro0();
 	umount_grw0();
-	mount_external_devices();
 	
 	int res = 0;
 	
@@ -684,7 +683,6 @@ int do_device_wipe_and_format(const char* block_device, uint8_t full, uint8_t fo
 
 	mount_gro0();
 	mount_grw0();
-	umount_external_devices();
 	
 	unlock_shell();
 	
@@ -739,7 +737,6 @@ int do_device_dump(const char* block_device, char* output_file, BackupFormat for
 
 int do_select_input_location() {
 	
-	PRINT_STR("mount_external_devices\n");
 	mount_external_devices();
 	
 	uint8_t ux_exist = check_partition("ux0:");
@@ -752,6 +749,8 @@ int do_select_input_location() {
 				xmc_exist, 
 				uma_exist,
 				host_exist);
+				
+	umount_external_devices();
 	
 	return selected;
 }
@@ -766,7 +765,6 @@ int do_error(int error) {
 }
 
 int do_select_arbitary_device(char* output, size_t len) {
-	umount_external_devices();
 	
 	PROCESS_MENU(draw_select_arbitary_device, NULL);
 	strncpy(output, BLOCK_DEVICES[selected][1], len);
@@ -776,19 +774,18 @@ int do_select_arbitary_device(char* output, size_t len) {
 
 int do_select_output_location(char* output, uint64_t dev_size) {
 	
-	PRINT_STR("mount_external_devices\n");
 	mount_external_devices();
 	
 	uint8_t save_network = is_connected();	
 	
-	uint64_t xmc_size = get_free_space("xmc0:");
-	uint64_t uma_size = get_free_space("uma0:");
-	uint64_t ux_size  = get_free_space("ux0:");
-
 	uint8_t ux_exist = check_partition("ux0:");
 	uint8_t xmc_exist = check_partition("xmc0:");
 	uint8_t uma_exist = check_partition("uma0:");
 	uint8_t host_exist = check_partition("host0:");
+
+	uint64_t xmc_size = get_free_space("xmc0:");
+	uint64_t uma_size = get_free_space("uma0:");
+	uint64_t ux_size  = get_free_space("ux0:");
 
 	PRINT_STR("device_size %llx\n", dev_size);
 	PRINT_STR("xmc_size %llx\n", xmc_size);
@@ -796,8 +793,6 @@ int do_select_output_location(char* output, uint64_t dev_size) {
 	PRINT_STR("ux_size %llx\n", ux_size);
 	
 	PRINT_STR("save_network = %x\n", save_network);
-
-
 	PRINT_STR("ux_exist = %x\n", ux_exist);
 	PRINT_STR("xmc_exist = %x\n", xmc_exist);
 	PRINT_STR("uma_exist = %x\n", uma_exist);
@@ -809,5 +804,7 @@ int do_select_output_location(char* output, uint64_t dev_size) {
 				(uma_exist && uma_size >= dev_size), 
 				host_exist, save_network);
 	
+	umount_external_devices();
+
 	return selected;
 }

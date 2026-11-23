@@ -16,12 +16,15 @@
 
 int key_dump(char* output_file) {
 	int res = -1;
+
+	mount_external_devices();
 	PRINT_FUNC();
+
 	
 	make_directories_excluding_last(output_file);
 	FsChangeSize(sizeof(GcCmd56Keys));
 	
-	SceUID fd = FsOpen(output_file, SCE_O_WRONLY);
+	SceUID fd = FsOpen(output_file, SCE_O_WRONLY | SCE_O_CREAT | SCE_O_TRUNC);
 	PRINT_STR("fd = %x\n", fd);
 	if(fd < 0) ERROR(fd);
 	
@@ -34,7 +37,8 @@ int key_dump(char* output_file) {
 
 error:
 	if(fd >= 0) FsClose(fd);
-	
+	umount_external_devices();
+
 	return res;
 }
 

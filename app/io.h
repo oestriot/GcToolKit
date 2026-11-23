@@ -35,10 +35,11 @@ void umount_grw0();
 
 void mount_external_devices();
 void mount_gamecart();
-void umount_uma();
-void umount_xmc();
-void umount_imc();
+void umount_uma0();
+void umount_xmc0();
+void umount_imc0();
 void umount_ux0();
+
 void umount_external_devices();
 
 uint64_t get_file_size(const char* filepath);

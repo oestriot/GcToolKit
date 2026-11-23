@@ -64,7 +64,7 @@ int handle_dump_device(int what, BackupFormat format, char* block_device, char* 
 		res = dump_report(extra_file);
 	}
 	
-	if(res < 0) {
+	if(res < OK) {
 		do_error(res);
 	}
 	else {
@@ -238,6 +238,8 @@ int handle_format_confirm_and_format(const char* block_device) {
 }
 
 void handle_wipe_option(int what) {
+	InitalizeDiskFs();
+
 	const char* block_device = NULL;
 	switch(what) {
 		case RESET_MEDIAID:
@@ -287,6 +289,7 @@ void handle_select_file(int what, char* folder) {
 		default:
 			return;
 	}
+	
 	
 	// get total size
 	uint64_t total_device_size = 0;
