@@ -1,7 +1,7 @@
 #include "compiler_defs.h"
 
 
-#if no_include(<string>)
+#if defined(NO_LIBC)
 
 // define our own memory functions if dont have libc.
 void* memcpy(void* buf, void const* src, size_t n) {

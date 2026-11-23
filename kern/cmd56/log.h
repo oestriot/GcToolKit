@@ -4,8 +4,9 @@
 */
 #ifndef LOG_H
 #define LOG_H 1
+#include "compiler_defs.h"
 
-#if (!defined(LOGGING_ENABLED) && defined(_DEBUG))
+#if (!defined(LOGGING_ENABLED) && defined(_DEBUG) && !defined(NO_LIBC))
 	#define LOGGING_ENABLED 1
 #endif
 

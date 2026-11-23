@@ -22,9 +22,6 @@
 
 extern const uint8_t CMD56_MAGIC[0x20];
 
-typedef void (*cmd56_send_t)(const void* data, size_t size);
-typedef void (*cmd56_recv_t)(void* data, size_t size);
-
 typedef uint8_t cmd56_error_code;
 enum CMD56_ERRORS { 
     ERR_SUCCESS = 0x00,
@@ -166,8 +163,10 @@ typedef PACK(struct get_p20_key_and_cmac_signature_response {
     uint8_t cmac_signature[0x10];
 }) get_p20_key_and_cmac_signature_response;
 
+typedef void (*cmd56_send_t)(const void* data, size_t size);
+typedef void (*cmd56_recv_t)(void* data, size_t size);
 
-typedef PACK(struct cmd56_state {
+typedef struct cmd56_state {
     // send/recv callbacks
     cmd56_send_t send;
     cmd56_recv_t recv;
@@ -176,12 +175,12 @@ typedef PACK(struct cmd56_state {
     // which is the case on prototype firmwares, 
     // on fw 1.04+ this is not allowed, 
     boolean allow_prototype_keys;
-	
+
     // shared
 
     // cart lock status, unlocked after
     // successful VITA_AUTHENTICITY_CHECK
-    cmd56_lock_status lock_status; 
+    cmd56_lock_status lock_status;
 
     // KEY_ID to use, every gc i've ever seen uses RETAIL_KEY_ID (0x1).
     // however a PROTOTYPE_KEY_ID1 0x8001 is also allowed,
@@ -206,7 +205,7 @@ typedef PACK(struct cmd56_state {
 
     AES_ctx session_key;
     AES_ctx secondary_key;
-}) cmd56_state;
+} cmd56_state;
 
 void cmd56_response_start(cmd56_request* packet_buffer, cmd56_response* response);
 void cmd56_response_error(cmd56_response* response, cmd56_error_code error);

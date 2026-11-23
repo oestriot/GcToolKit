@@ -7,9 +7,10 @@
 #define COMPILER_DEFS_H 1
 
 // test for libc, and headers
-#define has_libc (defined(__GLIBC__))
-#define has_include(inc) (__has_include(inc) || !has_libc)
-#define no_include(inc) (!__has_include(inc) || !has_libc)
+#if !defined(NO_LIBC) && !(__has_include(<stdint.h>) && __has_include(<string.h>) && __has_include(<stddef.h>))
+#define NO_LIBC 1
+#endif
+
 
 #ifdef __GNUC__
 #define PACK( declaration ) declaration __attribute__((__packed__))
@@ -25,7 +26,7 @@
 #define endian_swap32 __builtin_bswap32
 #endif
 
-#if has_include(<stdint.h>) // if we dont have libc, specify our own versions of stdint variables.
+#if !defined(NO_LIBC) // if we dont have libc, specify our own versions of stdint variables.
     #include <stdint.h>
 #else
     typedef signed char int8_t;
@@ -38,34 +39,33 @@
     typedef unsigned long long int uint64_t;
 #endif
 
-#if has_include(<stddef.h>) 
-#include <stddef.h>
-#else
-#if defined(_WIN64) || defined(__x86_64__)
-    typedef unsigned __int64 size_t;
-    typedef unsigned __int64 uintptr_t;
+#if !defined(NO_LIBC)
+    #include <stddef.h>
 #elif defined(__GNUC__)
     typedef __SIZE_TYPE__ size_t;
     typedef size_t uintptr_t;
+#elif defined(_WIN64) || defined(__x86_64__)
+    typedef unsigned __int64 size_t;
+    typedef unsigned __int64 uintptr_t;
 #else
-    typedef unsigned int     size_t;
-    typedef unsigned int     uintptr_t;
-#endif
+    typedef unsigned int size_t;
+    typedef unsigned int uintptr_t;
 #endif
 
-#if defined(_MSC_VER) // msvc has memset/memcpy, etc as compiler builtins ..
+
+#if !defined(NO_LIBC)
+#include <string.h>
+#elif defined(_MSC_VER) // msvc has memset/memcpy, etc as compiler builtins ..
 #define memset __impl_memset
 #define memcpy __impl_memcpy
 #define memcmp __impl_memcmp
-void* memcpy(void* buf, void const* src, size_t n);
-void* memset(void* buf, int c, size_t n);
-int memcmp(void const* a, void const* b, size_t len);
-#elif no_include(<string>)
     void* memcpy(void* buf, void const* src, size_t n);
     void* memset(void* buf, int c, size_t n);
     int memcmp(void const* a, void const* b, size_t len);
-#else // we have libc, so just use the default ones.
-#include <string.h>
+#else
+    void* memcpy(void* buf, void const* src, size_t n);
+    void* memset(void* buf, int c, size_t n);
+    int memcmp(void const* a, void const* b, size_t len);
 #endif
 
 
