@@ -270,17 +270,25 @@ void draw_eject_sd_menu() {
 }
 
 void draw_insert_gc_menu() {
+	PRINT_STR("start_draw()\n");
 	start_draw();
+	PRINT_STR("draw_background()\n");
 	draw_background();
 	
+	PRINT_STR("start_y(ytop)\n");
 	start_y(ytop);
 
+	PRINT_STR("draw_title()\n");
 	draw_title("Waiting for CMD56 authentication ...");
+	PRINT_STR("draw_texture_center()\n");
 	draw_texture_center(next_y(), insertgc_tex);
 	
+	PRINT_STR("skip_y()\n");
 	skip_y(200);
 	
+	PRINT_STR("draw_text_center()\n");
 	draw_text_center(next_y(), "Insert a PlayStation Vita Game Cartridge.");	
+	PRINT_STR("end_draw()\n");
 	end_draw();
 }
 
@@ -508,7 +516,9 @@ int draw_device_info(int* selected, int* window, GcInfo* info)
 	snprintf(msg, sizeof(msg)-1, "CMD56 KeyID: %s (0x%02X)", keyid_to_keygroup(info->key_id), info->key_id);
 	draw_text_center(next_y(), msg);
 	
-		
+	next_y();
+	next_y();
+	
 	DEFOPT(next_y());
 	ADDOPT(1, "Create Report");
 	ADDOPT(1, "Cancel");
@@ -620,13 +630,18 @@ int do_select_file(char* folder, char* output, const char* extension, uint64_t m
 	int total_files = 0;	
 	static char files[MAX_PATH * sizeof(options)];
 	
+
 	SearchFilter filter;
 	memset(&filter, 0x00, sizeof(SearchFilter));
 	filter.max_filesize = max_size;
 	filter.file_only = 1;
 	strncpy(filter.match_extension, extension, sizeof(filter.match_extension)-1);
 	
+	mount_external_devices();
+	
 	int res = get_files_in_folder(folder, files, &total_files, &filter, sizeof(options));
+
+	umount_external_devices();
 	
 	PRINT_STR("get_files_in_folder = %x\n", res);
 	if(res < 0) return res;
@@ -635,7 +650,8 @@ int do_select_file(char* folder, char* output, const char* extension, uint64_t m
 	PRINT_STR("total_files: %x\n", total_files);
 	
 	PROCESS_MENU(draw_select_file, folder, files, total_files);
-	strncpy(output, files + (selected * MAX_PATH), MAX_PATH);	
+	strncpy(output, files + (selected * MAX_PATH), MAX_PATH);
+	
 	return selected;	
 }
 

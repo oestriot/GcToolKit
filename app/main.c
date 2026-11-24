@@ -125,8 +125,7 @@ int handle_menu_set_network_options(BackupWhat what, BackupFormat format, const 
 
 	
 void handle_menu_set_output(const char* ext, BackupFormat format, BackupWhat what, const char* block_device) {
-		// determine block device		
-		PRINT_STR("handle_menu_set_output\n");
+		PRINT_FUNC();
 		
 		// get output_folder
 		int res = 0;
@@ -255,6 +254,7 @@ void handle_wipe_option(BackupWhat what) {
 }
 
 void handle_select_file(BackupWhat what, char* folder) {
+
 	const char* block_device = wht_to_blkdev(what);
 	const char* extension = wht_to_extension(what);
 	
@@ -285,8 +285,8 @@ void handle_select_file(BackupWhat what, char* folder) {
 		snprintf(msg, sizeof(msg)-1, "Restored from: %s ...", input_file);
 		do_confirm_message("Restore Success!", msg);
 	}
-	
-	return;
+
+
 }
 
 void handle_select_input_device(BackupWhat what) {
@@ -372,7 +372,7 @@ void handle_device_info() {
 		int selected = do_device_info();
 		switch(selected) {
 			case DUMP_REPORT:
-				handle_menu_set_output(fmt_to_extension(WHT_REPORT), BACKUP_FORMAT_RAW, WHT_REPORT, NULL);
+				handle_menu_set_output(wht_to_extension(WHT_REPORT), BACKUP_FORMAT_RAW, WHT_REPORT, NULL);
 				return;
 			case CANCEL_REPORT:
 				return;
@@ -391,30 +391,26 @@ void handle_menu_select_option() {
 		case DUMP_WHOLE_GC:
 			what = WHT_WHOLE_GAMECART;
 			break;
+		
 		case DUMP_KEYS_ONLY:
 			what = WHT_CMD56_KEYS;
 			break;
+			
 		case DUMP_MEDIAID:
-			what = WHT_MEDIA_ID;
-			break;
 		case WRITE_MEDIAID:
-			what = WHT_MEDIA_ID;
-			break;
 		case RESET_MEDIAID:
 			what = WHT_MEDIA_ID;
 			break;
 			
 		case DUMP_GRW0:
-			what = WHT_GAMECART_REWRITABLE;
-			break;
 		case WRITE_GRW0:
-			what = WHT_GAMECART_REWRITABLE;
-			break;
 		case RESET_GRW0:
 			what = WHT_GAMECART_REWRITABLE;
 			break;
+			
 		case GET_GC_INFO:
 			break;
+			
 		default:
 			break;
 	};
@@ -430,8 +426,6 @@ void handle_menu_select_option() {
 		handle_select_input_device(what);
 	if(selected == GET_GC_INFO)
 		handle_device_info();
-	if(selected == OP_CANCELED)
-		do_gc_insert_prompt();
 	
 	return;
 }
@@ -492,8 +486,13 @@ int main(int argc, char** argv) {
 
 	// main loop:
 	undo_sd2vita_patches();	
-	do_gc_insert_prompt();
+	PRINT_STR("Undone sd2vita patches\n");
+	
+	PRINT_STR("Running main loop\n");
 	while(1) {
+		PRINT_STR("Displaying gc insert menu.\n");
+		do_gc_insert_prompt();
+		PRINT_STR("Displaying main menu.\n");
 		handle_menu_select_option();
 	}
 		

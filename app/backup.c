@@ -355,7 +355,7 @@ const char* wht_to_extension(BackupWhat what) {
 		case WHT_GAMECART_REWRITABLE:
 			return ".img";
 		case WHT_REPORT:
-			return "report.txt";
+			return ".report.txt";
 		default:
 			return ".bin";
 	}

@@ -15,12 +15,11 @@
 #include "fs.h"
 
 int do_dump_cmd56_keys(char* output_file) {
-	int res = -1;
+	int res = OK;
 
 	mount_external_devices();
 	PRINT_FUNC();
 
-	
 	make_directories_excluding_last(output_file);
 	FsChangeSize(sizeof(GcCmd56Keys));
 	
@@ -35,7 +34,8 @@ int do_dump_cmd56_keys(char* output_file) {
 	if(wr == 0) ERROR(SIZE_IS_ZERO);
 	if(wr < 0) ERROR(wr);
 	if(wr != sizeof(GcCmd56Keys)) ERROR(SIZE_NOT_MATCH);
-
+	
+	
 error:
 	if(fd >= 0) FsClose(fd);
 	umount_external_devices();
@@ -45,13 +45,13 @@ error:
 
 
 int do_dump_npdrm_keys(char* output_file) {
-	int res = -1;
+	int res = OK;
 
 	mount_external_devices();
 	PRINT_FUNC();
 	
 	make_directories_excluding_last(output_file);
-	FsChangeSize(sizeof(GcCmd56Keys));
+	FsChangeSize(sizeof(GcNpdrmKeys));
 	
 	SceUID fd = FsOpen(output_file, SCE_O_WRONLY | SCE_O_CREAT | SCE_O_TRUNC);
 	PRINT_STR("fd = %x\n", fd);
@@ -60,10 +60,10 @@ int do_dump_npdrm_keys(char* output_file) {
 	GcNpdrmKeys keys;
 	kGetNpdrmKeys(&keys);
 	
-	int wr = FsWrite(fd, &keys, sizeof(GcCmd56Keys));
+	int wr = FsWrite(fd, &keys, sizeof(GcNpdrmKeys));
 	if(wr == 0) ERROR(SIZE_IS_ZERO);
 	if(wr < 0) ERROR(wr);
-	if(wr != sizeof(GcCmd56Keys)) ERROR(SIZE_NOT_MATCH);
+	if(wr != sizeof(GcNpdrmKeys)) ERROR(SIZE_NOT_MATCH);
 
 error:
 	if(fd >= 0) FsClose(fd);
