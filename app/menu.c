@@ -453,7 +453,7 @@ int draw_device_info(int* selected, int* window, GcInfo* info)
  {
 	start_draw();
 	draw_background();
-	draw_controls(1);
+	draw_controls(0);
 	
 	draw_title("GameCart Information");
 	
@@ -520,7 +520,7 @@ int draw_device_info(int* selected, int* window, GcInfo* info)
 	
 	DEFOPT(next_y());
 	ADDOPT(1, "Create Report");
-	ADDOPT(1, "Cancel");
+	ADDOPT(1, "Back");
 	
 	end_draw();
 	

@@ -374,6 +374,7 @@ void handle_device_info() {
 			case DUMP_REPORT:
 				handle_menu_set_output(wht_to_extension(WHT_REPORT), BACKUP_FORMAT_RAW, WHT_REPORT, NULL);
 				return;
+			case OP_CANCELED:
 			case CANCEL_REPORT:
 				return;
 			default:
