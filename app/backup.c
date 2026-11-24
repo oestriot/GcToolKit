@@ -219,7 +219,7 @@ int dump_device(const char* block_device, const char* output_path, BackupFormat 
 	
 	// open device
 	state.rd_fd = kOpenDevice(state.block_device, SCE_O_RDONLY | SCE_O_RDLOCK);
-	if(state.wr_fd < 0) ERROR(state.rd_fd);
+	if(state.rd_fd < 0) ERROR(state.rd_fd);
 	
 	// open image file
 	state.wr_fd = FsOpen(state.output_path, SCE_O_WRONLY | SCE_O_CREAT | SCE_O_TRUNC);
@@ -244,7 +244,7 @@ error:
 	return res;
 }
 
-int restore_device(const char* block_device, char* input_data, ProgressCallback callback) {
+int restore_device(const char* block_device, char* input_path, ProgressCallback callback) {
 	int res = -1;
 	
 	// WARN:
@@ -255,29 +255,33 @@ int restore_device(const char* block_device, char* input_data, ProgressCallback 
 	DEVICE_WHITELIST_CHECK(block_device);
 
 	// start restore ..
-	PRINT_STR("Begining restore of %s to %s\n", input_data, block_device);
+	PRINT_STR("Begining restore of %s to %s\n", input_path, block_device);
 
 	BackupState state;	
 	res = setup_state(&state,
-		block_device,
-			input_data,
+			block_device,
+			input_path,
 			BACKUP_FORMAT_RAW,
 			NULL,
 			callback);
 	if(res < 0) goto error;
 
 	// check image file size
-	if(state.effective_size < get_file_size(input_data)) ERROR(SIZE_NO_SPACE);
-
+	PRINT_STR("Checking effective size\n");
+	if(state.effective_size < get_file_size(input_path)) ERROR(SIZE_NO_SPACE);
+	
 	// open image file
-	state.rd_fd = FsOpen(input_data, SCE_O_RDONLY);
+	state.rd_fd = FsOpen(input_path, SCE_O_RDONLY);
+	PRINT_STR("FsOpen %s %x\n", input_path, state.rd_fd);
 	if(state.rd_fd < 0) ERROR(state.rd_fd);
 	
 	// open device
 	state.wr_fd = kOpenDevice(block_device, SCE_O_WRONLY | SCE_O_WRLOCK);
-	if(state.wr_fd < 0) ERROR(state.rd_fd);
+	PRINT_STR("kOpenDevice %s %x\n", block_device, state.wr_fd);
+	if(state.wr_fd < 0) ERROR(state.wr_fd);
 	
 	// enter read/write loop
+	PRINT_STR("entering device_access_loop\n");
 	res = device_access_loop(&state, read_with_zeros, kWriteDevice);
 
 error:

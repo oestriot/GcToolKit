@@ -80,9 +80,8 @@ SceUID kOpenDevice(const char* device, int permission) {
 }
 
 
-int kWriteDevice(SceUID device_handle, void* data, size_t size) {
-	return k_write_device(device_handle, data , size);
-	
+int kWriteDevice(SceUID device_handle, void* data, size_t size) {	
+
 	void* k_data = NULL;
 	size_t k_size = 0;
 	uint32_t k_offset = 0;

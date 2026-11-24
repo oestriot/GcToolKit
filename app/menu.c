@@ -627,9 +627,10 @@ int do_gc_options() {
 }
 
 int do_select_file(char* folder, char* output, const char* extension, uint64_t max_size) {
-	int total_files = 0;	
 	static char files[MAX_PATH * sizeof(options)];
-	
+	int total_files = 0;	
+	int res = -1;
+	mount_external_devices();
 
 	SearchFilter filter;
 	memset(&filter, 0x00, sizeof(SearchFilter));
@@ -637,22 +638,22 @@ int do_select_file(char* folder, char* output, const char* extension, uint64_t m
 	filter.file_only = 1;
 	strncpy(filter.match_extension, extension, sizeof(filter.match_extension)-1);
 	
-	mount_external_devices();
-	
-	int res = get_files_in_folder(folder, files, &total_files, &filter, sizeof(options));
-
-	umount_external_devices();
+	res = get_files_in_folder(folder, files, &total_files, &filter, sizeof(options));
 	
 	PRINT_STR("get_files_in_folder = %x\n", res);
-	if(res < 0) return res;
-	if(total_files <= 0) return TOTAL_FILES_LESS_THAN_EQ_0;
+	if(res < 0) ERROR(res);
+	if(total_files <= 0) ERROR(TOTAL_FILES_LESS_THAN_EQ_0);
 	
 	PRINT_STR("total_files: %x\n", total_files);
 	
 	PROCESS_MENU(draw_select_file, folder, files, total_files);
 	strncpy(output, files + (selected * MAX_PATH), MAX_PATH);
-	
-	return selected;	
+
+	return selected;
+error:
+	umount_external_devices();
+	return res;
+
 }
 
 void do_ime() {
