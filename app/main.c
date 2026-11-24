@@ -426,8 +426,9 @@ void handle_menu_select_option() {
 		handle_select_input_device(what);
 	if(selected == GET_GC_INFO)
 		handle_device_info();
-	
-	return;
+
+	if(selected == OP_CANCELED)
+		do_gc_insert_prompt();
 }
 
 int handle_select_arbitary_device() {
@@ -488,11 +489,8 @@ int main(int argc, char** argv) {
 	undo_sd2vita_patches();	
 	PRINT_STR("Undone sd2vita patches\n");
 	
-	PRINT_STR("Running main loop\n");
+	do_gc_insert_prompt();
 	while(1) {
-		PRINT_STR("Displaying gc insert menu.\n");
-		do_gc_insert_prompt();
-		PRINT_STR("Displaying main menu.\n");
 		handle_menu_select_option();
 	}
 		

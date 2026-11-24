@@ -267,21 +267,17 @@ int restore_device(const char* block_device, char* input_path, ProgressCallback 
 	if(res < 0) goto error;
 
 	// check image file size
-	PRINT_STR("Checking effective size\n");
 	if(state.effective_size < get_file_size(input_path)) ERROR(SIZE_NO_SPACE);
 	
 	// open image file
 	state.rd_fd = FsOpen(input_path, SCE_O_RDONLY);
-	PRINT_STR("FsOpen %s %x\n", input_path, state.rd_fd);
 	if(state.rd_fd < 0) ERROR(state.rd_fd);
 	
 	// open device
 	state.wr_fd = kOpenDevice(block_device, SCE_O_WRONLY | SCE_O_WRLOCK);
-	PRINT_STR("kOpenDevice %s %x\n", block_device, state.wr_fd);
 	if(state.wr_fd < 0) ERROR(state.wr_fd);
 	
 	// enter read/write loop
-	PRINT_STR("entering device_access_loop\n");
 	res = device_access_loop(&state, read_with_zeros, kWriteDevice);
 
 error:

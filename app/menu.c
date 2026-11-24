@@ -517,7 +517,6 @@ int draw_device_info(int* selected, int* window, GcInfo* info)
 	draw_text_center(next_y(), msg);
 	
 	next_y();
-	next_y();
 	
 	DEFOPT(next_y());
 	ADDOPT(1, "Create Report");
