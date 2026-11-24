@@ -2,7 +2,8 @@
 #define AUTH_H 1
 
 
-int key_dump(char* output_file);
+int do_dump_cmd56_keys(char* output_file);
+int do_dump_npdrm_keys(char* output_file);
 
 void wait_for_gc_auth();
 

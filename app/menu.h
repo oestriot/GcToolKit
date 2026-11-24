@@ -10,7 +10,7 @@ void do_gc_insert_prompt();
 int do_gc_options();
 int do_select_output_location(char* output, uint64_t device_size);
 int do_select_input_location();
-int do_select_file(char* folder, char* output, char* extension, uint64_t max_size);
+int do_select_file(char* folder, char* output, const char* extension, uint64_t max_size);
 
 int do_device_dump(const char* block_device, char* output_file, BackupFormat format);
 int do_device_wipe_and_format(const char* block_device, uint8_t full, uint8_t format);
@@ -21,7 +21,7 @@ void do_confirm_message(const char* title, const char* msg);
 int do_network_options(char* ip_address, unsigned short port);
 int do_error(int error);
 void do_ime();
-void do_device_info();
+int do_device_info();
 int do_select_backup_format();
 
 void do_kmodule_failed_message(const char* module_name);
@@ -32,6 +32,13 @@ int do_select_arbitary_device(char* output, size_t len);
 
 void init_menus();
 void term_menus();
+
+
+
+enum show_info_options {
+	DUMP_REPORT,
+	CANCEL_REPORT
+};
 
 enum insert_menu_options {
 	DUMP_WHOLE_GC,

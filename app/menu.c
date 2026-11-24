@@ -441,6 +441,82 @@ int draw_format_confirm_menu(int* selected, int* window, const char* device) {
 	RETURNOPT();
 
 }
+int draw_device_info(int* selected, int* window, GcInfo* info)
+ {
+	start_draw();
+	draw_background();
+	draw_controls(1);
+	
+	draw_title("GameCart Information");
+	
+	char hex[MAX_PATH];
+	char msg[MAX_PATH];
+	
+	memset(hex, 0x00, sizeof(hex));
+	memset(msg, 0x00, sizeof(msg));
+	
+	TO_HEX(&info->card_id, sizeof(info->card_id), hex);
+	snprintf(msg, sizeof(msg)-1, "MMC CID: %s", hex);
+	draw_text_center(start_y(ytop), msg);
+	
+	TO_HEX(&info->card_descriptor, sizeof(info->card_descriptor), hex);
+	snprintf(msg, sizeof(msg)-1, "MMC CSD: %s", hex);
+	draw_text_center(next_y(), msg);
+
+	snprintf(msg, sizeof(msg)-1, "Extended CSD Revision: 0x%02X", info->extra_card_descriptor_revision);
+	draw_text_center(next_y(), msg);
+
+	// card id breakdown:
+	next_y();
+
+	snprintf(msg, sizeof(msg)-1, "Crc7: 0x%02X", info->card_id.crc7);
+	draw_text_center(next_y(), msg);
+
+	snprintf(msg, sizeof(msg)-1, "Manufactured Date: %u/%u (0x%02X)", info->month, info->year, info->card_id.manufacture_date);
+	draw_text_center(next_y(), msg);
+
+	snprintf(msg, sizeof(msg)-1, "Serial Number: 0x%02X", info->card_id.serial_number);
+	draw_text_center(next_y(), msg);
+
+	snprintf(msg, sizeof(msg)-1, "Revision: 0x%02X", info->card_id.revision);
+	draw_text_center(next_y(), msg);
+
+	snprintf(msg, sizeof(msg)-1, "Product Name: %.6s", info->card_id.product_name);
+	draw_text_center(next_y(), msg);
+
+	snprintf(msg, sizeof(msg)-1, "Oem ID: 0x%02X", info->card_id.oem_id);
+	draw_text_center(next_y(), msg);
+
+	snprintf(msg, sizeof(msg)-1, "Device Type: %s (0x%02X)", mmc_device_type_to_string(info->card_id.device_type), info->card_id.device_type);
+	draw_text_center(next_y(), msg);
+
+	snprintf(msg, sizeof(msg)-1, "Vendor: %s (0x%02X)", mmc_vendor_id_to_manufacturer(info->card_id.vendor), info->card_id.vendor);
+	draw_text_center(next_y(), msg);
+
+	
+	// cmd56 breakdown	
+	next_y();	
+	
+	TO_HEX(info->key_set.packet18_key, sizeof(info->key_set.packet18_key), hex);
+	snprintf(msg, sizeof(msg)-1, "CMD56 Key18: %s", hex);
+	draw_text_center(next_y(), msg);
+	
+	TO_HEX(info->key_set.packet20_key, sizeof(info->key_set.packet20_key), hex);
+	snprintf(msg, sizeof(msg)-1, "CMD56 Key20: %s", hex);
+	draw_text_center(next_y(), msg);
+	
+	snprintf(msg, sizeof(msg)-1, "CMD56 KeyID: %s (0x%02X)", keyid_to_keygroup(info->key_id), info->key_id);
+	draw_text_center(next_y(), msg);
+	
+		
+	DEFOPT(next_y());
+	ADDOPT(1, "Create Report");
+	ADDOPT(1, "Cancel");
+	
+	end_draw();
+	
+	RETURNOPT();
+}
 
 void draw_blacklisted_module_message(const char* module_name) {
 	start_draw();
@@ -511,84 +587,14 @@ void draw_confirmation_message(const char* title, const char* msg) {
 	end_draw();
 }
 
-void draw_device_info(GcInfo* info) {
-	start_draw();
-	draw_background();
-	draw_controls(1);
-	
-	draw_title("GameCart Information");
-	
-	char hex[MAX_PATH];
-	char msg[MAX_PATH];
-	
-	memset(hex, 0x00, sizeof(hex));
-	memset(msg, 0x00, sizeof(msg));
-	
-	TO_HEX(&info->card_id, sizeof(info->card_id), hex);
-	snprintf(msg, sizeof(msg)-1, "MMC CID: %s", hex);
-	draw_text_center(start_y(ytop), msg);
-	
-	TO_HEX(&info->card_descriptor, sizeof(info->card_descriptor), hex);
-	snprintf(msg, sizeof(msg)-1, "MMC CSD: %s", hex);
-	draw_text_center(next_y(), msg);
 
-	snprintf(msg, sizeof(msg)-1, "Extended CSD Revision: 0x%02X", info->extra_card_descriptor_revision);
-	draw_text_center(next_y(), msg);
-
-	// card id breakdown:
-	next_y();
-
-	snprintf(msg, sizeof(msg)-1, "Crc7: 0x%02X", info->card_id.crc7);
-	draw_text_center(next_y(), msg);
-
-	snprintf(msg, sizeof(msg)-1, "Manufactured Date: %u/%u (0x%02X)", info->month, info->year, info->card_id.manufacture_date);
-	draw_text_center(next_y(), msg);
-
-	snprintf(msg, sizeof(msg)-1, "Serial Number: 0x%02X", info->card_id.serial_number);
-	draw_text_center(next_y(), msg);
-
-	snprintf(msg, sizeof(msg)-1, "Revision: 0x%02X", info->card_id.revision);
-	draw_text_center(next_y(), msg);
-
-	snprintf(msg, sizeof(msg)-1, "Product Name: %.6s", info->card_id.product_name);
-	draw_text_center(next_y(), msg);
-
-	snprintf(msg, sizeof(msg)-1, "Oem ID: 0x%02X", info->card_id.oem_id);
-	draw_text_center(next_y(), msg);
-
-	snprintf(msg, sizeof(msg)-1, "Device Type: %s (0x%02X)", mmc_device_type_to_string(info->card_id.device_type), info->card_id.device_type);
-	draw_text_center(next_y(), msg);
-
-	snprintf(msg, sizeof(msg)-1, "Vendor: %s (0x%02X)", mmc_vendor_id_to_manufacturer(info->card_id.vendor), info->card_id.vendor);
-	draw_text_center(next_y(), msg);
-
-	
-	// cmd56 breakdown	
-	next_y();	
-	
-	TO_HEX(info->key_set.packet18_key, sizeof(info->key_set.packet18_key), hex);
-	snprintf(msg, sizeof(msg)-1, "CMD56 Key18: %s", hex);
-	draw_text_center(next_y(), msg);
-	
-	TO_HEX(info->key_set.packet20_key, sizeof(info->key_set.packet20_key), hex);
-	snprintf(msg, sizeof(msg)-1, "CMD56 Key20: %s", hex);
-	draw_text_center(next_y(), msg);
-	
-	snprintf(msg, sizeof(msg)-1, "CMD56 KeyID: %s (0x%02X)", keyid_to_keygroup(info->key_id), info->key_id);
-	draw_text_center(next_y(), msg);
-	
-		
-	end_draw();
-}
-
-
-void do_device_info() {
+int do_device_info() {
 	GcInfo info;
 	
 	get_gc_info(&info);
-	draw_device_info(&info);		
+	PROCESS_MENU(draw_device_info, &info);	
 	
-	WAIT_FOR_CONFIRM();
+	return selected;
 }
 
 int do_network_options(char* ip_address, unsigned short port) {	
@@ -610,7 +616,7 @@ int do_gc_options() {
 	return selected;
 }
 
-int do_select_file(char* folder, char* output, char* extension, uint64_t max_size) {
+int do_select_file(char* folder, char* output, const char* extension, uint64_t max_size) {
 	int total_files = 0;	
 	static char files[MAX_PATH * sizeof(options)];
 	

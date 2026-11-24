@@ -227,7 +227,7 @@ size_t create_report(char* rtxt, size_t rtxt_len) {
 	return rptr - rtxt;
 }
 
-int dump_report(const char* output_file) {
+int do_dump_report(const char* output_file) {
 	int res = OK;
 	mount_external_devices();
 

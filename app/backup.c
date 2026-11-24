@@ -321,3 +321,58 @@ error:
 
 	return res;
 }
+
+// translate enums to extension/types
+
+const char* wht_to_blkdev(BackupWhat what) {
+	switch(what) {
+		case WHT_WHOLE_GAMECART:
+			return BLOCK_DEVICE_GC;
+		case WHT_MEDIA_ID:
+			return BLOCK_DEVICE_MEDIAID;
+		case WHT_GAMECART_REWRITABLE:
+			return BLOCK_DEVICE_GRW0;
+		case WHT_GAMECART_READONLY:
+			return BLOCK_DEVICE_GRO0;
+		case WHT_CMD56_KEYS:
+		case WHT_NPDRM_KEYS:
+		case WHT_REPORT:
+		default:
+			return NULL;
+	}
+}
+
+const char* wht_to_extension(BackupWhat what) {
+	switch(what) {
+		case WHT_MEDIA_ID:
+			return ".mediaid";
+		case WHT_CMD56_KEYS:
+			return ".keys.bin";
+		case WHT_NPDRM_KEYS:
+			return ".npdrm.bin";
+		case WHT_GAMECART_READONLY:
+		case WHT_RAW_PARTITION:
+		case WHT_GAMECART_REWRITABLE:
+			return ".img";
+		case WHT_REPORT:
+			return "report.txt";
+		default:
+			return ".bin";
+	}
+}
+
+const char* fmt_to_extension(BackupFormat fmt) {
+	switch(fmt) {
+		case BACKUP_FORMAT_VCI:
+			return ".vci";
+		case BACKUP_FORMAT_VCI_TRIM:
+			return ".trim.vci";
+		case BACKUP_FORMAT_PSV:
+			return ".psv";
+		case BACKUP_FORMAT_PSV_TRIM:
+			return "trim.psv";
+		case BACKUP_FORMAT_RAW:
+		default:
+			return ".img";
+	}
+}

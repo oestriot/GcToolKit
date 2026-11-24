@@ -14,7 +14,7 @@
 #include "log.h"
 #include "fs.h"
 
-int key_dump(char* output_file) {
+int do_dump_cmd56_keys(char* output_file) {
 	int res = -1;
 
 	mount_external_devices();
@@ -30,6 +30,7 @@ int key_dump(char* output_file) {
 	
 	GcCmd56Keys keys;
 	kGetPerCartKeys(&keys);
+	
 	int wr = FsWrite(fd, &keys, sizeof(GcCmd56Keys));
 	if(wr == 0) ERROR(SIZE_IS_ZERO);
 	if(wr < 0) ERROR(wr);
@@ -41,6 +42,37 @@ error:
 
 	return res;
 }
+
+
+int do_dump_npdrm_keys(char* output_file) {
+	int res = -1;
+
+	mount_external_devices();
+	PRINT_FUNC();
+	
+	make_directories_excluding_last(output_file);
+	FsChangeSize(sizeof(GcCmd56Keys));
+	
+	SceUID fd = FsOpen(output_file, SCE_O_WRONLY | SCE_O_CREAT | SCE_O_TRUNC);
+	PRINT_STR("fd = %x\n", fd);
+	if(fd < 0) ERROR(fd);
+	
+	GcNpdrmKeys keys;
+	kGetNpdrmKeys(&keys);
+	
+	int wr = FsWrite(fd, &keys, sizeof(GcCmd56Keys));
+	if(wr == 0) ERROR(SIZE_IS_ZERO);
+	if(wr < 0) ERROR(wr);
+	if(wr != sizeof(GcCmd56Keys)) ERROR(SIZE_NOT_MATCH);
+
+error:
+	if(fd >= 0) FsClose(fd);
+	umount_external_devices();
+
+	return res;
+}
+
+
 
 
 

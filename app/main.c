@@ -24,16 +24,16 @@
 #include "fs.h"
 
 
-void get_output_filename(char* output, char* extension, size_t number, size_t size_output) {
+void get_output_filename(char* output, const char* extension, size_t number, size_t size_output) {
 	char title_id[64];
 	char title[64];
 	read_gameinfo(title_id, title, sizeof(title));
 	
 	if(number > 0) {
-		snprintf(output, size_output, "%s [%s] (%02d).%s", title, title_id, number, extension);
+		snprintf(output, size_output, "%s [%s] (%02d)%s", title, title_id, number, extension);
 	}
 	else {
-		snprintf(output, size_output, "%s [%s].%s", title, title_id, extension);
+		snprintf(output, size_output, "%s [%s]%s", title, title_id, extension);
 	}
 	
 	remove_illegal_chars(output);	
@@ -41,27 +41,33 @@ void get_output_filename(char* output, char* extension, size_t number, size_t si
 }
 
 
-int handle_dump_device(int what, BackupFormat format, char* block_device, char* out_file, char* ip_address, unsigned short port) {
+int handle_dump_device(BackupWhat what, BackupFormat format, const char* block_device, char* out_file, char* ip_address, unsigned short port) {
 	int res = -1;
 	char extra_file[MAX_PATH] = { 0 };
 	strncpy(extra_file, out_file, sizeof(extra_file)-1);
 	
-	if(what == DUMP_KEYS_ONLY) {
-		res = key_dump(out_file);
+	if(what == WHT_CMD56_KEYS) {
+		res = do_dump_cmd56_keys(out_file);
+	}
+	else if(what == WHT_NPDRM_KEYS) {
+		res = do_dump_npdrm_keys(out_file);
+	}
+	else if(what == WHT_REPORT) {
+		res = do_dump_report(out_file);
 	}
 	else {
 		res = do_device_dump(block_device, out_file, format);				
 	}
 	
-	if(res >= OK && what == DUMP_WHOLE_GC) { 
+	if(res >= OK && what == WHT_WHOLE_GAMECART) { 
 		if(!FMT_IS_VCI(format)) { // dump keys.bin if its not VCI.
-			change_extension(extra_file, MAX_PATH, ".keys.bin"); // get keys file ..
-			res = key_dump(extra_file);
+			change_extension(extra_file, MAX_PATH, wht_to_extension(WHT_CMD56_KEYS)); // get keys file ..
+			res = do_dump_cmd56_keys(extra_file);
 		}
 		
 		// create dump report.
-		change_extension(extra_file, MAX_PATH, ".report.txt");
-		res = dump_report(extra_file);
+		change_extension(extra_file, MAX_PATH, wht_to_extension(WHT_REPORT));
+		res = do_dump_report(extra_file);
 	}
 	
 	if(res < OK) {
@@ -76,7 +82,7 @@ int handle_dump_device(int what, BackupFormat format, char* block_device, char* 
 	return res;
 }
 
-int handle_menu_set_network_options(int what, BackupFormat format, char* block_device, char* outfile) {
+int handle_menu_set_network_options(BackupWhat what, BackupFormat format, const char* block_device, char* outfile) {
 
 	int selected = -1;
 	while(1) {
@@ -116,8 +122,9 @@ int handle_menu_set_network_options(int what, BackupFormat format, char* block_d
 }
 
 
+
 	
-void handle_menu_set_output(char* ext, BackupFormat format, int what, char* block_device) {
+void handle_menu_set_output(const char* ext, BackupFormat format, BackupWhat what, const char* block_device) {
 		// determine block device		
 		PRINT_STR("handle_menu_set_output\n");
 		
@@ -130,21 +137,8 @@ void handle_menu_set_output(char* ext, BackupFormat format, int what, char* bloc
 		
 		// skip if block device already set ..
 		if(block_device == NULL) {
-			switch(what) {
-				case DUMP_WHOLE_GC:
-					block_device = BLOCK_DEVICE_GC;
-					break;
-				case DUMP_MEDIAID:
-					block_device = BLOCK_DEVICE_MEDIAID;
-					break;
-				case DUMP_GRW0:
-					block_device = BLOCK_DEVICE_GRW0;
-					break;
-				case DUMP_KEYS_ONLY:
-					break;
-
-			}
-			PRINT_STR("block_device: %s\n", block_device);			
+			block_device = wht_to_blkdev(what);
+			if(block_device != NULL) PRINT_STR("block_device: %s\n", block_device);
 		}
 
 		
@@ -237,27 +231,15 @@ int handle_format_confirm_and_format(const char* block_device) {
 	return res;
 }
 
-void handle_wipe_option(int what) {
+void handle_wipe_option(BackupWhat what) {
 	InitalizeDiskFs();
 
-	const char* block_device = NULL;
-	switch(what) {
-		case RESET_MEDIAID:
-			block_device = BLOCK_DEVICE_MEDIAID;
-			break;
-		case RESET_GRW0:
-			block_device = BLOCK_DEVICE_GRW0;
-			break;
-		case OP_CANCELED:
-			return;
-		default:
-			return;
-	}
-		
+	const char* block_device = wht_to_blkdev(what);
+			
 	int res = 0;
 	
-	if(what == RESET_GRW0) res = handle_format_confirm_and_format(block_device);
-	else if(what == RESET_MEDIAID) res = do_device_wipe_and_format(block_device, 1, 0);
+	if(WHT_IS_EXFAT(what)) res = handle_format_confirm_and_format(block_device);
+	else if(WHT_IS_RAW(what)) res = do_device_wipe_and_format(block_device, 1, 0);
 	if(res == OP_CANCELED) return;
 	
 	char msg[MAX_PATH];	
@@ -272,24 +254,9 @@ void handle_wipe_option(int what) {
 	return;
 }
 
-void handle_select_file(int what, char* folder) {
-	char* block_device = NULL;
-	char* extension = NULL;
-	switch(what) {
-		case WRITE_MEDIAID:
-			block_device = BLOCK_DEVICE_MEDIAID;
-			extension = ".mediaid";
-			break;
-		case WRITE_GRW0:
-			block_device = BLOCK_DEVICE_GRW0;
-			extension = ".img";
-			break;
-		case OP_CANCELED:
-			return;
-		default:
-			return;
-	}
-	
+void handle_select_file(BackupWhat what, char* folder) {
+	const char* block_device = wht_to_blkdev(what);
+	const char* extension = wht_to_extension(what);
 	
 	// get total size
 	uint64_t total_device_size = 0;
@@ -322,10 +289,11 @@ void handle_select_file(int what, char* folder) {
 	return;
 }
 
-void handle_select_input_device(int what) {
+void handle_select_input_device(BackupWhat what) {
 
 	char* input_device = NULL;
 	int selected = -1;
+	
 	while(1) {
 		selected = do_select_input_location();
 		
@@ -365,9 +333,8 @@ void handle_select_input_device(int what) {
 	return;
 }
 
-void handle_menu_select_backup_format(int what) {
+void handle_menu_select_backup_format(BackupWhat what) {
 	BackupFormat format = BACKUP_FORMAT_VCI;
-	char* ext = "vci";
 	int selected = -1;
 
 	while(1) {
@@ -375,23 +342,18 @@ void handle_menu_select_backup_format(int what) {
 		switch(selected) {
 			case SELECT_FMT_VCI:
 				format = BACKUP_FORMAT_VCI;
-				ext = "vci";
 				break;
 			case SELECT_FMT_VCI_TRIM:
 				format = BACKUP_FORMAT_VCI_TRIM;
-				ext = "trim.vci";
 				break;
 			case SELECT_FMT_PSV:
 				format = BACKUP_FORMAT_PSV;
-				ext = "psv";
 				break;
 			case SELECT_FMT_PSV_TRIM:
 				format = BACKUP_FORMAT_PSV_TRIM;
-				ext = "trim.psv";
 				break;
 			case SELECT_FMT_RAW:
 				format = BACKUP_FORMAT_RAW;
-				ext = "img";
 				break;
 			case OP_CANCELED:
 				return;
@@ -399,41 +361,57 @@ void handle_menu_select_backup_format(int what) {
 				break;
 		};
 		
-		handle_menu_set_output(ext, format, what, NULL);
-		
+		handle_menu_set_output(fmt_to_extension(format), format, what, NULL);
 	}
 	
 	return;
 }
 
+void handle_device_info() {
+	while(1) {
+		int selected = do_device_info();
+		switch(selected) {
+			case DUMP_REPORT:
+				handle_menu_set_output(fmt_to_extension(WHT_REPORT), BACKUP_FORMAT_RAW, WHT_REPORT, NULL);
+				return;
+			case CANCEL_REPORT:
+				return;
+			default:
+				break;
+		}
+	}
+}
+
 void handle_menu_select_option() {
 	
-	char* ext = "";
+	BackupWhat what = WHT_WHOLE_GAMECART;
 	int selected = do_gc_options();
+	
 	switch(selected) {
 		case DUMP_WHOLE_GC:
-			ext = "vci";
+			what = WHT_WHOLE_GAMECART;
 			break;
 		case DUMP_KEYS_ONLY:
-			ext = "keys.bin";
+			what = WHT_CMD56_KEYS;
 			break;
-			
 		case DUMP_MEDIAID:
-			ext = "mediaid";
+			what = WHT_MEDIA_ID;
 			break;
 		case WRITE_MEDIAID:
-			ext = "mediaid";
+			what = WHT_MEDIA_ID;
 			break;
 		case RESET_MEDIAID:
+			what = WHT_MEDIA_ID;
 			break;
 			
 		case DUMP_GRW0:
-			ext = "img";
+			what = WHT_GAMECART_REWRITABLE;
 			break;
 		case WRITE_GRW0:
-			ext = "img";
+			what = WHT_GAMECART_REWRITABLE;
 			break;
 		case RESET_GRW0:
+			what = WHT_GAMECART_REWRITABLE;
 			break;
 		case GET_GC_INFO:
 			break;
@@ -441,16 +419,17 @@ void handle_menu_select_option() {
 			break;
 	};
 
+
 	if(selected == DUMP_WHOLE_GC) 
-		handle_menu_select_backup_format(selected);
+		handle_menu_select_backup_format(what);
 	if(selected == DUMP_KEYS_ONLY || selected == DUMP_MEDIAID || selected == DUMP_GRW0)
-		handle_menu_set_output(ext, BACKUP_FORMAT_RAW, selected, NULL);
+		handle_menu_set_output(wht_to_extension(what), BACKUP_FORMAT_RAW, what, NULL);
 	if(selected == RESET_MEDIAID || selected == RESET_GRW0)
-		handle_wipe_option(selected);
+		handle_wipe_option(what);
 	if(selected == WRITE_MEDIAID || selected == WRITE_GRW0)
-		handle_select_input_device(selected);
+		handle_select_input_device(what);
 	if(selected == GET_GC_INFO)
-		do_device_info();
+		handle_device_info();
 	if(selected == OP_CANCELED)
 		do_gc_insert_prompt();
 	
@@ -462,7 +441,7 @@ int handle_select_arbitary_device() {
 	int ret = do_select_arbitary_device(dump_from, sizeof(dump_from)-1);
 	if(ret == OP_CANCELED) return 0;
 	
-	handle_menu_set_output("img", BACKUP_FORMAT_RAW, DUMP_WHOLE_GC, dump_from);
+	handle_menu_set_output(wht_to_extension(WHT_RAW_PARTITION), BACKUP_FORMAT_RAW, WHT_WHOLE_GAMECART, dump_from);
 	return 0;
 }
 
