@@ -207,7 +207,7 @@ void handle_menu_set_output(const char* ext, BackupFormat format, BackupWhat wha
 			else {
 				res = handle_menu_set_network_options(what, format, block_device, output_filename);
 				if(res == OP_CANCELED) continue;
-			}		
+			}	
 
 			break;
 		} while(1);
@@ -371,15 +371,15 @@ void handle_device_info() {
 	while(1) {
 		int selected = do_device_info();
 		switch(selected) {
-			case DUMP_REPORT:
-				handle_menu_set_output(wht_to_extension(WHT_REPORT), BACKUP_FORMAT_RAW, WHT_REPORT, NULL);
-				return;
 			case OP_CANCELED:
 			case CANCEL_REPORT:
 				return;
 			default:
 				break;
 		}
+		
+		if(selected == DUMP_REPORT)
+			handle_menu_set_output(wht_to_extension(WHT_REPORT), BACKUP_FORMAT_RAW, WHT_REPORT, NULL);
 	}
 }
 
