@@ -124,7 +124,7 @@ int handle_menu_set_network_options(BackupWhat what, BackupFormat format, const 
 
 
 	
-void handle_menu_set_output(const char* ext, BackupFormat format, BackupWhat what, const char* block_device) {
+int handle_menu_set_output(const char* ext, BackupFormat format, BackupWhat what, const char* block_device) {
 		PRINT_FUNC();
 		
 		// get output_folder
@@ -174,16 +174,11 @@ void handle_menu_set_output(const char* ext, BackupFormat format, BackupWhat wha
 					open_ime("Enter filename", output_filename, sizeof(output_filename));
 					remove_illegal_chars(output_filename);
 					continue;
-					break;
 				case O_RELOAD_DEVICES:
 					continue;
-					break;
 				case OP_CANCELED:
-					return;
-					break;
 				default:
-					return;
-					break;
+					return OP_CANCELED;
 			};
 			
 		
@@ -202,17 +197,17 @@ void handle_menu_set_output(const char* ext, BackupFormat format, BackupWhat wha
 				InitalizeDiskFs();
 
 				res = handle_dump_device(what, format, block_device, output_folder, NULL, 0);
-				if(res == OP_CANCELED) break;
+				return res;
 			}
 			else {
 				res = handle_menu_set_network_options(what, format, block_device, output_filename);
 				if(res == OP_CANCELED) continue;
-			}	
-
-			break;
+				return res;
+			}
+		
 		} while(1);
 
-		return;
+		return res;
 }
 
 int handle_format_confirm_and_format(const char* block_device) {
@@ -361,10 +356,9 @@ void handle_menu_select_backup_format(BackupWhat what) {
 				break;
 		};
 		
-		handle_menu_set_output(fmt_to_extension(format), format, what, NULL);
+		if(handle_menu_set_output(fmt_to_extension(format), format, what, NULL) == OK) return;
 	}
 	
-	return;
 }
 
 void handle_device_info() {
@@ -378,8 +372,9 @@ void handle_device_info() {
 				break;
 		}
 		
-		if(selected == DUMP_REPORT)
-			handle_menu_set_output(wht_to_extension(WHT_REPORT), BACKUP_FORMAT_RAW, WHT_REPORT, NULL);
+		if(selected == DUMP_REPORT) {
+			if(handle_menu_set_output(wht_to_extension(WHT_REPORT), BACKUP_FORMAT_RAW, WHT_REPORT, NULL) == OK) return;			
+		}
 	}
 }
 
