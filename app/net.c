@@ -30,7 +30,6 @@ int send_file_patch(SceUID socket, const char* filename, uint32_t offset, const 
 
 	memset(&packet, 0x00, sizeof(patch_file_packet));
 
-
 	packet.magic = PATCH_FILE_MAGIC;
 	packet.offset = offset;
 	packet.patch_size = size;

@@ -2,7 +2,6 @@
 #include <stdint.h>
 #include <vitasdk.h>
 #include "net.h"
-
 #include "fs.h"
 
 static FsConfig cfg;
@@ -35,8 +34,7 @@ inline FsFd FsOpen(const char* file, int flags) {
 	switch(cfg.type) {
 		case FS_TYPE_NETWORK:
 			FsFd fd = begin_connection(cfg.ip_address, cfg.port);
-			if(fd >= 0)
-				begin_file_send(fd, file, cfg.total_size);
+			if(fd >= 0) begin_file_send(fd, file, cfg.total_size);
 			return fd;
 		case FS_TYPE_DISK:
 			return sceIoOpen(file, flags, 0777);
@@ -50,12 +48,10 @@ inline int FsWrite(FsFd fd, void* data, size_t sz) {
 	switch(cfg.type) {
 		case FS_TYPE_NETWORK:
 			return file_send_data(fd, data, sz);
-		case FS_TYPE_DISK:
-			return sceIoWrite(fd, data, sz);
 		case FS_TYPE_NULL:
 			memset(data, 0x00, sz);
-			int wr = sceIoWrite(fd, data, sz);
-			return wr;
+		case FS_TYPE_DISK:
+			return sceIoWrite(fd, data, sz);
 	}
 	return UNSUPPORTED_OPERATION;
 
@@ -64,11 +60,10 @@ inline int FsWrite(FsFd fd, void* data, size_t sz) {
 inline int FsFwrite(FsFd fd, SceOff offset, void* data, size_t sz) {	
 	switch(cfg.type) {
 		case FS_TYPE_NETWORK:
-			 int wr = send_file_patch(fd, cfg.name, offset, data, sz);
-			 if(sz > wr) return sz;
-			 if(sz < wr) return SIZE_NOT_MATCH;
-			 if(wr < 0) return wr;
-
+			int wr = send_file_patch(fd, cfg.name, offset, data, sz);
+			if(wr < 0) return wr;
+			if(wr == 0) return SIZE_IS_ZERO;
+			return sz;
 		case FS_TYPE_NULL:
 			memset(data, 0x00, sz);			
 		case FS_TYPE_DISK:

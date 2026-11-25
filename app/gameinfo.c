@@ -18,8 +18,8 @@
 
 
 static const char* PARAM_LOCATIONS[] = { 
-	"gro0:/patch",
 	"grw0:/patch",
+	"gro0:/patch",
 	"gro0:/app",
 	"gro0:/appinst",
 	"gro0:/acinst",

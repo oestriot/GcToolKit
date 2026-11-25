@@ -36,10 +36,10 @@ typedef int (DeviceAccessCallback)(SceUID fd, void* data, size_t length);
 typedef struct BackupState {
 	const char* block_device;
 	const char* output_path;
-	uint64_t total;
+	uint64_t done;
+	
 	uint64_t device_size;
 	uint64_t trim_size;
-	
 	uint64_t header_size;
 	uint64_t effective_size;
 	

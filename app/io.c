@@ -171,7 +171,7 @@ int mount_gro0() {
 }
 
 int mount_grw0() {
-	return mount_partition(0xA00, NULL, 1); // mount grw0
+	return mount_partition(0xA00, NULL, 2); // mount grw0
 }
 
 void umount_ux0() {

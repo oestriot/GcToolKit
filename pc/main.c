@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <limits.h>
+#include <inttypes.h>
 #include <Packet.h>
 #include "main.h"
 
@@ -54,57 +55,70 @@ void* receive_packets(void* args) {
 	
 	packet packet_data;
 	memset(&packet_data, 0, sizeof(packet));
-
-	int rd = READ_SOCKET(connection_fd, &packet_data, sizeof(packet));
-	
-	if(rd == -1) goto error;
-	if(rd == sizeof(packet)) { // check header size
-		if(packet_data.magic == SEND_FILE_MAGIC){ // receive packet
-			send_file_packet* sendfile = (send_file_packet*)&packet_data;
-			
-			sendfile->filename[sizeof(sendfile->filename)-1] = 0x00; // prevent buffer overflow
-			remove_illegal_chars(sendfile->filename); // remove illegal chars from filename
-			
-			printf("Receiving ... %s ... %lu bytes.\n", sendfile->filename, sendfile->total_size);
-			FILE* outfile_fd = fopen(sendfile->filename, "wb");
-			if(outfile_fd != NULL) {
-				uint64_t total_read = 0;
-				do {
-					rd = READ_SOCKET(connection_fd, work_buffer, sizeof(work_buffer));
-					fwrite(work_buffer, rd, 1, outfile_fd);
-					total_read += rd;
-				} while(total_read < sendfile->total_size);
+	while(1) {
+		int rd = READ_SOCKET(connection_fd, &packet_data, sizeof(packet));
+		
+		if(rd == 0) goto error;
+		else if(rd == sizeof(packet)) { // check header size
+			if(packet_data.magic == SEND_FILE_MAGIC){ // receive packet
+				send_file_packet* sendfile = (send_file_packet*)&packet_data;
 				
-				printf("File ... %s ... received.\n", sendfile->filename);
-				fclose(outfile_fd);
+				sendfile->filename[sizeof(sendfile->filename)-1] = 0x00; // prevent buffer overflow
+				remove_illegal_chars(sendfile->filename); // remove illegal chars from filename
 				
-			}
-		}
-		else if(packet_data.magic == PATCH_FILE_MAGIC) { // patch packet
-			patch_file_packet* patchfile = (patch_file_packet*)&packet_data;
+				printf("Receiving ... %s ... %lu bytes.\n", sendfile->filename, sendfile->total_size);
+				FILE* outfile_fd = fopen(sendfile->filename, "wb");
+				if(outfile_fd != NULL) {
+					uint64_t done = 0;
+					do {
+						uint64_t remain = (sendfile->total_size - done);
+						
+						rd = READ_SOCKET(connection_fd, work_buffer, remain < sizeof(work_buffer) ? remain : sizeof(work_buffer));
+						fwrite(work_buffer, rd, 1, outfile_fd);
+						done += rd;
 
-			patchfile->filename[sizeof(patchfile->filename)-1] = 0x00; // prevent buffer overflow
-			remove_illegal_chars(patchfile->filename); // remove illegal chars from filename
-			
-			printf("Patching ... %s ... %u bytes at 0x%llx\n", patchfile->filename, patchfile->patch_size, patchfile->offset);
-			
-			FILE* patchfile_fd = fopen(patchfile->filename, "r+b");
-			if(patchfile_fd != NULL) {
-				int pos = fseek(patchfile_fd, patchfile->offset, SEEK_SET);
-				if(pos == 0) {
-					fwrite(patchfile->patch_data, patchfile->patch_size, 1, patchfile_fd);				
+						printf("%u%% .. %uMiB / %uMiB ..  %"PRIu64" bytes received of %"PRIu64" total ..\r", 
+							(uint32_t)(((float)done / (float)sendfile->total_size) * 100.0f), 
+							(uint32_t)((float)done / 1048576.0f), 
+							(uint32_t)((float)sendfile->total_size / 1048576.0f), 
+							done, 
+							sendfile->total_size
+						);
+						} while(done < sendfile->total_size);
+					
+					printf("File ... %s ... received.\n", sendfile->filename);
+					fclose(outfile_fd);
+					
 				}
-				fclose(patchfile_fd);				
 			}
-			
+			else if(packet_data.magic == PATCH_FILE_MAGIC) { // patch packet
+				patch_file_packet* patchfile = (patch_file_packet*)&packet_data;
+
+				patchfile->filename[sizeof(patchfile->filename)-1] = 0x00; // prevent buffer overflow
+				remove_illegal_chars(patchfile->filename); // remove illegal chars from filename
+				
+				printf("Patching ... %s ... %u bytes at 0x%"PRIx64"\n", patchfile->filename, patchfile->patch_size, patchfile->offset);
+				
+				FILE* patchfile_fd = fopen(patchfile->filename, "r+b");
+				if(patchfile_fd != NULL) {
+					int pos = fseek(patchfile_fd, patchfile->offset, SEEK_SET);
+					if(pos == 0) {
+						fwrite(patchfile->patch_data, patchfile->patch_size, 1, patchfile_fd);				
+					}
+					fclose(patchfile_fd);				
+				}
+				
+			}
+			else {
+				fprintf(stderr, "Invalid packet magic: %x\n", packet_data.magic);
+				goto error;
+			}
 		}
-		else {
-			fprintf(stderr, "Invalid magic: %x\n", packet_data.magic);				
+		else{
+			fprintf(stderr, "Header packet is incorrect size: %x\n", rd);
+			goto error;
 		}
 	}
-	else{
-		fprintf(stderr, "Header packet is incorrect size: %x\n", rd);
-	}	
 error:
 	CLOSE_SOCKET(connection_fd);
 

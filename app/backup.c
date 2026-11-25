@@ -95,7 +95,10 @@ static inline int create_psv_header(BackupState* state, DeviceAccessCallback* wr
 	if(wr == 0) return SIZE_IS_ZERO;
 	if(wr < 0) return wr;
 	if(wr != sizeof(PsvHeader)) return SIZE_NOT_MATCH;
-	return 0;
+	
+	state->done += wr;
+	
+	return wr;
 }
 
 static inline int create_vci_header(BackupState* state, DeviceAccessCallback* wr_func) {
@@ -117,7 +120,10 @@ static inline int create_vci_header(BackupState* state, DeviceAccessCallback* wr
 	if(wr == 0) return SIZE_IS_ZERO;
 	if(wr < 0) return wr;
 	if(wr != sizeof(VciHeader)) return SIZE_NOT_MATCH;
-	return 0;
+	
+	state->done += wr;	
+	
+	return wr;
 }
 
 static inline int finalize_psv_header(BackupState* state) {
@@ -162,7 +168,6 @@ static inline int create_header(BackupState* state, DeviceAccessCallback* wr_fun
 }
 
 static inline int device_access_loop(BackupState* state, DeviceAccessCallback* rd_func, DeviceAccessCallback wr_func) {
-	uint64_t to_read = (state->effective_size - state->header_size);
 	
 	do {
 		int rd = rd_func(state->rd_fd, DEVICE_DUMP_BUFFER, sizeof(DEVICE_DUMP_BUFFER));
@@ -176,9 +181,9 @@ static inline int device_access_loop(BackupState* state, DeviceAccessCallback* r
 		if(wr == 0) return SIZE_IS_ZERO;
 		if(wr < 0) return wr; 
 		
-		state->total += wr; 
-		if(state->callback != NULL) state->callback(state->block_device, state->output_path, state->total, to_read);
-	} while(state->total < to_read);
+		state->done += wr; 
+		if(state->callback != NULL) state->callback(state->block_device, state->output_path, state->done, state->effective_size);
+	} while(state->done < state->effective_size);
 	
 	return 0;
 }

@@ -162,8 +162,6 @@ int get_header_size(BackupFormat format, uint64_t* size) {
 			*size = sizeof(VciHeader);
 			return 0;
 		case BACKUP_FORMAT_RAW:
-			*size = 0;
-			return 0;
 		default:
 			*size = 0;
 			return 0;	
@@ -172,10 +170,11 @@ int get_header_size(BackupFormat format, uint64_t* size) {
 
 int get_effective_size(const char* block_device, BackupFormat format, uint64_t* size) {
 	PRINT_STR("block_device: %s format: %x\n", block_device, format);
+	
 	uint64_t header_size = 0;
-	int res = 0;
-	res = get_header_size(format, &header_size);
+	int res = get_header_size(format, &header_size);
 	if(res < 0) return res;
+	
 	if(size == NULL) return POINTER_WAS_NULL;
 	
 	switch(format) {
@@ -192,13 +191,9 @@ int get_effective_size(const char* block_device, BackupFormat format, uint64_t* 
 			*size += header_size;
 			break;
 		case BACKUP_FORMAT_RAW:
+		default:
 			PRINT_STR("BACKUP_FORMAT_RAW\n");
 			res = get_device_size(block_device, size);
-			break;
-		default:
-			PRINT_STR("DEFAULT\n");
-			res = get_device_size(block_device, size);
-			*size += header_size;
 			break;
 	}
 	PRINT_STR("size: %llx\n", *size);
