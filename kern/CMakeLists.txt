@@ -11,9 +11,9 @@ endif()
 project(GcKernKit)
 include("$ENV{VITASDK}/share/vita.cmake" REQUIRED)
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wl,-q -std=gnu17 -DGCTK_VERSION=${GCTK_VERSION}")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wl,-q -std=gnu17")
 set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -O3 -g0")
-set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -O0 -ggdb -DLOGGING_ENABLED=1")
+set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -O0 -ggdb")
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -nostdlib")
 
 include_directories(${CMAKE_SOURCE_DIR}/inc)
